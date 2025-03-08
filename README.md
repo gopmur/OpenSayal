@@ -41,9 +41,11 @@ $$
 ## Projection
 
 In the realm of incompressible fluids there a rule that ensures the flow of the fluid is in such a way that the fluid remains incompressible. That is the divergence of the velocity filed should remain 0.
+
 $$
 \nabla \cdot \bf v = 0
 $$
+
 This basically states that if an amount of fluid is entering a cell the same amount should exit it, since divergence is proportional to the amount of fluid that exits the cell.
 For our discretized problem we can calculate the divergence like so.
 
