@@ -120,9 +120,11 @@ In our fluid the velocity state is carried by the particles but we are storing t
 
 The first step of the algorithm is to ask where was the fluid particle where $u$ is stored in the previous iteration. And then update $u$ to the horizontal velocity of said particle at the previous step.
 To find that particle we can calculate the velocity vector at $\bf x$ where $u$ is stored. Then we can approximate the previous location of that particle with this formula.
+
 $$
 \bf x - \Delta t \cdot \bf v(x)
 $$
+
 ![](images/image6.png)
 
 We have the horizontal part of $\bf v(x)$ but how can we find the vertical part of it? Simple we can estimate it by averaging the surrounding vertical velocities.
@@ -132,6 +134,7 @@ We have the horizontal part of $\bf v(x)$ but how can we find the vertical part 
 $$
 \bar v = (v_{i,j} + v_{i,j+} + v_{i-1,j} + v_{i-1,j+1}) / 4
 $$
+
 After finding the position of the particle we now we have to find the particle's velocity. To compute the velocity for a general position we can use this formula.
 
 ![](images/image8.png)
@@ -146,7 +149,7 @@ $$
 $$
 
 $$
-\bar v = w_{00}w_{10}v_{i,j} + w{01}w{10}v_{i+1,j} + w{01}w{11}v_{i,j+1} + w{00}w{11}v_{i+1,j+1}
+\bar v = w_{00}w_{10}v_{i,j} + w_{01}w_{10}v_{i+1,j} + w_{01}w_{11}v_{i,j+1} + w_{00}w_{11}v_{i+1,j+1}
 $$
 
 Now the only thing left to do is to move the smoke in or the quantity through the fluid. We can a take similar approach and find the previous position of the particle that is at the center of the cell. Then calculate the new intensity by interpolating using the four nearest points by a weighted average.
