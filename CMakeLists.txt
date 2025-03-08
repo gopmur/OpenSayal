@@ -9,4 +9,8 @@ file(GLOB_RECURSE PROJECT_SOURCE_FILES
 )
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC "inc")
+target_include_directories(${PROJECT_NAME} PUBLIC "inc" "lib/sdl")
+
+add_subdirectory("lib/sdl")
+target_link_directories(${PROJECT_NAME} PRIVATE "lib/sdl")
+target_link_libraries(${PROJECT_NAME} SDL2)
