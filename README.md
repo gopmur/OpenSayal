@@ -54,6 +54,7 @@ For our discretized problem we can calculate the divergence like so.
 $$
 d \leftarrow u_{i+1,j} - u_{i,j} + v_{i,j+1} - v_{i,j}
 $$
+
 To set the divergence to 0 we modify each velocity by the same value.
 
 $$
