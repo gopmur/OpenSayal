@@ -1,4 +1,5 @@
 #include "fluid.hpp"
+#include <stdint.h>
 #include <format>
 #include <stdexcept>
 
@@ -77,7 +78,7 @@ bool Fluid<H, W>::is_edge(uint32_t i, uint32_t j) {
 }
 
 template <uint32_t H, uint32_t W>
-Fluid<H, W>::Fluid() {
+Fluid<H, W>::Fluid(double o, uint32_t n) : o(o), n(n) {
   for (auto i = 0; i < H; i++) {
     for (auto j = 0; j < W; j++) {
       grid[i][j] = Cell(is_edge(i, j));
@@ -129,7 +130,7 @@ uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) {
 }
 
 template <uint32_t H, uint32_t W>
-void Fluid<H, W>::preform_projection(uint32_t n) {
+void Fluid<H, W>::preform_projection() {
   for (uint32_t _ = 0; _ < n; _++) {
     for (uint32_t i = 1; i < H - 1; i++) {
       for (uint32_t j = 1; j < W - 1; j++) {
