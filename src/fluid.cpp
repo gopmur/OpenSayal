@@ -87,18 +87,18 @@ Fluid<H, W>::Fluid() {
 
 template <uint32_t H, uint32_t W>
 Cell& Fluid<H, W>::get_cell(uint32_t i, uint32_t j) {
-  if (i >= H || j >= W) {
+  if (i >= W || j >= H) {
     throw std::out_of_range(std::format(
         "Index out of range while accessing Cell at ({}, {})", i, j));
   }
-  return grid[i][j];
+  return grid[H - j - 1][i];
 };
 
 template <uint32_t H, uint32_t W>
 float Fluid<H, W>::get_divergence(uint32_t i, uint32_t j) {
   Cell& cell = get_cell(i, j);
-  Cell& top_cell = get_cell(i - 1, j);
-  Cell& right_cell = get_cell(i, j + 1);
+  Cell& top_cell = get_cell(i, j + 1);
+  Cell& right_cell = get_cell(i + 1, j);
 
   auto u = cell.get_fluid().get_velocity().get_x();
   auto v = cell.get_fluid().get_velocity().get_y();
@@ -113,15 +113,15 @@ float Fluid<H, W>::get_divergence(uint32_t i, uint32_t j) {
 // ! Possible performance gain by memoizing s for each cell
 template <uint32_t H, uint32_t W>
 uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) {
-  Cell& top_cell = get_cell(i - 1, j);
-  Cell& bottom_cell = get_cell(i + 1, j);
-  Cell& right_cell = get_cell(i, j + 1);
-  Cell& left_cell = get_cell(i, j - 1);
+  Cell& top_cell = get_cell(i, j + 1);
+  Cell& bottom_cell = get_cell(i, j - 1);
+  Cell& right_cell = get_cell(i + 1, j);
+  Cell& left_cell = get_cell(i - 1, j);
 
   auto top_s = top_cell.get_fluid().get_s();
   auto bottom_s = bottom_cell.get_fluid().get_s();
   auto right_s = right_cell.get_fluid().get_s();
-  auto left_s = left_cell.get_fluid().get_s();  
+  auto left_s = left_cell.get_fluid().get_s();
 
   auto s = top_s + bottom_s + right_s + left_s;
 
@@ -133,15 +133,15 @@ void Fluid<H, W>::preform_projection(uint32_t n) {
   for (uint32_t _ = 0; _ < n; _++) {
     for (uint32_t i = 1; i < H - 1; i++) {
       for (uint32_t j = 1; j < W - 1; j++) {
-        Cell &cell = get_cell(i, j);
+        Cell& cell = get_cell(i, j);
         if (cell.get_fluid().get_is_solid()) {
           continue;
         }
 
-        Cell &top_cell = get_cell(i - 1, j);
-        Cell &bottom_cell = get_cell(i + 1, j);
-        Cell &right_cell = get_cell(i, j + 1);
-        Cell &left_cell = get_cell(i, j - 1);
+        Cell& top_cell = get_cell(i, j + 1);
+        Cell& bottom_cell = get_cell(i, j - 1);
+        Cell& right_cell = get_cell(i + 1, j);
+        Cell& left_cell = get_cell(i - 1, j);
 
         auto u = cell.get_fluid().get_velocity().get_x();
         auto v = cell.get_fluid().get_velocity().get_y();
@@ -154,21 +154,39 @@ void Fluid<H, W>::preform_projection(uint32_t n) {
 
         if (left_cell.get_fluid().get_s()) {
           u += velocity_diff;
+          cell.get_fluid().get_velocity().set_x(u);
         }
 
         if (right_cell.get_fluid().get_s()) {
           right_u -= velocity_diff;
+          right_cell.get_fluid().get_velocity().set_x(right_u);
         }
 
         if (bottom_cell.get_fluid().get_s()) {
           v += velocity_diff;
+          cell.get_fluid().get_velocity().set_y(v);
         }
 
         if (top_cell.get_fluid().get_s()) {
           top_v -= velocity_diff;
+          top_cell.get_fluid().get_velocity().set_y(top_v);
         }
-        
-      } 
+      }
+    }
+  }
+}
+
+template <uint32_t H, uint32_t W>
+void Fluid<H, W>::apply_external_forces(double d_t) {
+  for (uint32_t i = 1; i < H; i++) {
+    for (uint32_t j = 1; j < W; j++) {
+      Cell& cell = get_cell(i, j);
+      if (cell.get_fluid().get_is_solid()) {
+        continue;
+      }
+      auto v = cell.get_fluid().get_velocity().get_y();
+      v += d_t * g;
+      cell.get_fluid().get_velocity().set_y(v);
     }
   }
 }
