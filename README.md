@@ -35,7 +35,7 @@ $$
 v_{i,j} \leftarrow v_{i,j} + \Delta t \cdot g \\
 $$
 $$
-g=-9.81m/s
+g=-9.81m/s^2
 $$
 
 ## Projection
