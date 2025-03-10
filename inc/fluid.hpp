@@ -68,9 +68,11 @@ class Fluid {
   Cell grid[H][W];
 
  public:
-  static constexpr double g = -9.81;
+  const double g = -9.81;
+  const double o;
+  const uint32_t n;
 
-  Fluid();
+  Fluid(double o, uint32_t n);
 
   // getters
   Cell& get_cell(uint32_t i, uint32_t j);
@@ -80,5 +82,5 @@ class Fluid {
   bool is_edge(uint32_t i, uint32_t j);
 
   void apply_external_forces(double d_t);
-  void preform_projection(uint32_t n);
+  void preform_projection();
 };
