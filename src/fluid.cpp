@@ -49,6 +49,10 @@ double FluidCell::get_pressure() {
   return pressure;
 }
 
+uint8_t FluidCell::get_s() {
+  return !is_solid;
+}
+
 // -------------------------------- SmokeCell ------------------------------- //
 
 SmokeCell::SmokeCell() : density(0) {}
@@ -102,6 +106,69 @@ float Fluid<H, W>::get_divergence(uint32_t i, uint32_t j) {
   auto right_u = right_cell.get_fluid().get_velocity().get_x();
 
   auto divergence = right_u - u + top_v - v;
-  
+
   return divergence;
+}
+
+// ! Possible performance gain by memoizing s for each cell
+template <uint32_t H, uint32_t W>
+uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) {
+  Cell& top_cell = get_cell(i - 1, j);
+  Cell& bottom_cell = get_cell(i + 1, j);
+  Cell& right_cell = get_cell(i, j + 1);
+  Cell& left_cell = get_cell(i, j - 1);
+
+  auto top_s = top_cell.get_fluid().get_s();
+  auto bottom_s = bottom_cell.get_fluid().get_s();
+  auto right_s = right_cell.get_fluid().get_s();
+  auto left_s = left_cell.get_fluid().get_s();  
+
+  auto s = top_s + bottom_s + right_s + left_s;
+
+  return s;
+}
+
+template <uint32_t H, uint32_t W>
+void Fluid<H, W>::preform_projection(uint32_t n) {
+  for (uint32_t _ = 0; _ < n; _++) {
+    for (uint32_t i = 1; i < H - 1; i++) {
+      for (uint32_t j = 1; j < W - 1; j++) {
+        Cell &cell = get_cell(i, j);
+        if (cell.get_fluid().get_is_solid()) {
+          continue;
+        }
+
+        Cell &top_cell = get_cell(i - 1, j);
+        Cell &bottom_cell = get_cell(i + 1, j);
+        Cell &right_cell = get_cell(i, j + 1);
+        Cell &left_cell = get_cell(i, j - 1);
+
+        auto u = cell.get_fluid().get_velocity().get_x();
+        auto v = cell.get_fluid().get_velocity().get_y();
+        auto top_v = top_cell.get_fluid().get_velocity().get_y();
+        auto right_u = right_cell.get_fluid().get_velocity().get_x();
+
+        auto divergence = get_divergence(i, j);
+        auto s = get_s(i, j);
+        auto velocity_diff = divergence / s;
+
+        if (left_cell.get_fluid().get_s()) {
+          u += velocity_diff;
+        }
+
+        if (right_cell.get_fluid().get_s()) {
+          right_u -= velocity_diff;
+        }
+
+        if (bottom_cell.get_fluid().get_s()) {
+          v += velocity_diff;
+        }
+
+        if (top_cell.get_fluid().get_s()) {
+          top_v -= velocity_diff;
+        }
+        
+      } 
+    }
+  }
 }

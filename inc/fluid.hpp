@@ -36,6 +36,7 @@ class FluidCell {
 
   // getters
   bool get_is_solid();
+  uint8_t get_s();
   Vector2d<double> get_velocity();
   double get_pressure();
 };
@@ -71,7 +72,10 @@ class Fluid {
 
   // getters
   Cell& get_cell(uint32_t i, uint32_t j);
+  float get_divergence(uint32_t i, uint32_t j);
+  uint8_t get_s(uint32_t i, uint32_t j);
 
   bool is_edge(uint32_t i, uint32_t j);
-  float get_divergence(uint32_t i, uint32_t j);
+
+  void preform_projection(uint32_t n);
 };
