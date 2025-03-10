@@ -15,6 +15,14 @@ class Vector2d {
 
  public:
   Vector2d(T x, T y);
+
+  // getters
+  T get_x();
+  T get_y();
+
+  // setters
+  void set_x(T x);
+  void set_y(T y);
 };
 
 class FluidCell {
@@ -25,6 +33,11 @@ class FluidCell {
 
  public:
   FluidCell(bool is_solid);
+
+  // getters
+  bool get_is_solid();
+  Vector2d<double> get_velocity();
+  double get_pressure();
 };
 
 class SmokeCell {
@@ -37,12 +50,15 @@ class SmokeCell {
 };
 
 class Cell {
- private:
-  SmokeCell smoke;
   FluidCell fluid;
+  SmokeCell smoke;
 
  public:
   Cell(bool is_solid);
+  
+  // getters
+  FluidCell& get_fluid();
+  SmokeCell& get_smoke();
 };
 
 template <uint32_t H, uint32_t W>
@@ -52,5 +68,10 @@ class Fluid {
 
  public:
   Fluid();
+
+  // getters
+  Cell& get_cell(uint32_t i, uint32_t j);
+
   bool is_edge(uint32_t i, uint32_t j);
+  float get_divergence(uint32_t i, uint32_t j);
 };
