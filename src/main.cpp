@@ -7,7 +7,6 @@
 #include "SDL_error.h"
 #include "SDL_events.h"
 #include "SDL_render.h"
-#include "SDL_timer.h"
 #include "SDL_video.h"
 
 #include "logger.hpp"
