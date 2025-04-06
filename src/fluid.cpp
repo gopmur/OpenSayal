@@ -1,7 +1,5 @@
 #include "fluid.hpp"
 #include <stdint.h>
-#include <format>
-#include <stdexcept>
 
 // -------------------------------- Vector2d -------------------------------- //
 
