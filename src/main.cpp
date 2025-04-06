@@ -14,28 +14,28 @@
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
-#define HEIGHT 100
-#define WIDTH 100
+#define FLUID_HEIGHT 100
+#define FLUID_WIDTH 100
 #define CELL_SIZE 10
 
-float pixelData[HEIGHT][WIDTH];
+float pixelData[FLUID_HEIGHT][FLUID_WIDTH];
 
 // Generate some example data (gradient effect)
 void generatePixelData() {
   static int offset = 0;
-  for (int y = 0; y < HEIGHT; ++y) {
-    for (int x = 0; x < WIDTH; ++x) {
-      if (x + offset < WIDTH) {
-        pixelData[y][x + offset] =
-            static_cast<float>(WIDTH - x - 1) / WIDTH;  // Gradient from 0 to 1
+  for (int y = 0; y < FLUID_HEIGHT; ++y) {
+    for (int x = 0; x < FLUID_WIDTH; ++x) {
+      if (x + offset < FLUID_WIDTH) {
+        pixelData[y][x + offset] = static_cast<float>(FLUID_WIDTH - x - 1) /
+                                   FLUID_WIDTH;  // Gradient from 0 to 1
       } else {
-        pixelData[y][x + offset - WIDTH] =
-            static_cast<float>(WIDTH - x - 1) / WIDTH;
+        pixelData[y][x + offset - FLUID_WIDTH] =
+            static_cast<float>(FLUID_WIDTH - x - 1) / FLUID_WIDTH;
       }
     }
   }
 
-  offset %= WIDTH;
+  offset %= FLUID_WIDTH;
 }
 
 void cleanup(SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* texture) {
@@ -51,13 +51,9 @@ void cleanup(SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* texture) {
   SDL_Quit();
 }
 
-std::tuple<SDL_Window*, SDL_Renderer*, SDL_Texture*> setup() {
+void setup() {
   Logger::init();
   setup_platform();
-
-  
-
-  return {window, renderer, texture};
 }
 
 void draw_arrow(SDL_Renderer* renderer,
@@ -72,13 +68,15 @@ void draw_arrow(SDL_Renderer* renderer,
   uint32_t x2 = x + x_offset;
   uint32_t y2 = y + y_offset;
   SDL_RenderDrawLine(renderer, x, y, x2, y2);
-  
-  uint32_t arrow_x_offset = -arrow_head_length * std::cos(angle + arrow_head_angle);
-  uint32_t arrow_y_offset = arrow_head_length * std::sin(angle + arrow_head_angle);
+
+  int32_t arrow_x_offset =
+      -arrow_head_length * std::cos(angle + arrow_head_angle);
+  int32_t arrow_y_offset =
+      arrow_head_length * std::sin(angle + arrow_head_angle);
   uint32_t arrow_x2 = x2 + arrow_x_offset;
   uint32_t arrow_y2 = y2 + arrow_y_offset;
   SDL_RenderDrawLine(renderer, x2, y2, arrow_x2, arrow_y2);
-  
+
   arrow_x_offset = -arrow_head_length * std::cos(arrow_head_angle - angle);
   arrow_y_offset = -arrow_head_length * std::sin(arrow_head_angle - angle);
   arrow_x2 = x2 + arrow_x_offset;
@@ -87,10 +85,10 @@ void draw_arrow(SDL_Renderer* renderer,
 }
 
 int main() {
-  auto [window, renderer, texture] = setup();
+  setup();
   Logger::static_log("Window created successfully");
 
-  uint32_t* pixels = new uint32_t[WIDTH * HEIGHT];
+  uint32_t* pixels = new uint32_t[FLUID_WIDTH * FLUID_HEIGHT];
   SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 
   SDL_Event event;
@@ -102,16 +100,16 @@ int main() {
       }
     }
     generatePixelData();
-    for (int y = 0; y < HEIGHT; ++y) {
-      for (int x = 0; x < WIDTH; ++x) {
+    for (int y = 0; y < FLUID_HEIGHT; ++y) {
+      for (int x = 0; x < FLUID_WIDTH; ++x) {
         uint8_t color =
             static_cast<uint8_t>(pixelData[y][x] * 255.0f);  // Scale to 0-255
-        pixels[y * WIDTH + x] =
+        pixels[y * FLUID_WIDTH + x] =
             SDL_MapRGBA(format, color, color, color, 255);  // Grayscale
       }
     }
 
-    SDL_UpdateTexture(texture, NULL, pixels, WIDTH * sizeof(uint32_t));
+    SDL_UpdateTexture(texture, NULL, pixels, FLUID_WIDTH * sizeof(uint32_t));
 
     // Render the texture
     SDL_RenderClear(renderer);

@@ -1,6 +1,9 @@
-#include "graphics_handler.hpp"
+#include <cmath>
 #include <iostream>
+
 #include "SDL.h"
+
+#include "graphics_handler.hpp"
 
 GraphicsHandler::GraphicsHandler(uint32_t fluid_cell_size,
                                  uint32_t fluid_height,
@@ -52,4 +55,31 @@ GraphicsHandler::GraphicsHandler(uint32_t fluid_cell_size,
 
 GraphicsHandler::~GraphicsHandler() {
   this->cleanup();
+}
+
+void GraphicsHandler::draw_arrow(uint32_t x,
+                                 uint32_t y,
+                                 float length,
+                                 float angle,
+                                 float arrow_head_length,
+                                 float arrow_head_angle) {
+  int32_t x_offset = length * std::cos(angle);
+  int32_t y_offset = -length * std::sin(angle);
+  uint32_t x2 = x + x_offset;
+  uint32_t y2 = y + y_offset;
+  SDL_RenderDrawLine(renderer, x, y, x2, y2);
+
+  int32_t arrow_x_offset =
+      -arrow_head_length * std::cos(angle + arrow_head_angle);
+  int32_t arrow_y_offset =
+      arrow_head_length * std::sin(angle + arrow_head_angle);
+  uint32_t arrow_x2 = x2 + arrow_x_offset;
+  uint32_t arrow_y2 = y2 + arrow_y_offset;
+  SDL_RenderDrawLine(renderer, x2, y2, arrow_x2, arrow_y2);
+
+  arrow_x_offset = -arrow_head_length * std::cos(arrow_head_angle - angle);
+  arrow_y_offset = -arrow_head_length * std::sin(arrow_head_angle - angle);
+  arrow_x2 = x2 + arrow_x_offset;
+  arrow_y2 = y2 + arrow_y_offset;
+  SDL_RenderDrawLine(renderer, x2, y2, arrow_x2, arrow_y2);
 }
