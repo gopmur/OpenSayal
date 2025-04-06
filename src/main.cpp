@@ -1,42 +1,17 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
-#include <tuple>
 
 #include "SDL.h"
-#include "SDL_error.h"
 #include "SDL_events.h"
 #include "SDL_render.h"
-#include "SDL_timer.h"
 #include "SDL_video.h"
 
+#include "config.hpp"
+#include "fluid.hpp"
+#include "graphics_handler.hpp"
 #include "logger.hpp"
 #include "platform_setup.hpp"
-
-#define FLUID_HEIGHT 100
-#define FLUID_WIDTH 100
-#define CELL_SIZE 10
-
-float pixelData[FLUID_HEIGHT][FLUID_WIDTH];
-
-// Generate some example data (gradient effect)
-void generatePixelData() {
-  static int offset = 0;
-  for (int y = 0; y < FLUID_HEIGHT; ++y) {
-    for (int x = 0; x < FLUID_WIDTH; ++x) {
-      if (x + offset < FLUID_WIDTH) {
-        pixelData[y][x + offset] = static_cast<float>(FLUID_WIDTH - x - 1) /
-                                   FLUID_WIDTH;  // Gradient from 0 to 1
-      } else {
-        pixelData[y][x + offset - FLUID_WIDTH] =
-            static_cast<float>(FLUID_WIDTH - x - 1) / FLUID_WIDTH;
-      }
-    }
-  }
-
-  offset %= FLUID_WIDTH;
-}
 
 void cleanup(SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* texture) {
   if (window != nullptr) {
@@ -86,10 +61,10 @@ void draw_arrow(SDL_Renderer* renderer,
 
 int main() {
   setup();
-  Logger::static_log("Window created successfully");
 
-  uint32_t* pixels = new uint32_t[FLUID_WIDTH * FLUID_HEIGHT];
-  SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+  GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE> graphics(
+      ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE);
+  Fluid<FLUID_HEIGHT, FLUID_WIDTH> fluid(1.8, 100);
 
   SDL_Event event;
   bool is_running = true;
@@ -99,32 +74,8 @@ int main() {
         is_running = false;
       }
     }
-    generatePixelData();
-    for (int y = 0; y < FLUID_HEIGHT; ++y) {
-      for (int x = 0; x < FLUID_WIDTH; ++x) {
-        uint8_t color =
-            static_cast<uint8_t>(pixelData[y][x] * 255.0f);  // Scale to 0-255
-        pixels[y * FLUID_WIDTH + x] =
-            SDL_MapRGBA(format, color, color, color, 255);  // Grayscale
-      }
-    }
-
-    SDL_UpdateTexture(texture, NULL, pixels, FLUID_WIDTH * sizeof(uint32_t));
-
-    // Render the texture
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    static float angle = 0;
-    draw_arrow(renderer, 100, 100, 30, angle);
-    SDL_Delay(5);
-    angle += 0.01;
-
-    SDL_RenderPresent(renderer);
+    graphics.update(fluid);
   }
-
-  delete[] pixels;
-  SDL_FreeFormat(format);
-  cleanup(window, renderer, texture);
 
   return EXIT_SUCCESS;
 }
