@@ -55,44 +55,7 @@ std::tuple<SDL_Window*, SDL_Renderer*, SDL_Texture*> setup() {
   Logger::init();
   setup_platform();
 
-  SDL_Window* window = nullptr;
-  SDL_Renderer* renderer = nullptr;
-  SDL_Texture* texture = nullptr;
-
-  auto sdl_status = SDL_Init(SDL_INIT_VIDEO);
-  if (sdl_status < 0) {
-    auto sdl_error_message = SDL_GetError();
-    std::cout << "Video initialization failed: " << sdl_error_message
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  window = SDL_CreateWindow("Fluid simulation", SDL_WINDOWPOS_CENTERED,
-                            SDL_WINDOWPOS_CENTERED, WIDTH * CELL_SIZE,
-                            HEIGHT * CELL_SIZE, SDL_WINDOW_SHOWN);
-  if (window == nullptr) {
-    auto sdl_error_message = SDL_GetError();
-    std::cout << "Window creation failed: " << sdl_error_message << std::endl;
-    cleanup(window, renderer, texture);
-    exit(EXIT_FAILURE);
-  }
-
-  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (renderer == nullptr) {
-    auto sdl_error_message = SDL_GetError();
-    std::cout << "Renderer creation failed: " << sdl_error_message << std::endl;
-    cleanup(window, renderer, texture);
-    exit(EXIT_FAILURE);
-  }
-
-  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-                              SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
-  if (texture == nullptr) {
-    auto sdl_error_message = SDL_GetError();
-    std::cout << "Texture creation failed: " << sdl_error_message << std::endl;
-    cleanup(window, renderer, texture);
-    exit(EXIT_FAILURE);
-  }
+  
 
   return {window, renderer, texture};
 }
