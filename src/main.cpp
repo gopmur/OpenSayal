@@ -1,11 +1,7 @@
 #include <cmath>
-#include <cstdint>
 #include <cstdlib>
 
-#include "SDL.h"
 #include "SDL_events.h"
-#include "SDL_render.h"
-#include "SDL_video.h"
 
 #include "config.hpp"
 #include "fluid.hpp"

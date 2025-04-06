@@ -47,22 +47,25 @@ class FluidCell {
 
 class SmokeCell {
  private:
+ public:
+  // ! fix !
+  // TODO make these private
   // This value should be between 0 and 1
   float density;
-
- public:
- SmokeCell();
- float get_density() const;
+  SmokeCell();
+  float get_density() const;
 };
 
 class Cell {
   FluidCell fluid;
-  SmokeCell smoke;
 
  public:
+  // ! fix !
+  // TODO make these private
+  SmokeCell smoke;
   Cell();
   Cell(bool is_solid);
-  
+
   // getters
   const FluidCell& get_fluid() const;
   const SmokeCell& get_smoke() const;
@@ -101,6 +104,10 @@ Fluid<H, W>::Fluid(float o, uint32_t n) : o(o), n(n) {
   for (auto i = 0; i < H; i++) {
     for (auto j = 0; j < W; j++) {
       grid[i][j] = Cell(is_edge(i, j));
+      // ! fix !
+      // TODO remove this
+      Cell& cell = grid[i][j];
+      cell.smoke.density = static_cast<float>(j) / W;
     }
   }
 }
