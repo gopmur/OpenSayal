@@ -139,7 +139,7 @@ class Fluid {
 
 template <uint32_t H, uint32_t W>
 bool Fluid<H, W>::is_edge(uint32_t i, uint32_t j) const {
-  return i == 0 || j == 0 || i == H - 1 || j == W - 1;
+  return i == 0 || j == 0 || i == W - 1 || j == H - 1;
 }
 
 template <uint32_t H, uint32_t W>
@@ -253,8 +253,8 @@ void Fluid<H, W>::step_projection(uint32_t i, uint32_t j) {
 template <uint32_t H, uint32_t W>
 void Fluid<H, W>::perform_projection() {
   for (uint32_t _ = 0; _ < n; _++) {
-    for (uint32_t i = 1; i < H - 1; i++) {
-      for (uint32_t j = 1; j < W - 1; j++) {
+    for (uint32_t i = 1; i < W - 1; i++) {
+      for (uint32_t j = 1; j < H - 1; j++) {
         step_projection(i, j);
       }
     }
@@ -263,8 +263,8 @@ void Fluid<H, W>::perform_projection() {
 
 template <uint32_t H, uint32_t W>
 void Fluid<H, W>::apply_external_forces(float d_t) {
-  for (uint32_t i = 0; i < H; i++) {
-    for (uint32_t j = 0; j < W; j++) {
+  for (uint32_t i = 0; i < W; i++) {
+    for (uint32_t j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
       if (cell.is_solid()) {
         continue;

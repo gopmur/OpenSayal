@@ -183,9 +183,9 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
     for (uint32_t j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
 
-      // if (cell.is_solid()) {
-      //   continue;
-      // }
+      if (cell.is_solid()) {
+        continue;
+      }
 
       uint32_t x = i * S;
       uint32_t y = (H - j - 1) * S;

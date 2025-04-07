@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <optional>
 
 #include "SDL_events.h"
 
@@ -28,7 +29,7 @@ int main() {
     using namespace std::chrono;
 
     bool is_running = true;
-    auto prev_time = high_resolution_clock::now();
+    std::optional<time_point<high_resolution_clock>> prev_time = std::nullopt;
     while (is_running) {
       while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
@@ -36,14 +37,19 @@ int main() {
         }
       }
       auto now = high_resolution_clock::now();
-      auto passed_time = now - prev_time;
+      if (not prev_time.has_value()) {
+        prev_time = now;
+      }
+      auto passed_time = now - prev_time.value();
       auto passed_time_ns = duration_cast<nanoseconds>(passed_time);
       auto nano_seconds = passed_time_ns.count();
-      float d_t = static_cast<float>(nano_seconds) / 1'000'000'000;
 
-      auto fps = static_cast<uint32_t>(1 / d_t);
-
-      Logger::log_fps(d_t);
+      float d_t = 0;
+      if (nano_seconds != 0) {
+        d_t = static_cast<float>(nano_seconds) / 1'000'000'000;
+        auto fps = static_cast<uint32_t>(1 / d_t);
+        Logger::log_fps(d_t);
+      }
 
       fluid.apply_external_forces(d_t);
       
