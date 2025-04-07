@@ -160,11 +160,15 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
   for (int i = 0; i < H; i++) {
     for (int j = 0; j < W; j++) {
       const Cell& cell = fluid.get_cell(i, j);
-      auto smoke_density = cell.get_density();
-      uint8_t color =
-          255 - static_cast<uint8_t>(smoke_density * 255);  // Scale to 0-255
-      this->fluid_pixels[i][j] =
-          SDL_MapRGBA(this->format, 255, color, color, 255);  // Grayscale
+
+      if (cell.is_solid()) {
+        this->fluid_pixels[i][j] = SDL_MapRGBA(this->format, 20, 20, 20, 255);
+      } else {
+        auto smoke_density = cell.get_density();
+        uint8_t color = 255 - static_cast<uint8_t>(smoke_density * 255);
+        this->fluid_pixels[i][j] =
+            SDL_MapRGBA(this->format, 255, color, color, 255);
+      }
     }
   }
 }
@@ -189,9 +193,12 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
       auto angle = std::atan2(vel_y, vel_x);
       auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
 
+      uint32_t arrow_x = x + S / 2;
+      uint32_t arrow_y = y + S / 2;
+
       if (length > this->arrow_disable_thresh_hold) {
-        this->draw_arrow(x, y, length, angle, this->arrow_head_length,
-                         this->arrow_head_angle);
+        this->draw_arrow(arrow_x, arrow_y, length, angle,
+                         this->arrow_head_length, this->arrow_head_angle);
       }
     }
   }
