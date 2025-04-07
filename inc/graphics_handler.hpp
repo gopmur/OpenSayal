@@ -155,9 +155,9 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
       auto cell = fluid.get_cell(i, j);
       auto smoke_density = cell.get_smoke().get_density();
       uint8_t color =
-          static_cast<uint8_t>(smoke_density * 255.0f);  // Scale to 0-255
+          255 - static_cast<uint8_t>(smoke_density * 255);  // Scale to 0-255
       this->fluid_pixels[i][j] =
-          SDL_MapRGBA(this->format, color, color, color, 255);  // Grayscale
+          SDL_MapRGBA(this->format, 255, color, color, 255);  // Grayscale
     }
   }
 }
