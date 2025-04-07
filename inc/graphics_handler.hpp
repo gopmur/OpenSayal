@@ -16,6 +16,7 @@ class GraphicsHandler {
  private:
   float arrow_head_length;
   float arrow_head_angle;
+  float arrow_disable_thresh_hold;
   SDL_Renderer* renderer;
   SDL_Window* window;
   SDL_Texture* fluid_texture;
@@ -29,18 +30,24 @@ class GraphicsHandler {
                   float arrow_head_length,
                   float arrow_head_angle);
   void update_fluid_pixels(const Fluid<H, W>& fluid);
+  void update_velocity_arrows(const Fluid<H, W>& fluid);
   void cleanup();
 
  public:
-  GraphicsHandler(float arrow_head_length, float arrow_head_angle);
+  GraphicsHandler(float arrow_head_length,
+                  float arrow_head_angle,
+                  float arrow_disable_thresh_hold);
   ~GraphicsHandler();
   void update(const Fluid<H, W>& fluid);
 };
 
 template <uint32_t H, uint32_t W, uint32_t S>
 GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
-                                          float arrow_head_angle)
-    : arrow_head_angle(arrow_head_angle), arrow_head_length(arrow_head_length) {
+                                          float arrow_head_angle,
+                                          float arrow_disable_thresh_hold)
+    : arrow_head_angle(arrow_head_angle),
+      arrow_head_length(arrow_head_length),
+      arrow_disable_thresh_hold(arrow_disable_thresh_hold) {
   this->window = nullptr;
   this->renderer = nullptr;
   this->fluid_texture = nullptr;
@@ -94,7 +101,7 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
     exit(EXIT_FAILURE);
   }
 
-  Logger::static_log("Graphics initialized successfully");
+  Logger::static_debug("Graphics initialized successfully");
 }
 
 template <uint32_t H, uint32_t W, uint32_t S>
@@ -104,7 +111,7 @@ GraphicsHandler<H, W, S>::~GraphicsHandler() {
 
 template <uint32_t H, uint32_t W, uint32_t S>
 void GraphicsHandler<H, W, S>::cleanup() {
-  Logger::static_log("Cleaning up graphics");
+  Logger::static_debug("Cleaning up graphics");
   if (this->window != nullptr) {
     SDL_DestroyWindow(this->window);
   }
@@ -152,12 +159,40 @@ template <uint32_t H, uint32_t W, uint32_t S>
 void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
   for (int i = 0; i < H; i++) {
     for (int j = 0; j < W; j++) {
-      auto cell = fluid.get_cell(i, j);
-      auto smoke_density = cell.get_smoke().get_density();
+      const Cell& cell = fluid.get_cell(i, j);
+      auto smoke_density = cell.get_density();
       uint8_t color =
           255 - static_cast<uint8_t>(smoke_density * 255);  // Scale to 0-255
       this->fluid_pixels[i][j] =
           SDL_MapRGBA(this->format, 255, color, color, 255);  // Grayscale
+    }
+  }
+}
+
+template <uint32_t H, uint32_t W, uint32_t S>
+void GraphicsHandler<H, W, S>::update_velocity_arrows(
+    const Fluid<H, W>& fluid) {
+  for (uint32_t i = 0; i < W; i++) {
+    for (uint32_t j = 0; j < H; j++) {
+      const Cell& cell = fluid.get_cell(i, j);
+
+      if (cell.is_solid()) {
+        continue;
+      }
+
+      uint32_t x = i * S;
+      uint32_t y = (H - j - 1) * S;
+      auto velocity = cell.get_velocity();
+      auto vel_x = velocity.get_x();
+      auto vel_y = velocity.get_y();
+
+      auto angle = std::atan2(vel_y, vel_x);
+      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
+
+      if (length > this->arrow_disable_thresh_hold) {
+        this->draw_arrow(x, y, length, angle, this->arrow_head_length,
+                         this->arrow_head_angle);
+      }
     }
   }
 }
@@ -171,11 +206,8 @@ void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid) {
   // Render the texture
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, this->fluid_texture, NULL, NULL);
-  static float angle = 0;
-  this->draw_arrow(100, 100, 50, angle, this->arrow_head_length,
-                   this->arrow_head_angle);
-  SDL_Delay(5);
-  angle += 0.01;
+
+  this->update_velocity_arrows(fluid);
 
   SDL_RenderPresent(renderer);
 }
