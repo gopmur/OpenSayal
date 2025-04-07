@@ -5,6 +5,7 @@
 #include <format>
 #include <stdexcept>
 
+#include "config.hpp"
 #include "helper.hpp"
 
 template <typename T>
@@ -119,7 +120,7 @@ class Fluid {
   void step_projection(uint32_t i, uint32_t j);
 
  public:
-  const float g = -9.81;
+  const float g = PHYSICS_G;
   const float o;
   const uint32_t n;
 
@@ -146,7 +147,11 @@ Fluid<H, W>::Fluid(float o, uint32_t n) : o(o), n(n) {
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
-      cell = Cell(is_edge(i, j));
+      if (j >= 11 && j <= 16 && i == 13) {
+        cell = Cell(true);
+      } else {
+        cell = Cell(is_edge(i, j));
+      }
     }
   }
 }
@@ -269,9 +274,9 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
         cell.set_velocity(20, 20);
         cell.set_density(1);
       }
-      // auto v = cell.get_velocity().get_y();
-      // v += d_t * g;
-      // cell.set_velocity_y(v);
+      auto v = cell.get_velocity().get_y();
+      v += d_t * g;
+      cell.set_velocity_y(v);
     }
   }
 }

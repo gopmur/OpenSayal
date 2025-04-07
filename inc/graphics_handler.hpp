@@ -165,7 +165,7 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
       uint32_t y = H - j - 1;
 
       if (cell.is_solid()) {
-        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 20, 20, 20, 255);
+        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
         auto smoke_density = cell.get_density();
         uint8_t color = 255 - static_cast<uint8_t>(smoke_density * 255);
@@ -183,9 +183,9 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
     for (uint32_t j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
 
-      if (cell.is_solid()) {
-        continue;
-      }
+      // if (cell.is_solid()) {
+      //   continue;
+      // }
 
       uint32_t x = i * S;
       uint32_t y = (H - j - 1) * S;
