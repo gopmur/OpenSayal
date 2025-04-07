@@ -86,6 +86,7 @@ class SmokeCell {
  public:
   SmokeCell();
   float get_density() const;
+  void set_density(float density);
 };
 
 class Cell {
@@ -106,13 +107,16 @@ class Cell {
   void set_velocity_x(float x);
   void set_velocity_y(float y);
   void set_velocity(float x, float y);
+  void set_density(float density);
 };
 
 template <uint32_t H, uint32_t W>
 class Fluid {
  private:
   std::array<std::array<Cell, W>, H> grid;
+
   Cell& get_mut_cell(uint32_t i, uint32_t j);
+  void step_projection(uint32_t i, uint32_t j);
 
  public:
   const float g = -9.81;
@@ -200,49 +204,53 @@ uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) const {
 }
 
 template <uint32_t H, uint32_t W>
+void Fluid<H, W>::step_projection(uint32_t i, uint32_t j) {
+  Cell& cell = get_mut_cell(i, j);
+  if (cell.is_solid()) {
+    return;
+  }
+
+  Cell& top_cell = get_mut_cell(i, j + 1);
+  Cell& bottom_cell = get_mut_cell(i, j - 1);
+  Cell& right_cell = get_mut_cell(i + 1, j);
+  Cell& left_cell = get_mut_cell(i - 1, j);
+
+  auto u = cell.get_velocity().get_x();
+  auto v = cell.get_velocity().get_y();
+  auto top_v = top_cell.get_velocity().get_y();
+  auto right_u = right_cell.get_velocity().get_x();
+
+  auto divergence = get_divergence(i, j);
+  auto s = get_s(i, j);
+  auto velocity_diff = this->o * (divergence / s);
+
+  if (left_cell.get_s()) {
+    u += velocity_diff;
+    cell.set_velocity_x(u);
+  }
+
+  if (right_cell.get_s()) {
+    right_u -= velocity_diff;
+    right_cell.set_velocity_x(right_u);
+  }
+
+  if (bottom_cell.get_s()) {
+    v += velocity_diff;
+    cell.set_velocity_y(v);
+  }
+
+  if (top_cell.get_s()) {
+    top_v -= velocity_diff;
+    top_cell.set_velocity_y(top_v);
+  }
+}
+
+template <uint32_t H, uint32_t W>
 void Fluid<H, W>::perform_projection() {
-  static uint8_t turn = 0;
   for (uint32_t _ = 0; _ < n; _++) {
     for (uint32_t i = 1; i < H - 1; i++) {
       for (uint32_t j = 1; j < W - 1; j++) {
-        Cell& cell = get_mut_cell(i, j);
-        if (cell.is_solid()) {
-          continue;
-        }
-
-        Cell& top_cell = get_mut_cell(i, j + 1);
-        Cell& bottom_cell = get_mut_cell(i, j - 1);
-        Cell& right_cell = get_mut_cell(i + 1, j);
-        Cell& left_cell = get_mut_cell(i - 1, j);
-
-        auto u = cell.get_velocity().get_x();
-        auto v = cell.get_velocity().get_y();
-        auto top_v = top_cell.get_velocity().get_y();
-        auto right_u = right_cell.get_velocity().get_x();
-
-        auto divergence = get_divergence(i, j);
-        auto s = get_s(i, j);
-        auto velocity_diff = this->o * (divergence / s);
-
-        if (left_cell.get_s()) {
-          u += velocity_diff;
-          cell.set_velocity_x(u);
-        }
-
-        if (right_cell.get_s()) {
-          right_u -= velocity_diff;
-          right_cell.set_velocity_x(right_u);
-        }
-
-        if (bottom_cell.get_s()) {
-          v += velocity_diff;
-          cell.set_velocity_y(v);
-        }
-
-        if (top_cell.get_s()) {
-          top_v -= velocity_diff;
-          top_cell.set_velocity_y(top_v);
-        }
+        step_projection(i, j);
       }
     }
   }
@@ -250,15 +258,20 @@ void Fluid<H, W>::perform_projection() {
 
 template <uint32_t H, uint32_t W>
 void Fluid<H, W>::apply_external_forces(float d_t) {
-  for (uint32_t i = 1; i < H; i++) {
-    for (uint32_t j = 1; j < W; j++) {
+  for (uint32_t i = 0; i < H; i++) {
+    for (uint32_t j = 0; j < W; j++) {
       Cell& cell = get_mut_cell(i, j);
       if (cell.is_solid()) {
         continue;
       }
-      auto v = cell.get_velocity().get_y();
-      v += d_t * g;
-      cell.set_velocity_y(v);
+
+      if (j == 10 && i > 5 && i < 11) {
+        cell.set_velocity(20, 20);
+        cell.set_density(1);
+      }
+      // auto v = cell.get_velocity().get_y();
+      // v += d_t * g;
+      // cell.set_velocity_y(v);
     }
   }
 }

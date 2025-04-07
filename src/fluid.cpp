@@ -45,10 +45,18 @@ float SmokeCell::get_density() const {
   return this->density;
 }
 
+void SmokeCell::set_density(float density) {
+  this->density = density;
+}
+
 // ---------------------------------- Cell ---------------------------------- //
 
 Cell::Cell(bool is_solid) : smoke(), fluid(is_solid) {}
 Cell::Cell() : smoke(), fluid() {}
+
+void Cell::set_density(float density) {
+  this->smoke.set_density(density);
+}
 
 const Vector2d<float> Cell::get_velocity() const {
   return this->fluid.get_velocity();

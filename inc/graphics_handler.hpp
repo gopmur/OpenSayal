@@ -157,16 +157,19 @@ void GraphicsHandler<H, W, S>::draw_arrow(uint32_t x,
 
 template <uint32_t H, uint32_t W, uint32_t S>
 void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
-  for (int i = 0; i < H; i++) {
-    for (int j = 0; j < W; j++) {
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
 
+      uint32_t x = i;
+      uint32_t y = H - j - 1;
+
       if (cell.is_solid()) {
-        this->fluid_pixels[i][j] = SDL_MapRGBA(this->format, 20, 20, 20, 255);
+        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 20, 20, 20, 255);
       } else {
         auto smoke_density = cell.get_density();
         uint8_t color = 255 - static_cast<uint8_t>(smoke_density * 255);
-        this->fluid_pixels[i][j] =
+        this->fluid_pixels[y][x] =
             SDL_MapRGBA(this->format, 255, color, color, 255);
       }
     }
