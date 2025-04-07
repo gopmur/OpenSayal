@@ -201,6 +201,7 @@ uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) const {
 
 template <uint32_t H, uint32_t W>
 void Fluid<H, W>::perform_projection() {
+  static uint8_t turn = 0;
   for (uint32_t _ = 0; _ < n; _++) {
     for (uint32_t i = 1; i < H - 1; i++) {
       for (uint32_t j = 1; j < W - 1; j++) {
@@ -221,7 +222,7 @@ void Fluid<H, W>::perform_projection() {
 
         auto divergence = get_divergence(i, j);
         auto s = get_s(i, j);
-        auto velocity_diff = divergence / s;
+        auto velocity_diff = this->o * (divergence / s);
 
         if (left_cell.get_s()) {
           u += velocity_diff;
@@ -255,15 +256,9 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
       if (cell.is_solid()) {
         continue;
       }
-      if (i == 1 && j == 1) {
-        auto v = cell.get_velocity().get_y();
-        v += d_t * g;
-        cell.set_velocity_y(v);
-      } else {
-        auto v = cell.get_velocity().get_y();
-        v += d_t * g;
-        cell.set_velocity_y(v);
-      }
+      auto v = cell.get_velocity().get_y();
+      v += d_t * g;
+      cell.set_velocity_y(v);
     }
   }
 }
