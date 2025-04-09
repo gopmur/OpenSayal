@@ -200,10 +200,10 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
-      if (std::sqrt(std::pow((i - W / 2), 2) + std::pow((j - H / 2), 2)) <
+      if (std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) + std::pow((j - CIRCLE_POSITION_Y), 2)) <
               CIRCLE_RADIUS ||
-          (i <= 6 && (j == H / 2 - PIP_HEIGHT / 2 - 1 ||
-                      j == H / 2 + PIP_HEIGHT / 2 + 1))) {
+          (i < PIPE_LENGTH && (j == H / 2 - PIPE_HEIGHT / 2 - 1 ||
+                      j == H / 2 + PIPE_HEIGHT / 2 + 1))) {
         cell = Cell(true);
       } else {
         cell = Cell(i == 0 || j == 0 || j == H - 1);
@@ -339,8 +339,8 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
-      if (i == 1 && j >= H / 2 - PIP_HEIGHT / 2 &&
-          j <= H / 2 + PIP_HEIGHT / 2) {
+      if (i == 1 && j >= H / 2 - PIPE_HEIGHT / 2 &&
+          j <= H / 2 + PIPE_HEIGHT / 2) {
         cell.set_density(1);
         cell.set_velocity_x(WIND_SPEED);
       }
@@ -655,9 +655,9 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
       get_center_position(indices_4.get_x(), indices_4.get_y());
 
   auto distance_1 = get_distance(Vector2d<float>(x, y), pos_1);
-  auto distance_2 = get_distance(Vector2d<float>(x, y), pos_1);
-  auto distance_3 = get_distance(Vector2d<float>(x, y), pos_2);
-  auto distance_4 = get_distance(Vector2d<float>(x, y), pos_3);
+  auto distance_2 = get_distance(Vector2d<float>(x, y), pos_2);
+  auto distance_3 = get_distance(Vector2d<float>(x, y), pos_3);
+  auto distance_4 = get_distance(Vector2d<float>(x, y), pos_4);
 
   distance_sum = distance_1 + distance_2 + distance_3 + distance_4;
 
@@ -675,11 +675,11 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
     avg_density += w2 * cell.get_density();
   }
   if (is_valid_fluid(indices_3.get_x(), indices_1.get_y())) {
-    const Cell& cell = this->get_cell(indices_3.get_x(), indices_1.get_y());
+    const Cell& cell = this->get_cell(indices_3.get_x(), indices_3.get_y());
     avg_density += w3 * cell.get_density();
   }
   if (is_valid_fluid(indices_4.get_x(), indices_1.get_y())) {
-    const Cell& cell = this->get_cell(indices_4.get_x(), indices_1.get_y());
+    const Cell& cell = this->get_cell(indices_4.get_x(), indices_4.get_y());
     avg_density += w4 * cell.get_density();
   }
 
