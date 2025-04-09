@@ -52,10 +52,10 @@ int main() {
       }
 
       fluid.apply_external_forces(d_t);
+      graphics.update(fluid);
       fluid.apply_projection();
       fluid.apply_advection(d_t);
 
-      graphics.update(fluid);
       prev_time = now;
     }
   }

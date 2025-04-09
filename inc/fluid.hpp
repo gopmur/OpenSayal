@@ -7,81 +7,6 @@
 #include "config.hpp"
 #include "helper.hpp"
 
-template <typename T>
-  requires arithmetic_concept<T>
-class Vector2d {
- private:
-  // the same as i
-  T x;
-  // the same as j
-  T y;
-
- public:
-  inline Vector2d(T x, T y);
-  inline Vector2d();
-
-  // getters
-  inline T get_x() const;
-  inline T get_y() const;
-
-  // setters
-  inline void set_x(T x);
-  inline void set_y(T y);
-
-  inline Vector2d<T> operator+(const Vector2d<T>& other);
-  inline Vector2d<T> operator-(const Vector2d<T>& other);
-
-  template <typename G>
-    requires arithmetic_concept<G>
-  friend Vector2d<T> operator*(const Vector2d<T>& vector, G scalar) {
-    return Vector2d<T>(vector.x * scalar, vector.y * scalar);
-  }
-};
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline Vector2d<T> Vector2d<T>::operator+(const Vector2d<T>& other) {
-  return Vector2d<T>(this->x + other.x, this->y + other.y);
-}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline Vector2d<T> Vector2d<T>::operator-(const Vector2d<T>& other) {
-  return Vector2d<T>(this->x - other.x, this->y - other.y);
-}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline Vector2d<T>::Vector2d(T x, T y) : x(x), y(y) {}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline Vector2d<T>::Vector2d() : x(0), y(0) {}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline T Vector2d<T>::get_x() const {
-  return x;
-}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline T Vector2d<T>::get_y() const {
-  return y;
-}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline void Vector2d<T>::set_x(T x) {
-  this->x = x;
-}
-
-template <typename T>
-  requires arithmetic_concept<T>
-inline void Vector2d<T>::set_y(T y) {
-  this->y = y;
-}
-
 class FluidCell {
  private:
   bool is_solid;
@@ -216,55 +141,58 @@ inline void Cell::set_velocity(float x, float y) {
   this->set_velocity_y(y);
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 class Fluid {
  private:
   std::array<std::array<Cell, W>, H> grid;
   std::array<std::array<Vector2d<float>, W>, H> velocity_buffer;
+  std::array<std::array<float, W>, H> smoke_buffer;
 
-  inline Cell& get_mut_cell(uint32_t i, uint32_t j);
-  inline Vector2d<float>& get_mut_velocity_buffer(uint32_t i, uint32_t j);
-  static inline std::tuple<uint32_t, uint32_t> translate_indices(uint32_t i,
-                                                                 uint32_t j);
-  void step_projection(uint32_t i, uint32_t j);
-  Vector2d<float> get_vertical_edge_velocity(uint32_t i, uint32_t j) const;
-  Vector2d<float> get_horizontal_edge_velocity(uint32_t i, uint32_t j) const;
+  inline Cell& get_mut_cell(int i, int j);
+  inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
+  inline void set_smoke_buffer(int i, int j, float density);
+  inline float get_smoke_buffer(int i, int j);
+  static inline std::tuple<int, int> translate_indices(int i, int j);
+  void step_projection(int i, int j);
+  Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
+  Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
+  float interpolate_smoke(float x, float y) const;
   inline Vector2d<float> get_general_velocity(float x, float y) const;
   float get_general_velocity_y(float x, float y) const;
   float get_general_velocity_x(float x, float y) const;
-  inline bool index_is_valid(uint32_t i, uint32_t j) const;
-  inline bool is_valid_fluid(uint32_t i, uint32_t j) const;
-  inline Vector2d<float> get_position(uint32_t i, uint32_t j) const;
-  inline Vector2d<float> get_u_position(uint32_t i, uint32_t j) const;
-  inline Vector2d<float> get_v_position(uint32_t, uint32_t j) const;
+  inline bool index_is_valid(int i, int j) const;
+  inline bool is_valid_fluid(int i, int j) const;
+  inline Vector2d<float> get_center_position(int i, int j) const;
+  inline Vector2d<float> get_u_position(int i, int j) const;
+  inline Vector2d<float> get_v_position(int, int j) const;
 
  public:
   const float g = PHYSICS_G;
   const float o;
-  const uint32_t cell_size;
-  const uint32_t n;
+  const int cell_size;
+  const int n;
 
-  Fluid(float o, uint32_t n, uint32_t cell_size);
+  Fluid(float o, int n, int cell_size);
 
   // getters
-  inline const Cell& get_cell(uint32_t i, uint32_t j) const;
-  float get_divergence(uint32_t i, uint32_t j) const;
-  uint8_t get_s(uint32_t i, uint32_t j) const;
+  inline const Cell& get_cell(int i, int j) const;
+  float get_divergence(int i, int j) const;
+  uint8_t get_s(int i, int j) const;
 
-  inline bool is_edge(uint32_t i, uint32_t j) const;
+  inline bool is_edge(int i, int j) const;
 
   void apply_external_forces(float d_t);
   void apply_projection();
   void apply_advection(float d_t);
 };
 
-template <uint32_t H, uint32_t W>
-inline bool Fluid<H, W>::is_edge(uint32_t i, uint32_t j) const {
+template <int H, int W>
+inline bool Fluid<H, W>::is_edge(int i, int j) const {
   return i == 0 || j == 0 || i == W - 1 || j == H - 1;
 }
 
-template <uint32_t H, uint32_t W>
-Fluid<H, W>::Fluid(float o, uint32_t n, uint32_t cell_size)
+template <int H, int W>
+Fluid<H, W>::Fluid(float o, int n, int cell_size)
     : o(o), n(n), cell_size(cell_size) {
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
@@ -278,35 +206,43 @@ Fluid<H, W>::Fluid(float o, uint32_t n, uint32_t cell_size)
   }
 }
 
-template <uint32_t H, uint32_t W>
-inline std::tuple<uint32_t, uint32_t> Fluid<H, W>::translate_indices(
-    uint32_t i,
-    uint32_t j) {
+template <int H, int W>
+inline std::tuple<int, int> Fluid<H, W>::translate_indices(int i, int j) {
   return {H - j - 1, i};
 }
 
-template <uint32_t H, uint32_t W>
-inline const Cell& Fluid<H, W>::get_cell(uint32_t i, uint32_t j) const {
+template <int H, int W>
+inline const Cell& Fluid<H, W>::get_cell(int i, int j) const {
   auto indices = Fluid::translate_indices(i, j);
   return grid.at(std::get<0>(indices)).at(std::get<1>(indices));
 };
+template <int H, int W>
+inline void Fluid<H, W>::set_smoke_buffer(int i, int j, float density) {
+  auto indices = Fluid::translate_indices(i, j);
+  smoke_buffer.at(std::get<0>(indices)).at(std::get<1>(indices)) = density;
+}
 
-template <uint32_t H, uint32_t W>
-inline Vector2d<float>& Fluid<H, W>::get_mut_velocity_buffer(uint32_t i,
-                                                             uint32_t j) {
+template <int H, int W>
+inline float Fluid<H, W>::get_smoke_buffer(int i, int j) {
+  auto indices = Fluid::translate_indices(i, j);
+  return smoke_buffer.at(std::get<0>(indices)).at(std::get<1>(indices));
+}
+
+template <int H, int W>
+inline Vector2d<float>& Fluid<H, W>::get_mut_velocity_buffer(int i, int j) {
   auto indices = Fluid::translate_indices(i, j);
   return this->velocity_buffer.at(std::get<0>(indices))
       .at(std::get<1>(indices));
 }
 
-template <uint32_t H, uint32_t W>
-inline Cell& Fluid<H, W>::get_mut_cell(uint32_t i, uint32_t j) {
+template <int H, int W>
+inline Cell& Fluid<H, W>::get_mut_cell(int i, int j) {
   auto indices = Fluid::translate_indices(i, j);
   return grid.at(std::get<0>(indices)).at(std::get<1>(indices));
 };
 
-template <uint32_t H, uint32_t W>
-float Fluid<H, W>::get_divergence(uint32_t i, uint32_t j) const {
+template <int H, int W>
+float Fluid<H, W>::get_divergence(int i, int j) const {
   const Cell& cell = get_cell(i, j);
   const Cell& top_cell = get_cell(i, j + 1);
   const Cell& right_cell = get_cell(i + 1, j);
@@ -322,8 +258,8 @@ float Fluid<H, W>::get_divergence(uint32_t i, uint32_t j) const {
 }
 
 // ! Possible performance gain by memoizing s for each cell
-template <uint32_t H, uint32_t W>
-uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) const {
+template <int H, int W>
+uint8_t Fluid<H, W>::get_s(int i, int j) const {
   const Cell& top_cell = get_cell(i, j + 1);
   const Cell& bottom_cell = get_cell(i, j - 1);
   const Cell& right_cell = get_cell(i + 1, j);
@@ -339,8 +275,8 @@ uint8_t Fluid<H, W>::get_s(uint32_t i, uint32_t j) const {
   return s;
 }
 
-template <uint32_t H, uint32_t W>
-void Fluid<H, W>::step_projection(uint32_t i, uint32_t j) {
+template <int H, int W>
+void Fluid<H, W>::step_projection(int i, int j) {
   Cell& cell = get_mut_cell(i, j);
   if (cell.is_solid()) {
     return;
@@ -381,28 +317,27 @@ void Fluid<H, W>::step_projection(uint32_t i, uint32_t j) {
   }
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 void Fluid<H, W>::apply_projection() {
-  for (uint32_t _ = 0; _ < n; _++) {
-    for (uint32_t i = 1; i < W - 1; i++) {
-      for (uint32_t j = 1; j < H - 1; j++) {
+  for (int _ = 0; _ < n; _++) {
+    for (int i = 1; i < W - 1; i++) {
+      for (int j = 1; j < H - 1; j++) {
         step_projection(i, j);
       }
     }
   }
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 void Fluid<H, W>::apply_external_forces(float d_t) {
-  for (uint32_t i = 0; i < W; i++) {
-    for (uint32_t j = 0; j < H; j++) {
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
       if (cell.is_solid()) {
         continue;
       }
-
       if (j == 10 && i > 5 && i < 11) {
-        cell.set_velocity(100, 100);
+        // cell.set_velocity(100, 100);
         cell.set_density(1);
       }
       auto v = cell.get_velocity().get_y();
@@ -412,19 +347,18 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
   }
 }
 
-template <uint32_t H, uint32_t W>
-inline bool Fluid<H, W>::index_is_valid(uint32_t i, uint32_t j) const {
+template <int H, int W>
+inline bool Fluid<H, W>::index_is_valid(int i, int j) const {
   return i <= W && j <= H;
 }
 
-template <uint32_t H, uint32_t W>
-inline bool Fluid<H, W>::is_valid_fluid(uint32_t i, uint32_t j) const {
+template <int H, int W>
+inline bool Fluid<H, W>::is_valid_fluid(int i, int j) const {
   return index_is_valid(i, j) and not this->get_cell(i, j).is_solid();
 }
 
-template <uint32_t H, uint32_t W>
-Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(uint32_t i,
-                                                        uint32_t j) const {
+template <int H, int W>
+Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto u = cell.get_velocity().get_x();
 
@@ -450,9 +384,8 @@ Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(uint32_t i,
   return Vector2d<float>(u, avg_v);
 }
 
-template <uint32_t H, uint32_t W>
-Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(uint32_t i,
-                                                          uint32_t j) const {
+template <int H, int W>
+Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto v = cell.get_velocity().get_y();
 
@@ -478,10 +411,10 @@ Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(uint32_t i,
   return Vector2d<float>(avg_u, v);
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
-  uint32_t i = x / this->cell_size;
-  uint32_t j = y / this->cell_size;
+  int i = x / this->cell_size;
+  int j = y / this->cell_size;
 
   float in_x = x - i * this->cell_size;
   float in_y = y - j * this->cell_size;
@@ -544,10 +477,10 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   return avg_v / 4;
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
-  uint32_t i = x / this->cell_size;
-  uint32_t j = y / this->cell_size;
+  int i = x / this->cell_size;
+  int j = y / this->cell_size;
 
   float in_x = x - i * this->cell_size;
   float in_y = y - j * this->cell_size;
@@ -611,7 +544,7 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
   return avg_u / 4;
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
                                                          float y) const {
   float u = this->get_general_velocity_x(x, y);
@@ -619,27 +552,26 @@ inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
   return Vector2d<float>(u, v);
 }
 
-template <uint32_t H, uint32_t W>
-inline Vector2d<float> Fluid<H, W>::get_position(uint32_t i, uint32_t j) const {
-  return Vector2d<float>(i * this->cell_size, j * this->cell_size);
+template <int H, int W>
+inline Vector2d<float> Fluid<H, W>::get_center_position(int i, int j) const {
+  return Vector2d<float>((i + 0.5) * this->cell_size,
+                         (j * 0.5) * this->cell_size);
 }
 
-template <uint32_t H, uint32_t W>
-inline Vector2d<float> Fluid<H, W>::get_u_position(uint32_t i,
-                                                   uint32_t j) const {
+template <int H, int W>
+inline Vector2d<float> Fluid<H, W>::get_u_position(int i, int j) const {
   return Vector2d<float>(i * this->cell_size, (j + 0.5) * this->cell_size);
 }
 
-template <uint32_t H, uint32_t W>
-inline Vector2d<float> Fluid<H, W>::get_v_position(uint32_t i,
-                                                   uint32_t j) const {
+template <int H, int W>
+inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
   return Vector2d<float>((i + 0.5) * this->cell_size, j * this->cell_size);
 }
 
-template <uint32_t H, uint32_t W>
+template <int H, int W>
 void Fluid<H, W>::apply_advection(float d_t) {
-  for (uint32_t i = 1; i < W - 1; i++) {
-    for (uint32_t j = 1; j < H - 1; j++) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
       // update u
       Vector2d<float> current_pos = this->get_u_position(i, j);
       Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
@@ -655,15 +587,100 @@ void Fluid<H, W>::apply_advection(float d_t) {
       new_velocity =
           this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
       this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
+
+      // update smoke
+      current_pos = this->get_center_position(i, j);
+      current_velocity = this->get_general_velocity(current_pos.get_x(),
+                                                    current_pos.get_y());
+      prev_pos = current_pos - current_velocity * d_t;
+      float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+      this->set_smoke_buffer(i, j, new_density);      
     }
   }
 
   // move velocities
-  for (uint32_t i = 1; i < W - 1; i++) {
-    for (uint32_t j = 1; j < H - 1; j++) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
       this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
                                             new_velocity.get_y());
+      float new_density = this->get_smoke_buffer(i, j);
+      this->get_mut_cell(i, j).set_density(new_density);
     }
   }
+}
+
+template <int H, int W>
+float Fluid<H, W>::interpolate_smoke(float x, float y) const {
+  int i = x / this->cell_size;
+  int j = y / this->cell_size;
+
+  float in_x = x - i * this->cell_size;
+  float in_y = y - j * this->cell_size;
+
+  Vector2d<int> indices_1(i, j);
+  Vector2d<int> indices_2;
+  Vector2d<int> indices_3;
+  Vector2d<int> indices_4;
+
+  float distance_sum = 0;
+  float avg_density = 0;
+
+  if (in_x < this->cell_size / 2.0 && in_y < this->cell_size / 2.0) {
+    indices_2 = Vector2d<int>(i - 1, j);
+    indices_3 = Vector2d<int>(i, j - 1);
+    indices_4 = Vector2d<int>(i - 1, j - 1);
+  } else if (in_x < this->cell_size / 2.0) {
+    indices_2 = Vector2d<int>(i - 1, j);
+    indices_3 = Vector2d<int>(i, j + 1);
+    indices_4 = Vector2d<int>(i - 1, j + 1);
+  } else if (in_y < this->cell_size / 2.0) {
+    indices_2 = Vector2d<int>(i + 1, j);
+    indices_3 = Vector2d<int>(i, j - 1);
+    indices_4 = Vector2d<int>(i + 1, j - 1);
+  } else {
+    indices_2 = Vector2d<int>(i + 1, j);
+    indices_3 = Vector2d<int>(i, j + 1);
+    indices_4 = Vector2d<int>(i + 1, j + 1);
+  }
+
+  Vector2d<float> pos_1 =
+      get_center_position(indices_1.get_x(), indices_1.get_y());
+  Vector2d<float> pos_2 =
+      get_center_position(indices_2.get_x(), indices_2.get_y());
+  Vector2d<float> pos_3 =
+      get_center_position(indices_3.get_x(), indices_3.get_y());
+  Vector2d<float> pos_4 =
+      get_center_position(indices_4.get_x(), indices_4.get_y());
+
+  auto distance_1 = get_distance(Vector2d<float>(x, y), pos_1);
+  auto distance_2 = get_distance(Vector2d<float>(x, y), pos_1);
+  auto distance_3 = get_distance(Vector2d<float>(x, y), pos_2);
+  auto distance_4 = get_distance(Vector2d<float>(x, y), pos_3);
+
+  distance_sum = distance_1 + distance_2 + distance_3 + distance_4;
+
+  auto w1 = distance_1 / distance_sum;
+  auto w2 = distance_2 / distance_sum;
+  auto w3 = distance_3 / distance_sum;
+  auto w4 = distance_4 / distance_sum;
+
+  if (is_valid_fluid(indices_1.get_x(), indices_1.get_y())) {
+    const Cell& cell = this->get_cell(indices_1.get_x(), indices_1.get_y());
+    avg_density += w1 * cell.get_density();
+  }
+  if (is_valid_fluid(indices_2.get_x(), indices_2.get_y())) {
+    const Cell& cell = this->get_cell(indices_2.get_x(), indices_2.get_y());
+    avg_density += w2 * cell.get_density();
+  }
+  if (is_valid_fluid(indices_3.get_x(), indices_1.get_y())) {
+    const Cell& cell = this->get_cell(indices_3.get_x(), indices_1.get_y());
+    avg_density += w3 * cell.get_density();
+  }
+  if (is_valid_fluid(indices_4.get_x(), indices_1.get_y())) {
+    const Cell& cell = this->get_cell(indices_4.get_x(), indices_1.get_y());
+    avg_density += w4 * cell.get_density();
+  }
+
+  return avg_density;
 }

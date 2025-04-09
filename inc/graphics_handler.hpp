@@ -11,7 +11,7 @@
 #include "fluid.hpp"
 #include "logger.hpp"
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 class GraphicsHandler {
  private:
   float arrow_head_length;
@@ -21,10 +21,10 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
-  std::array<std::array<uint32_t, W>, H> fluid_pixels;
+  std::array<std::array<int, W>, H> fluid_pixels;
 
-  void draw_arrow(uint32_t x,
-                  uint32_t y,
+  void draw_arrow(int x,
+                  int y,
                   float length,
                   float angle,
                   float arrow_head_length,
@@ -41,7 +41,7 @@ class GraphicsHandler {
   void update(const Fluid<H, W>& fluid);
 };
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
                                           float arrow_head_angle,
                                           float arrow_disable_thresh_hold)
@@ -53,8 +53,8 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
   this->fluid_texture = nullptr;
   this->format = nullptr;
 
-  uint32_t window_height = S * H;
-  uint32_t window_width = S * W;
+  int window_height = S * H;
+  int window_width = S * W;
 
   auto sdl_status = SDL_Init(SDL_INIT_VIDEO);
   if (sdl_status < 0) {
@@ -104,12 +104,12 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
   Logger::static_debug("Graphics initialized successfully");
 }
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 GraphicsHandler<H, W, S>::~GraphicsHandler() {
   this->cleanup();
 }
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::cleanup() {
   Logger::static_debug("Cleaning up graphics");
   if (this->window != nullptr) {
@@ -127,25 +127,25 @@ void GraphicsHandler<H, W, S>::cleanup() {
   SDL_Quit();
 }
 
-template <uint32_t H, uint32_t W, uint32_t S>
-void GraphicsHandler<H, W, S>::draw_arrow(uint32_t x,
-                                          uint32_t y,
+template <int H, int W, int S>
+void GraphicsHandler<H, W, S>::draw_arrow(int x,
+                                          int y,
                                           float length,
                                           float angle,
                                           float arrow_head_length,
                                           float arrow_head_angle) {
   int32_t x_offset = length * std::cos(angle);
   int32_t y_offset = -length * std::sin(angle);
-  uint32_t x2 = x + x_offset;
-  uint32_t y2 = y + y_offset;
+  int x2 = x + x_offset;
+  int y2 = y + y_offset;
   SDL_RenderDrawLine(renderer, x, y, x2, y2);
 
   int32_t arrow_x_offset =
       -arrow_head_length * std::cos(angle + arrow_head_angle);
   int32_t arrow_y_offset =
       arrow_head_length * std::sin(angle + arrow_head_angle);
-  uint32_t arrow_x2 = x2 + arrow_x_offset;
-  uint32_t arrow_y2 = y2 + arrow_y_offset;
+  int arrow_x2 = x2 + arrow_x_offset;
+  int arrow_y2 = y2 + arrow_y_offset;
   SDL_RenderDrawLine(renderer, x2, y2, arrow_x2, arrow_y2);
 
   arrow_x_offset = -arrow_head_length * std::cos(arrow_head_angle - angle);
@@ -155,14 +155,14 @@ void GraphicsHandler<H, W, S>::draw_arrow(uint32_t x,
   SDL_RenderDrawLine(renderer, x2, y2, arrow_x2, arrow_y2);
 }
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
 
-      uint32_t x = i;
-      uint32_t y = H - j - 1;
+      int x = i;
+      int y = H - j - 1;
 
       if (cell.is_solid()) {
         this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
@@ -176,19 +176,19 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
   }
 }
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update_velocity_arrows(
     const Fluid<H, W>& fluid) {
-  for (uint32_t i = 0; i < W; i++) {
-    for (uint32_t j = 0; j < H; j++) {
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
 
       if (cell.is_solid()) {
         continue;
       }
 
-      uint32_t x = i * S;
-      uint32_t y = (H - j - 1) * S;
+      int x = i * S;
+      int y = (H - j - 1) * S;
       auto velocity = cell.get_velocity();
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
@@ -196,8 +196,8 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
       auto angle = std::atan2(vel_y, vel_x);
       auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
 
-      uint32_t arrow_x = x + S / 2;
-      uint32_t arrow_y = y + S / 2;
+      int arrow_x = x + S / 2;
+      int arrow_y = y + S / 2;
 
       if (length > this->arrow_disable_thresh_hold) {
         this->draw_arrow(arrow_x, arrow_y, length, angle,
@@ -207,11 +207,11 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
   }
 }
 
-template <uint32_t H, uint32_t W, uint32_t S>
+template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid) {
   this->update_fluid_pixels(fluid);
   SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels.data(),
-                    W * sizeof(uint32_t));
+                    W * sizeof(int));
 
   // Render the texture
   SDL_RenderClear(renderer);
