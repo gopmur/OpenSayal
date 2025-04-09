@@ -2,8 +2,8 @@
 
 #include <array>
 #include <cstdint>
-#include <format>
-#include <stdexcept>
+#include <iostream>
+#include <tuple>
 
 #include "config.hpp"
 #include "helper.hpp"
@@ -28,11 +28,32 @@ class Vector2d {
   // setters
   inline void set_x(T x);
   inline void set_y(T y);
+
+  inline Vector2d<T> operator+(const Vector2d<T>& other);
+  inline Vector2d<T> operator-(const Vector2d<T>& other);
+
+  template <typename G>
+    requires arithmetic_concept<G>
+  friend Vector2d<T> operator*(const Vector2d<T>& vector, G scalar) {
+    return Vector2d<T>(vector.x * scalar, vector.y * scalar);
+  }
 };
 
 template <typename T>
   requires arithmetic_concept<T>
-inline Vector2d<T>::Vector2d(T x, T y) : x(x), y(x) {}
+inline Vector2d<T> Vector2d<T>::operator+(const Vector2d<T>& other) {
+  return Vector2d<T>(this->x + other.x, this->y + other.y);
+}
+
+template <typename T>
+  requires arithmetic_concept<T>
+inline Vector2d<T> Vector2d<T>::operator-(const Vector2d<T>& other) {
+  return Vector2d<T>(this->x - other.x, this->y - other.y);
+}
+
+template <typename T>
+  requires arithmetic_concept<T>
+inline Vector2d<T>::Vector2d(T x, T y) : x(x), y(y) {}
 
 template <typename T>
   requires arithmetic_concept<T>
@@ -202,7 +223,10 @@ class Fluid {
   std::array<std::array<Cell, W>, H> grid;
   std::array<std::array<Vector2d<float>, W>, H> velocity_buffer;
 
-  Cell& get_mut_cell(uint32_t i, uint32_t j);
+  inline Cell& get_mut_cell(uint32_t i, uint32_t j);
+  inline Vector2d<float>& get_mut_velocity_buffer(uint32_t i, uint32_t j);
+  static inline std::tuple<uint32_t, uint32_t> translate_indices(uint32_t i,
+                                                                 uint32_t j);
   void step_projection(uint32_t i, uint32_t j);
   Vector2d<float> get_vertical_edge_velocity(uint32_t i, uint32_t j) const;
   Vector2d<float> get_horizontal_edge_velocity(uint32_t i, uint32_t j) const;
@@ -212,6 +236,8 @@ class Fluid {
   inline bool index_is_valid(uint32_t i, uint32_t j) const;
   inline bool is_valid_fluid(uint32_t i, uint32_t j) const;
   inline Vector2d<float> get_position(uint32_t i, uint32_t j) const;
+  inline Vector2d<float> get_u_position(uint32_t i, uint32_t j) const;
+  inline Vector2d<float> get_v_position(uint32_t, uint32_t j) const;
 
  public:
   const float g = PHYSICS_G;
@@ -254,13 +280,30 @@ Fluid<H, W>::Fluid(float o, uint32_t n, uint32_t cell_size)
 }
 
 template <uint32_t H, uint32_t W>
+inline std::tuple<uint32_t, uint32_t> Fluid<H, W>::translate_indices(
+    uint32_t i,
+    uint32_t j) {
+  return {H - j - 1, i};
+}
+
+template <uint32_t H, uint32_t W>
 inline const Cell& Fluid<H, W>::get_cell(uint32_t i, uint32_t j) const {
-  return grid.at(H - j - 1).at(i);
+  auto indices = Fluid::translate_indices(i, j);
+  return grid.at(std::get<0>(indices)).at(std::get<1>(indices));
 };
 
 template <uint32_t H, uint32_t W>
-Cell& Fluid<H, W>::get_mut_cell(uint32_t i, uint32_t j) {
-  return grid.at(H - j - 1).at(i);
+inline Vector2d<float>& Fluid<H, W>::get_mut_velocity_buffer(uint32_t i,
+                                                             uint32_t j) {
+  auto indices = Fluid::translate_indices(i, j);
+  return this->velocity_buffer.at(std::get<0>(indices))
+      .at(std::get<1>(indices));
+}
+
+template <uint32_t H, uint32_t W>
+inline Cell& Fluid<H, W>::get_mut_cell(uint32_t i, uint32_t j) {
+  auto indices = Fluid::translate_indices(i, j);
+  return grid.at(std::get<0>(indices)).at(std::get<1>(indices));
 };
 
 template <uint32_t H, uint32_t W>
@@ -360,7 +403,7 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
       }
 
       if (j == 10 && i > 5 && i < 11) {
-        cell.set_velocity(20, 20);
+        cell.set_velocity(100, 100);
         cell.set_density(1);
       }
       auto v = cell.get_velocity().get_y();
@@ -383,23 +426,23 @@ inline bool Fluid<H, W>::is_valid_fluid(uint32_t i, uint32_t j) const {
 template <uint32_t H, uint32_t W>
 Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(uint32_t i,
                                                         uint32_t j) const {
-  Cell& cell = this->get_cell(i, j);
+  const Cell& cell = this->get_cell(i, j);
   auto u = cell.get_velocity().get_x();
 
   auto avg_v = cell.get_velocity().get_y();
 
   if (is_valid_fluid(i - 1, j + 1)) {
-    Cell& top_left_cell = this->get_cell(i - 1, j + 1);
+    const Cell& top_left_cell = this->get_cell(i - 1, j + 1);
     avg_v += top_left_cell.get_velocity().get_y();
   }
 
   if (is_valid_fluid(i, j + 1)) {
-    Cell& top_right_cell = this->get_cell(i, j + 1);
+    const Cell& top_right_cell = this->get_cell(i, j + 1);
     avg_v += top_right_cell.get_velocity().get_y();
   }
 
   if (is_valid_fluid(i - 1, j)) {
-    Cell& bottom_left_cell = this->get_cell(i - 1, j);
+    const Cell& bottom_left_cell = this->get_cell(i - 1, j);
     avg_v += bottom_left_cell.get_velocity().get_y();
   }
 
@@ -411,23 +454,23 @@ Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(uint32_t i,
 template <uint32_t H, uint32_t W>
 Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(uint32_t i,
                                                           uint32_t j) const {
-  Cell& cell = this->get_cell(i, j);
+  const Cell& cell = this->get_cell(i, j);
   auto v = cell.get_velocity().get_y();
 
   float avg_u = cell.get_velocity().get_x();
 
   if (is_valid_fluid(i + 1, j)) {
-    Cell& top_right_cell = this->get_cell(i + 1, j);
+    const Cell& top_right_cell = this->get_cell(i + 1, j);
     avg_u += top_right_cell.get_velocity().get_x();
   }
 
   if (is_valid_fluid(i, j - 1)) {
-    Cell& bottom_left_cell = this->get_cell(i, j - 1);
+    const Cell& bottom_left_cell = this->get_cell(i, j - 1);
     avg_u += bottom_left_cell.get_velocity().get_x();
   }
 
   if (is_valid_fluid(i + 1, j - 1)) {
-    Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
+    const Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
     avg_u += bottom_right_cell.get_velocity().get_x();
   }
 
@@ -453,22 +496,22 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
     float w_y = in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      Cell& bottom_right_cell = this->get_cell(i, j);
+      const Cell& bottom_right_cell = this->get_cell(i, j);
       avg_v += w_y * w_x * bottom_right_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i - 1, j)) {
-      Cell& bottom_left_cell = this->get_cell(i - 1, j);
+      const Cell& bottom_left_cell = this->get_cell(i - 1, j);
       avg_v = w_y * (1 - w_x) * bottom_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i - 1, j + 1)) {
-      Cell& top_left_cell = this->get_cell(i - 1, j + 1);
+      const Cell& top_left_cell = this->get_cell(i - 1, j + 1);
       avg_v = (1 - w_y) * (1 - w_x) * top_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
-      Cell& top_right_cell = this->get_cell(i, j + 1);
+      const Cell& top_right_cell = this->get_cell(i, j + 1);
       avg_v = (1 - w_y) * w_x * top_right_cell.get_velocity().get_y();
     }
   }
@@ -479,22 +522,22 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
     float w_y = in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      Cell& bottom_left_cell = this->get_cell(i, j);
+      const Cell& bottom_left_cell = this->get_cell(i, j);
       avg_v += w_y * w_x * bottom_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
-      Cell& top_left_cell = this->get_cell(i, j + 1);
+      const Cell& top_left_cell = this->get_cell(i, j + 1);
       avg_v += (1 - w_y) * w_x * top_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i + 1, j + 1)) {
-      Cell& top_right_cell = this->get_cell(i + 1, j + 1);
+      const Cell& top_right_cell = this->get_cell(i + 1, j + 1);
       avg_v += (1 - w_y) * (1 - w_x) * top_right_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i + 1, j)) {
-      Cell& bottom_right_cell = this->get_cell(i + 1, j);
+      const Cell& bottom_right_cell = this->get_cell(i + 1, j);
       avg_v += w_y * (1 - w_x) * bottom_right_cell.get_velocity().get_y();
     }
   }
@@ -519,22 +562,22 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
     float w_y = d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      Cell& top_left_cell = this->get_cell(i, j);
+      const Cell& top_left_cell = this->get_cell(i, j);
       avg_u += w_y * w_x * top_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j)) {
-      Cell& top_right_cell = this->get_cell(i + 1, j);
+      const Cell& top_right_cell = this->get_cell(i + 1, j);
       avg_u += w_y * (1 - w_x) * top_right_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i, j - 1)) {
-      Cell& bottom_left_cell = this->get_cell(i, j - 1);
+      const Cell& bottom_left_cell = this->get_cell(i, j - 1);
       avg_u += (1 - w_y) * w_x * bottom_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j - 1)) {
-      Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
+      const Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
       avg_u += (1 - w_y) * (1 - w_x) * bottom_right_cell.get_velocity().get_x();
     }
   }
@@ -546,22 +589,22 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
     float w_y = d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      Cell& bottom_left_cell = this->get_cell(i, j);
+      const Cell& bottom_left_cell = this->get_cell(i, j);
       avg_u += w_y * w_x * bottom_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
-      Cell& top_left_cell = this->get_cell(i, j + 1);
+      const Cell& top_left_cell = this->get_cell(i, j + 1);
       avg_u += (1 - w_y) * w_x * top_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j)) {
-      Cell& bottom_right_cell = this->get_cell(i + 1, j);
+      const Cell& bottom_right_cell = this->get_cell(i + 1, j);
       avg_u += w_y * (1 - w_x) * bottom_right_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j + 1)) {
-      Cell& top_right_cell = this->get_cell(i + 1, j + 1);
+      const Cell& top_right_cell = this->get_cell(i + 1, j + 1);
       avg_u = (1 - w_y) * (1 - w_x) * top_right_cell.get_velocity().get_x();
     }
   }
@@ -570,9 +613,10 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 }
 
 template <uint32_t H, uint32_t W>
-inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x, float y) const {
-  auto u = this->get_general_velocity_x(x, y);
-  auto v = this->get_general_velocity_y(x, y);
+inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
+                                                         float y) const {
+  float u = this->get_general_velocity_x(x, y);
+  float v = this->get_general_velocity_y(x, y);
   return Vector2d<float>(u, v);
 }
 
@@ -582,6 +626,45 @@ inline Vector2d<float> Fluid<H, W>::get_position(uint32_t i, uint32_t j) const {
 }
 
 template <uint32_t H, uint32_t W>
+inline Vector2d<float> Fluid<H, W>::get_u_position(uint32_t i,
+                                                   uint32_t j) const {
+  return Vector2d<float>(i * this->cell_size, (j + 0.5) * this->cell_size);
+}
+
+template <uint32_t H, uint32_t W>
+inline Vector2d<float> Fluid<H, W>::get_v_position(uint32_t i,
+                                                   uint32_t j) const {
+  return Vector2d<float>((i + 0.5) * this->cell_size, j * this->cell_size);
+}
+
+template <uint32_t H, uint32_t W>
 void Fluid<H, W>::apply_advection(float d_t) {
-  
+  for (uint32_t i = 1; i < W - 1; i++) {
+    for (uint32_t j = 1; j < H - 1; j++) {
+      // update u
+      Vector2d<float> current_pos = this->get_u_position(i, j);
+      Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
+      auto prev_pos = current_pos - current_velocity * d_t;
+      float new_velocity =
+          this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
+      this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
+
+      // update v
+      current_pos = this->get_v_position(i, j);
+      current_velocity = this->get_horizontal_edge_velocity(i, j);
+      prev_pos = current_pos - current_velocity * d_t;
+      new_velocity =
+          this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
+      this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
+    }
+  }
+
+  // move velocities
+  for (uint32_t i = 1; i < W - 1; i++) {
+    for (uint32_t j = 1; j < H - 1; j++) {
+      Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
+      this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
+                                            new_velocity.get_y());
+    }
+  }
 }
