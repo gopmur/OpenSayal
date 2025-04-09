@@ -53,7 +53,7 @@ int main() {
 
       fluid.apply_external_forces(d_t);
       
-      fluid.perform_projection();
+      fluid.apply_projection();
 
       graphics.update(fluid);
       prev_time = now;

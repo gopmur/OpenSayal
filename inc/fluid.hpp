@@ -18,42 +18,47 @@ class Vector2d {
   T y;
 
  public:
-  Vector2d(T x, T y);
+  inline Vector2d(T x, T y);
+  inline Vector2d();
 
   // getters
-  T get_x() const;
-  T get_y() const;
+  inline T get_x() const;
+  inline T get_y() const;
 
   // setters
-  void set_x(T x);
-  void set_y(T y);
+  inline void set_x(T x);
+  inline void set_y(T y);
 };
 
 template <typename T>
   requires arithmetic_concept<T>
-Vector2d<T>::Vector2d(T x, T y) : x(x), y(x) {}
+inline Vector2d<T>::Vector2d(T x, T y) : x(x), y(x) {}
 
 template <typename T>
   requires arithmetic_concept<T>
-T Vector2d<T>::get_x() const {
+inline Vector2d<T>::Vector2d() : x(0), y(0) {}
+
+template <typename T>
+  requires arithmetic_concept<T>
+inline T Vector2d<T>::get_x() const {
   return x;
 }
 
 template <typename T>
   requires arithmetic_concept<T>
-T Vector2d<T>::get_y() const {
+inline T Vector2d<T>::get_y() const {
   return y;
 }
 
 template <typename T>
   requires arithmetic_concept<T>
-void Vector2d<T>::set_x(T x) {
+inline void Vector2d<T>::set_x(T x) {
   this->x = x;
 }
 
 template <typename T>
   requires arithmetic_concept<T>
-void Vector2d<T>::set_y(T y) {
+inline void Vector2d<T>::set_y(T y) {
   this->y = y;
 }
 
@@ -64,20 +69,54 @@ class FluidCell {
   float pressure;
 
  public:
-  FluidCell();
-  FluidCell(bool is_solid);
+  inline FluidCell();
+  inline FluidCell(bool is_solid);
 
   // getters
-  bool get_is_solid() const;
-  uint8_t get_s() const;
-  Vector2d<float> get_velocity() const;
-  float get_pressure() const;
+  inline bool get_is_solid() const;
+  inline uint8_t get_s() const;
+  inline Vector2d<float> get_velocity() const;
+  inline float get_pressure() const;
 
   // setters
-  void set_velocity_x(float x);
-  void set_velocity_y(float y);
-  void set_velocity(float x, float y);
+  inline void set_velocity_x(float x);
+  inline void set_velocity_y(float y);
+  inline void set_velocity(float x, float y);
 };
+
+inline FluidCell::FluidCell() : velocity(0, 0), is_solid(0), pressure(0) {}
+
+inline FluidCell::FluidCell(bool is_solid)
+    : velocity(0, 0), is_solid(is_solid), pressure(0) {}
+
+inline bool FluidCell::get_is_solid() const {
+  return is_solid;
+}
+
+inline Vector2d<float> FluidCell::get_velocity() const {
+  return velocity;
+}
+
+inline float FluidCell::get_pressure() const {
+  return pressure;
+}
+
+inline uint8_t FluidCell::get_s() const {
+  return !is_solid;
+}
+
+inline void FluidCell::set_velocity_x(float x) {
+  this->velocity.set_x(x);
+}
+
+inline void FluidCell::set_velocity_y(float y) {
+  this->velocity.set_y(y);
+}
+
+inline void FluidCell::set_velocity(float x, float y) {
+  this->set_velocity_x(x);
+  this->set_velocity_y(y);
+}
 
 class SmokeCell {
  private:
@@ -85,46 +124,94 @@ class SmokeCell {
   float density;
 
  public:
-  SmokeCell();
-  float get_density() const;
-  void set_density(float density);
+  inline SmokeCell();
+  inline float get_density() const;
+  inline void set_density(float density);
 };
+
+inline SmokeCell::SmokeCell() : density(0) {}
+
+inline float SmokeCell::get_density() const {
+  return this->density;
+}
+
+inline void SmokeCell::set_density(float density) {
+  this->density = density;
+}
 
 class Cell {
   FluidCell fluid;
   SmokeCell smoke;
 
  public:
-  Cell();
-  Cell(bool is_solid);
+  inline Cell();
+  inline Cell(bool is_solid);
 
   // getters
-  const Vector2d<float> get_velocity() const;
-  const float get_density() const;
-  const bool is_solid() const;
-  const uint8_t get_s() const;
+  inline const Vector2d<float> get_velocity() const;
+  inline const float get_density() const;
+  inline const bool is_solid() const;
+  inline const uint8_t get_s() const;
 
   // setters
-  void set_velocity_x(float x);
-  void set_velocity_y(float y);
-  void set_velocity(float x, float y);
-  void set_density(float density);
+  inline void set_velocity_x(float x);
+  inline void set_velocity_y(float y);
+  inline void set_velocity(float x, float y);
+  inline void set_density(float density);
 };
+
+inline Cell::Cell(bool is_solid) : smoke(), fluid(is_solid) {}
+inline Cell::Cell() : smoke(), fluid() {}
+
+inline void Cell::set_density(float density) {
+  this->smoke.set_density(density);
+}
+
+inline const Vector2d<float> Cell::get_velocity() const {
+  return this->fluid.get_velocity();
+}
+
+inline const float Cell::get_density() const {
+  return this->smoke.get_density();
+}
+
+inline const bool Cell::is_solid() const {
+  return this->fluid.get_is_solid();
+}
+
+inline const uint8_t Cell::get_s() const {
+  return this->fluid.get_s();
+}
+
+inline void Cell::set_velocity_x(float x) {
+  this->fluid.set_velocity_x(x);
+}
+
+inline void Cell::set_velocity_y(float y) {
+  this->fluid.set_velocity_y(y);
+}
+
+inline void Cell::set_velocity(float x, float y) {
+  this->set_velocity_x(x);
+  this->set_velocity_y(y);
+}
 
 template <uint32_t H, uint32_t W>
 class Fluid {
  private:
   std::array<std::array<Cell, W>, H> grid;
+  std::array<std::array<Vector2d<float>, W>, H> velocity_buffer;
 
   Cell& get_mut_cell(uint32_t i, uint32_t j);
   void step_projection(uint32_t i, uint32_t j);
   Vector2d<float> get_vertical_edge_velocity(uint32_t i, uint32_t j) const;
   Vector2d<float> get_horizontal_edge_velocity(uint32_t i, uint32_t j) const;
-  Vector2d<float> get_general_velocity(float x, float y) const;
+  inline Vector2d<float> get_general_velocity(float x, float y) const;
   float get_general_velocity_y(float x, float y) const;
   float get_general_velocity_x(float x, float y) const;
   inline bool index_is_valid(uint32_t i, uint32_t j) const;
   inline bool is_valid_fluid(uint32_t i, uint32_t j) const;
+  inline Vector2d<float> get_position(uint32_t i, uint32_t j) const;
 
  public:
   const float g = PHYSICS_G;
@@ -135,18 +222,19 @@ class Fluid {
   Fluid(float o, uint32_t n, uint32_t cell_size);
 
   // getters
-  const Cell& get_cell(uint32_t i, uint32_t j) const;
+  inline const Cell& get_cell(uint32_t i, uint32_t j) const;
   float get_divergence(uint32_t i, uint32_t j) const;
   uint8_t get_s(uint32_t i, uint32_t j) const;
 
-  bool is_edge(uint32_t i, uint32_t j) const;
+  inline bool is_edge(uint32_t i, uint32_t j) const;
 
   void apply_external_forces(float d_t);
-  void perform_projection();
+  void apply_projection();
+  void apply_advection(float d_t);
 };
 
 template <uint32_t H, uint32_t W>
-bool Fluid<H, W>::is_edge(uint32_t i, uint32_t j) const {
+inline bool Fluid<H, W>::is_edge(uint32_t i, uint32_t j) const {
   return i == 0 || j == 0 || i == W - 1 || j == H - 1;
 }
 
@@ -166,21 +254,13 @@ Fluid<H, W>::Fluid(float o, uint32_t n, uint32_t cell_size)
 }
 
 template <uint32_t H, uint32_t W>
-const Cell& Fluid<H, W>::get_cell(uint32_t i, uint32_t j) const {
-  if (i >= W || j >= H) {
-    throw std::out_of_range(std::format(
-        "Index out of range while accessing Cell at ({}, {})", i, j));
-  }
-  return grid[H - j - 1][i];
+inline const Cell& Fluid<H, W>::get_cell(uint32_t i, uint32_t j) const {
+  return grid.at(H - j - 1).at(i);
 };
 
 template <uint32_t H, uint32_t W>
 Cell& Fluid<H, W>::get_mut_cell(uint32_t i, uint32_t j) {
-  if (i >= W || j >= H) {
-    throw std::out_of_range(std::format(
-        "Index out of range while accessing Cell at ({}, {})", i, j));
-  }
-  return grid[H - j - 1][i];
+  return grid.at(H - j - 1).at(i);
 };
 
 template <uint32_t H, uint32_t W>
@@ -260,7 +340,7 @@ void Fluid<H, W>::step_projection(uint32_t i, uint32_t j) {
 }
 
 template <uint32_t H, uint32_t W>
-void Fluid<H, W>::perform_projection() {
+void Fluid<H, W>::apply_projection() {
   for (uint32_t _ = 0; _ < n; _++) {
     for (uint32_t i = 1; i < W - 1; i++) {
       for (uint32_t j = 1; j < H - 1; j++) {
@@ -432,7 +512,7 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 
   float avg_u = 0;
 
-  // take average with the bottom cell 
+  // take average with the bottom cell
   if (in_y < this->cell_size / 2.0) {
     float d_y = this->cell_size / 2.0 - in_y;
     float w_x = in_x / this->cell_size;
@@ -490,8 +570,18 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 }
 
 template <uint32_t H, uint32_t W>
-Vector2d<float> Fluid<H, W>::get_general_velocity(float x, float y) const {
+inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x, float y) const {
   auto u = this->get_general_velocity_x(x, y);
   auto v = this->get_general_velocity_y(x, y);
   return Vector2d<float>(u, v);
+}
+
+template <uint32_t H, uint32_t W>
+inline Vector2d<float> Fluid<H, W>::get_position(uint32_t i, uint32_t j) const {
+  return Vector2d<float>(i * this->cell_size, j * this->cell_size);
+}
+
+template <uint32_t H, uint32_t W>
+void Fluid<H, W>::apply_advection(float d_t) {
+  
 }
