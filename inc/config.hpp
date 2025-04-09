@@ -10,7 +10,7 @@
 #define ARROW_DISABLE_THRESH_HOLD 0.1
 #define FPS_AVG_SIZE 15
 #define PROJECTION_O 1.8
-#define PROJECTION_N 40
+#define PROJECTION_N 100
 #define PHYSICS_G -9.81
 #define PIP_HEIGHT 6
 #define WIND_SPEED 2
