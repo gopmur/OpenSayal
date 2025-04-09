@@ -200,7 +200,10 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
-      if (j >= 11 && j <= 16 && i == 13) {
+      if (std::sqrt(std::pow((i - W / 2), 2) + std::pow((j - H / 2), 2)) <
+              CIRCLE_RADIUS ||
+          (i <= 6 && (j == H / 2 - PIP_HEIGHT / 2 - 1 ||
+                      j == H / 2 + PIP_HEIGHT / 2 + 1))) {
         cell = Cell(true);
       } else {
         cell = Cell(i == 0 || j == 0 || j == H - 1);
@@ -553,7 +556,7 @@ inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
 template <int H, int W>
 inline Vector2d<float> Fluid<H, W>::get_center_position(int i, int j) const {
   return Vector2d<float>((i + 0.5) * this->cell_size,
-                         (j * 0.5) * this->cell_size);
+                         (j + 0.5) * this->cell_size);
 }
 
 template <int H, int W>

@@ -195,13 +195,13 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
       auto vel_y = velocity.get_y();
 
       auto angle = std::atan2(vel_y, vel_x);
-      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
+      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
 
       int arrow_x = x + S / 2;
       int arrow_y = y + S / 2;
 
       if (length > this->arrow_disable_thresh_hold) {
-        this->draw_arrow(arrow_x, arrow_y, length * ARROW_LENGTH_MULTIPLIER, angle,
+        this->draw_arrow(arrow_x, arrow_y, length, angle,
                          this->arrow_head_length, this->arrow_head_angle);
       }
     }
