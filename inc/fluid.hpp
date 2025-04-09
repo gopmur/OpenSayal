@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstdint>
-#include <iostream>
 #include <tuple>
 
 #include "config.hpp"
