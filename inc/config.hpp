@@ -12,3 +12,6 @@
 #define PROJECTION_O 1.8
 #define PROJECTION_N 40
 #define PHYSICS_G -9.81
+#define PIP_HEIGHT 6
+#define WIND_SPEED 2
+#define ARROW_LENGTH_MULTIPLIER 50

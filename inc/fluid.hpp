@@ -166,6 +166,11 @@ class Fluid {
   inline Vector2d<float> get_u_position(int i, int j) const;
   inline Vector2d<float> get_v_position(int, int j) const;
 
+  void apply_external_forces(float d_t);
+  void apply_projection();
+  void apply_advection(float d_t);
+  void extrapolate();
+
  public:
   const float g = PHYSICS_G;
   const float o;
@@ -181,9 +186,7 @@ class Fluid {
 
   inline bool is_edge(int i, int j) const;
 
-  void apply_external_forces(float d_t);
-  void apply_projection();
-  void apply_advection(float d_t);
+  void update(float d_t);
 };
 
 template <int H, int W>
@@ -200,7 +203,7 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
       if (j >= 11 && j <= 16 && i == 13) {
         cell = Cell(true);
       } else {
-        cell = Cell(is_edge(i, j));
+        cell = Cell(i == 0 || j == 0 || j == H - 1);
       }
     }
   }
@@ -278,14 +281,14 @@ uint8_t Fluid<H, W>::get_s(int i, int j) const {
 template <int H, int W>
 void Fluid<H, W>::step_projection(int i, int j) {
   Cell& cell = get_mut_cell(i, j);
-  if (cell.is_solid()) {
-    return;
-  }
+  // if (cell.is_solid()) {
+  //   return;
+  // }
 
-  Cell& top_cell = get_mut_cell(i, j + 1);
-  Cell& bottom_cell = get_mut_cell(i, j - 1);
-  Cell& right_cell = get_mut_cell(i + 1, j);
   Cell& left_cell = get_mut_cell(i - 1, j);
+  Cell& right_cell = get_mut_cell(i + 1, j);
+  Cell& bottom_cell = get_mut_cell(i, j - 1);
+  Cell& top_cell = get_mut_cell(i, j + 1);
 
   auto u = cell.get_velocity().get_x();
   auto v = cell.get_velocity().get_y();
@@ -333,16 +336,14 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
-      if (cell.is_solid()) {
-        continue;
-      }
-      if (j == 10 && i > 5 && i < 11) {
-        // cell.set_velocity(100, 100);
+      // auto v = cell.get_velocity().get_y();
+      // v += d_t * g;
+      // cell.set_velocity_y(v);
+      if (i == 1 && j >= H / 2 - PIP_HEIGHT / 2 &&
+          j <= H / 2 + PIP_HEIGHT / 2) {
         cell.set_density(1);
+        cell.set_velocity_x(WIND_SPEED);
       }
-      auto v = cell.get_velocity().get_y();
-      v += d_t * g;
-      cell.set_velocity_y(v);
     }
   }
 }
@@ -590,11 +591,11 @@ void Fluid<H, W>::apply_advection(float d_t) {
 
       // update smoke
       current_pos = this->get_center_position(i, j);
-      current_velocity = this->get_general_velocity(current_pos.get_x(),
-                                                    current_pos.get_y());
+      current_velocity =
+          this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
       prev_pos = current_pos - current_velocity * d_t;
       float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
-      this->set_smoke_buffer(i, j, new_density);      
+      this->set_smoke_buffer(i, j, new_density);
     }
   }
 
@@ -604,8 +605,8 @@ void Fluid<H, W>::apply_advection(float d_t) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
       this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
                                             new_velocity.get_y());
-      float new_density = this->get_smoke_buffer(i, j);
-      this->get_mut_cell(i, j).set_density(new_density);
+      // float new_density = this->get_smoke_buffer(i, j);
+      // this->get_mut_cell(i, j).set_density(new_density);
     }
   }
 }
@@ -683,4 +684,42 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
   }
 
   return avg_density;
+}
+
+template <int H, int W>
+void Fluid<H, W>::extrapolate() {
+  for (int i = 0; i < W; i++) {
+    {
+      Cell& bottom_cell = this->get_mut_cell(i, 0);
+      Cell& top_cell = this->get_mut_cell(i, 1);
+      bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
+    }
+
+    {
+      Cell& bottom_cell = this->get_mut_cell(i, H - 2);
+      Cell& top_cell = this->get_mut_cell(i, H - 1);
+      top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
+    }
+  }
+
+  for (int j = 0; j < H; j++) {
+    {
+      Cell& right_cell = this->get_mut_cell(W - 1, j);
+      Cell& left_cell = this->get_mut_cell(W - 2, j);
+      right_cell.set_velocity_y(left_cell.get_velocity().get_y());
+    }
+    {
+      Cell& right_cell = this->get_mut_cell(1, j);
+      Cell& left_cell = this->get_mut_cell(0, j);
+      left_cell.set_velocity_y(right_cell.get_velocity().get_y());
+    }
+  }
+}
+
+template <int H, int W>
+void Fluid<H, W>::update(float d_t) {
+  this->apply_external_forces(d_t);
+  this->apply_projection();
+  this->extrapolate();
+  // this->apply_advection(d_t);
 }

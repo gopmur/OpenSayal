@@ -8,6 +8,7 @@
 #include "SDL.h"
 #include "SDL_render.h"
 
+#include "config.hpp"
 #include "fluid.hpp"
 #include "logger.hpp"
 
@@ -200,7 +201,7 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
       int arrow_y = y + S / 2;
 
       if (length > this->arrow_disable_thresh_hold) {
-        this->draw_arrow(arrow_x, arrow_y, length, angle,
+        this->draw_arrow(arrow_x, arrow_y, length * ARROW_LENGTH_MULTIPLIER, angle,
                          this->arrow_head_length, this->arrow_head_angle);
       }
     }

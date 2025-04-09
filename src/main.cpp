@@ -51,11 +51,10 @@ int main() {
         Logger::log_fps(d_t);
       }
 
-      fluid.apply_external_forces(d_t);
-      graphics.update(fluid);
-      fluid.apply_projection();
-      fluid.apply_advection(d_t);
+      d_t = 1 / 120.0;
 
+      fluid.update(d_t);
+      graphics.update(fluid);
       prev_time = now;
     }
   }
