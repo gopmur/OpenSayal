@@ -413,8 +413,8 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   // take average with the left cell
   if (in_x < this->cell_size / 2.0) {
     float d_x = this->cell_size / 2.0 - in_x;
-    float w_x = d_x / this->cell_size;
-    float w_y = in_y / this->cell_size;
+    float w_x = 1 - d_x / this->cell_size;
+    float w_y = 1 - in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& bottom_right_cell = this->get_cell(i, j);
@@ -439,8 +439,8 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   // take average with the right cell
   else {
     float d_x = in_x - this->cell_size / 2.0;
-    float w_x = d_x / this->cell_size;
-    float w_y = in_y / this->cell_size;
+    float w_x = 1 - d_x / this->cell_size;
+    float w_y = 1 - in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& bottom_left_cell = this->get_cell(i, j);
@@ -477,10 +477,10 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
   float avg_u = 0;
 
   // take average with the bottom cell
-  if (in_y < this->cell_size / 2.0) {
+  if (in_y <= this->cell_size / 2.0) {
     float d_y = this->cell_size / 2.0 - in_y;
-    float w_x = in_x / this->cell_size;
-    float w_y = d_y / this->cell_size;
+    float w_x = 1 - in_x / this->cell_size;
+    float w_y = 1 - d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& top_left_cell = this->get_cell(i, j);
@@ -506,8 +506,8 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
   // take average with the top cell
   else {
     float d_y = in_y - this->cell_size / 2.0;
-    float w_x = in_x / this->cell_size;
-    float w_y = d_y / this->cell_size;
+    float w_x = 1 - in_x / this->cell_size;
+    float w_y = 1 - d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& bottom_left_cell = this->get_cell(i, j);
@@ -715,9 +715,9 @@ void Fluid<H, W>::extrapolate() {
 template <int H, int W>
 void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
-  this->apply_projection();
-  this->extrapolate();
+  // this->apply_projection();
+  // this->extrapolate();
 
-  this->apply_velocity_advection(d_t);
-  this->apply_smoke_advection(d_t);
+  // this->apply_velocity_advection(d_t);
+  // this->apply_smoke_advection(d_t);
 }

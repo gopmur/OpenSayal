@@ -186,7 +186,7 @@ void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
       }
       float x = (i + 0.5) * S;
       float y = (H - j - 1 + 0.5) * S;
-      Vector2d<float> velocity = fluid.get_general_velocity(x, H * S - y - 1);
+      Vector2d<float> velocity = fluid.get_general_velocity(x, H * S - y);
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
