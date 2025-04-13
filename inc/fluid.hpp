@@ -157,7 +157,6 @@ class Fluid {
   Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
   Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
   float interpolate_smoke(float x, float y) const;
-  inline Vector2d<float> get_general_velocity(float x, float y) const;
   float get_general_velocity_y(float x, float y) const;
   float get_general_velocity_x(float x, float y) const;
   inline bool index_is_valid(int i, int j) const;
@@ -185,6 +184,8 @@ class Fluid {
   uint8_t get_s(int i, int j) const;
 
   inline bool is_edge(int i, int j) const;
+
+  inline Vector2d<float> get_general_velocity(float x, float y) const;
 
   void update(float d_t);
 };
@@ -718,8 +719,9 @@ void Fluid<H, W>::extrapolate() {
 
 template <int H, int W>
 void Fluid<H, W>::update(float d_t) {
+  this->apply_external_forces(d_t);
   this->apply_projection();
   this->extrapolate();
-  this->apply_advection(d_t);
-  this->apply_external_forces(d_t);
+
+  // this->apply_advection(d_t);
 }

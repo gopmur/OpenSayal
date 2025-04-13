@@ -10,6 +10,7 @@
 
 #include "config.hpp"
 #include "fluid.hpp"
+#include "helper.hpp"
 #include "logger.hpp"
 
 template <int H, int W, int S>
@@ -180,8 +181,8 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update_velocity_arrows(
     const Fluid<H, W>& fluid) {
-  for (int i = 0; i < W; i++) {
-    for (int j = 0; j < H; j++) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
       const Cell& cell = fluid.get_cell(i, j);
 
       if (cell.is_solid()) {
@@ -190,19 +191,38 @@ void GraphicsHandler<H, W, S>::update_velocity_arrows(
 
       int x = i * S;
       int y = (H - j - 1) * S;
-      auto velocity = cell.get_velocity();
-      auto vel_x = velocity.get_x();
-      auto vel_y = velocity.get_y();
 
-      auto angle = std::atan2(vel_y, vel_x);
-      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      float center_arrow_x = x + S / 2.0;
+      float center_arrow_y = y + S / 2.0;
 
-      int arrow_x = x + S / 2;
-      int arrow_y = y + S / 2;
+      Vector2d<float> center_velocity =
+          fluid.get_general_velocity(center_arrow_x, H * S - center_arrow_y - 1);
 
-      if (length > this->arrow_disable_thresh_hold) {
-        this->draw_arrow(arrow_x, arrow_y, length, angle,
-                         this->arrow_head_length, this->arrow_head_angle);
+      auto center_vel_x = center_velocity.get_x();
+      auto center_vel_y = center_velocity.get_y();
+
+      auto center_angle = std::atan2(center_vel_y, center_vel_x);
+      auto center_length =
+          std::sqrt(center_vel_x * center_vel_x + center_vel_y * center_vel_y) *
+          ARROW_LENGTH_MULTIPLIER;
+
+      auto edge_velocity = cell.get_velocity();
+      auto edge_vel_x = edge_velocity.get_x();
+      auto edge_vel_y = edge_velocity.get_y();
+      auto edge_angle = std::atan2(edge_vel_y, edge_vel_x);
+      auto edge_length =
+          std::sqrt(edge_vel_x * edge_vel_x + edge_vel_y * edge_vel_y) *
+          ARROW_LENGTH_MULTIPLIER;
+
+      if (center_length > this->arrow_disable_thresh_hold) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        this->draw_arrow(center_arrow_x, center_arrow_y, center_length,
+                         center_angle, this->arrow_head_length,
+                         this->arrow_head_angle);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+
+        this->draw_arrow(x, y, edge_length, edge_angle, this->arrow_head_length,
+                         this->arrow_head_angle);
       }
     }
   }
