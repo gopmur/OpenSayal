@@ -2,12 +2,12 @@
 
 #include <cmath>
 
-#define FLUID_HEIGHT 50
-#define FLUID_WIDTH 90
-#define CELL_SIZE 20
+#define FLUID_HEIGHT 100
+#define FLUID_WIDTH 200
+#define CELL_SIZE 6
 
-#define PROJECTION_O 1.8
-#define PROJECTION_N 100
+#define PROJECTION_O 1.9
+#define PROJECTION_N 10
 
 #define FPS_AVG_SIZE 15
 
@@ -18,7 +18,7 @@
 #define WIND_SPEED 100
 
 #define CIRCLE_RADIUS 5
-#define CIRCLE_POSITION_X 30
+#define CIRCLE_POSITION_X FLUID_WIDTH / 2
 #define CIRCLE_POSITION_Y FLUID_HEIGHT / 2
 #define ENABLE_CIRCLE true
 
@@ -35,5 +35,5 @@
 #define DRAW_HORIZONTAL_EDGE_ARROW false
 #define DRAW_CORNER_EDGE_ARROW false
 
-#define D_T 2
+#define D_T 0.5
 #define USE_REAL_TIME false
