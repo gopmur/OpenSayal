@@ -144,15 +144,14 @@ inline void Cell::set_velocity(float x, float y) {
 template <int H, int W>
 class Fluid {
  private:
-  std::array<std::array<Cell, W>, H> grid;
-  std::array<std::array<Vector2d<float>, W>, H> velocity_buffer;
-  std::array<std::array<float, W>, H> smoke_buffer;
+  std::array<std::array<Cell, H>, W> grid;
+  std::array<std::array<Vector2d<float>, H>, W> velocity_buffer;
+  std::array<std::array<float, H>, W> smoke_buffer;
 
   inline Cell& get_mut_cell(int i, int j);
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
   inline void set_smoke_buffer(int i, int j, float density);
   inline float get_smoke_buffer(int i, int j);
-  static inline std::tuple<int, int> translate_indices(int i, int j);
   void step_projection(int i, int j);
   Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
   Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
@@ -201,10 +200,10 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
-      if (std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) + std::pow((j - CIRCLE_POSITION_Y), 2)) <
-              CIRCLE_RADIUS ||
+      if (std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
+                    std::pow((j - CIRCLE_POSITION_Y), 2)) < CIRCLE_RADIUS ||
           (i < PIPE_LENGTH && (j == H / 2 - PIPE_HEIGHT / 2 - 1 ||
-                      j == H / 2 + PIPE_HEIGHT / 2 + 1))) {
+                               j == H / 2 + PIPE_HEIGHT / 2 + 1))) {
         cell = Cell(true);
       } else {
         cell = Cell(i == 0 || j == 0 || j == H - 1);
@@ -214,38 +213,27 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
 }
 
 template <int H, int W>
-inline std::tuple<int, int> Fluid<H, W>::translate_indices(int i, int j) {
-  return {H - j - 1, i};
-}
-
-template <int H, int W>
 inline const Cell& Fluid<H, W>::get_cell(int i, int j) const {
-  auto indices = Fluid::translate_indices(i, j);
-  return grid.at(std::get<0>(indices)).at(std::get<1>(indices));
+  return grid.at(i).at(j);
 };
 template <int H, int W>
 inline void Fluid<H, W>::set_smoke_buffer(int i, int j, float density) {
-  auto indices = Fluid::translate_indices(i, j);
-  smoke_buffer.at(std::get<0>(indices)).at(std::get<1>(indices)) = density;
+  smoke_buffer.at(i).at(j) = density;
 }
 
 template <int H, int W>
 inline float Fluid<H, W>::get_smoke_buffer(int i, int j) {
-  auto indices = Fluid::translate_indices(i, j);
-  return smoke_buffer.at(std::get<0>(indices)).at(std::get<1>(indices));
+  return smoke_buffer.at(i).at(j);
 }
 
 template <int H, int W>
 inline Vector2d<float>& Fluid<H, W>::get_mut_velocity_buffer(int i, int j) {
-  auto indices = Fluid::translate_indices(i, j);
-  return this->velocity_buffer.at(std::get<0>(indices))
-      .at(std::get<1>(indices));
+  return this->velocity_buffer.at(i).at(j);
 }
 
 template <int H, int W>
 inline Cell& Fluid<H, W>::get_mut_cell(int i, int j) {
-  auto indices = Fluid::translate_indices(i, j);
-  return grid.at(std::get<0>(indices)).at(std::get<1>(indices));
+  return grid.at(i).at(j);
 };
 
 template <int H, int W>
