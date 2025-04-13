@@ -332,6 +332,8 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
         cell.set_density(1);
         cell.set_velocity_x(WIND_SPEED);
       }
+      auto vel_y = cell.get_velocity().get_y();
+      cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
     }
   }
 }
@@ -725,7 +727,6 @@ void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
   this->apply_projection();
   this->extrapolate();
-
   this->apply_velocity_advection(d_t);
   this->apply_smoke_advection(d_t);
 }
