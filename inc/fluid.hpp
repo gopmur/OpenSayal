@@ -153,8 +153,6 @@ class Fluid {
   inline void set_smoke_buffer(int i, int j, float density);
   inline float get_smoke_buffer(int i, int j);
   void step_projection(int i, int j);
-  Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
-  Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
   float interpolate_smoke(float x, float y) const;
   float get_general_velocity_y(float x, float y) const;
   float get_general_velocity_x(float x, float y) const;
@@ -185,6 +183,8 @@ class Fluid {
   inline bool is_edge(int i, int j) const;
 
   inline Vector2d<float> get_general_velocity(float x, float y) const;
+  Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
+  Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
 
   void update(float d_t);
 };
@@ -591,9 +591,9 @@ void Fluid<H, W>::apply_advection(float d_t) {
   // move velocities
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      // Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
-      // this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
-      //                                       new_velocity.get_y());
+      Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
+      this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
+                                            new_velocity.get_y());
       float new_density = this->get_smoke_buffer(i, j);
       this->get_mut_cell(i, j).set_density(new_density);
     }
@@ -711,5 +711,5 @@ void Fluid<H, W>::update(float d_t) {
   this->apply_projection();
   this->extrapolate();
 
-  // this->apply_advection(d_t);
+  this->apply_advection(d_t);
 }

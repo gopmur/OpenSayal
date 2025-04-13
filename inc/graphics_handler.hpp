@@ -25,14 +25,13 @@ class GraphicsHandler {
   SDL_PixelFormat* format;
   std::array<std::array<int, W>, H> fluid_pixels;
 
-  void draw_arrow(int x,
-                  int y,
-                  float length,
-                  float angle,
-                  float arrow_head_length,
-                  float arrow_head_angle);
+  void draw_arrow(int x, int y, float length, float angle);
   void update_fluid_pixels(const Fluid<H, W>& fluid);
   void update_velocity_arrows(const Fluid<H, W>& fluid);
+  void update_center_velocity_arrow(const Fluid<H, W>& fluid);
+  void update_horizontal_edge_velocity_arrow(const Fluid<H, W>& fluid);
+  void update_vertical_edge_velocity_arrow(const Fluid<H, W>& fluid);
+  void update_corner_velocity_arrow(const Fluid<H, W>& fluid);
   void cleanup();
 
  public:
@@ -133,9 +132,7 @@ template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::draw_arrow(int x,
                                           int y,
                                           float length,
-                                          float angle,
-                                          float arrow_head_length,
-                                          float arrow_head_angle) {
+                                          float angle) {
   int32_t x_offset = length * std::cos(angle);
   int32_t y_offset = -length * std::sin(angle);
   int x2 = x + x_offset;
@@ -179,53 +176,112 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_velocity_arrows(
+void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
     const Fluid<H, W>& fluid) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       const Cell& cell = fluid.get_cell(i, j);
-
       if (cell.is_solid()) {
         continue;
       }
-
-      int x = i * S;
-      int y = (H - j - 1) * S;
-
-      float center_arrow_x = x + S / 2.0;
-      float center_arrow_y = y + S / 2.0;
-
-      Vector2d<float> center_velocity =
-          fluid.get_general_velocity(center_arrow_x, H * S - center_arrow_y - 1);
-
-      auto center_vel_x = center_velocity.get_x();
-      auto center_vel_y = center_velocity.get_y();
-
-      auto center_angle = std::atan2(center_vel_y, center_vel_x);
-      auto center_length =
-          std::sqrt(center_vel_x * center_vel_x + center_vel_y * center_vel_y) *
-          ARROW_LENGTH_MULTIPLIER;
-
-      auto edge_velocity = cell.get_velocity();
-      auto edge_vel_x = edge_velocity.get_x();
-      auto edge_vel_y = edge_velocity.get_y();
-      auto edge_angle = std::atan2(edge_vel_y, edge_vel_x);
-      auto edge_length =
-          std::sqrt(edge_vel_x * edge_vel_x + edge_vel_y * edge_vel_y) *
-          ARROW_LENGTH_MULTIPLIER;
-
-      if (center_length > this->arrow_disable_thresh_hold) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        this->draw_arrow(center_arrow_x, center_arrow_y, center_length,
-                         center_angle, this->arrow_head_length,
-                         this->arrow_head_angle);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-
-        this->draw_arrow(x, y, edge_length, edge_angle, this->arrow_head_length,
-                         this->arrow_head_angle);
+      float x = (i + 0.5) * S;
+      float y = (H - j - 1 + 0.5) * S;
+      Vector2d<float> velocity = fluid.get_general_velocity(x, H * S - y - 1);
+      auto vel_x = velocity.get_x();
+      auto vel_y = velocity.get_y();
+      auto angle = std::atan2(vel_y, vel_x);
+      auto length =
+          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      if (length > this->arrow_disable_thresh_hold) {
+        this->draw_arrow(x, y, length, angle);
       }
     }
   }
+}
+
+template <int H, int W, int S>
+void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
+    const Fluid<H, W>& fluid) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
+      const Cell& cell = fluid.get_cell(i, j);
+      if (cell.is_solid()) {
+        continue;
+      }
+      float x = (i + 0.5) * S;
+      float y = (H - j - 1) * S;
+      Vector2d<float> velocity = fluid.get_horizontal_edge_velocity(i, j);
+      auto vel_x = velocity.get_x();
+      auto vel_y = velocity.get_y();
+      auto angle = std::atan2(vel_y, vel_x);
+      auto length =
+          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      if (length > this->arrow_disable_thresh_hold) {
+        this->draw_arrow(x, y, length, angle);
+      }
+    }
+  }
+}
+
+template <int H, int W, int S>
+void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
+    const Fluid<H, W>& fluid) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
+      const Cell& cell = fluid.get_cell(i, j);
+      if (cell.is_solid()) {
+        continue;
+      }
+      float x = (i) * S;
+      float y = (H - j - 1 + 0.5) * S;
+      Vector2d<float> velocity = fluid.get_vertical_edge_velocity(i, j);
+      auto vel_x = velocity.get_x();
+      auto vel_y = velocity.get_y();
+      auto angle = std::atan2(vel_y, vel_x);
+      auto length =
+          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      if (length > this->arrow_disable_thresh_hold) {
+        this->draw_arrow(x, y, length, angle);
+      }
+    }
+  }
+}
+
+template <int H, int W, int S>
+void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
+    const Fluid<H, W>& fluid) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
+      const Cell& cell = fluid.get_cell(i, j);
+      if (cell.is_solid()) {
+        continue;
+      }
+      int x = i * S;
+      int y = (H - j - 1) * S;
+      auto velocity = cell.get_velocity();
+      auto vel_x = velocity.get_x();
+      auto vel_y = velocity.get_y();
+      auto angle = std::atan2(vel_y, vel_x);
+      auto length =
+          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      if (length > this->arrow_disable_thresh_hold) {
+        this->draw_arrow(x, y, length, angle);
+      }
+    }
+  }
+}
+
+template <int H, int W, int S>
+void GraphicsHandler<H, W, S>::update_velocity_arrows(
+    const Fluid<H, W>& fluid) {
+  SDL_SetRenderDrawColor(renderer, CORNER_ARROW_COLOR);
+  this->update_corner_velocity_arrow(fluid);
+  SDL_SetRenderDrawColor(renderer, CENTER_ARROW_COLOR);
+  this->update_center_velocity_arrow(fluid);
+  SDL_SetRenderDrawColor(renderer, HORIZONTAL_EDGE_ARROW_COLOR);
+  this->update_horizontal_edge_velocity_arrow(fluid);
+  SDL_SetRenderDrawColor(renderer, VERTICAL_EDGE_ARROW_COLOR);
+  this->update_vertical_edge_velocity_arrow(fluid);
 }
 
 template <int H, int W, int S>
