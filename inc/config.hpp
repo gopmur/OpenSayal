@@ -3,8 +3,8 @@
 #include <cmath>
 
 #define FLUID_HEIGHT 50
-#define FLUID_WIDTH 100
-#define CELL_SIZE 30
+#define FLUID_WIDTH 90
+#define CELL_SIZE 20
 
 #define PROJECTION_O 1.8
 #define PROJECTION_N 100
@@ -15,9 +15,9 @@
 
 #define PIPE_HEIGHT 6
 #define PIPE_LENGTH 0
-#define WIND_SPEED 2
+#define WIND_SPEED 1
 
-#define CIRCLE_RADIUS 12
+#define CIRCLE_RADIUS 5
 #define CIRCLE_POSITION_X 30
 #define CIRCLE_POSITION_Y FLUID_HEIGHT / 2
 #define ENABLE_CIRCLE true
@@ -34,3 +34,6 @@
 #define DRAW_VERTICAL_EDGE_ARROW false
 #define DRAW_HORIZONTAL_EDGE_ARROW false
 #define DRAW_CORNER_EDGE_ARROW false
+
+#define D_T 100
+#define USE_REAL_TIME false

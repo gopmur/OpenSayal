@@ -178,8 +178,8 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
     const Fluid<H, W>& fluid) {
-  for (int i = 1; i < W - 1; i++) {
-    for (int j = 1; j < H - 1; j++) {
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
       if (cell.is_solid()) {
         continue;

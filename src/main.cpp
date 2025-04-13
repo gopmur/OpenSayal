@@ -51,7 +51,11 @@ int main() {
         Logger::log_fps(d_t);
       }
 
-      d_t = 1 / 120.0;
+#if USE_REAL_TIME
+      
+#else
+      d_t = D_T;
+#endif
 
       fluid.update(d_t);
       graphics.update(fluid);

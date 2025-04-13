@@ -338,7 +338,7 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
 
 template <int H, int W>
 inline bool Fluid<H, W>::index_is_valid(int i, int j) const {
-  return i <= W && j <= H;
+  return i < W and j < H and i >= 0 and j >= 0;
 }
 
 template <int H, int W>
@@ -405,6 +405,10 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
+  if (not this->is_valid_fluid(i, j)) {
+    return 0;
+  }
+
   float in_x = x - i * this->cell_size;
   float in_y = y - j * this->cell_size;
 
@@ -470,6 +474,10 @@ template <int H, int W>
 float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
+
+  if (not this->is_valid_fluid(i, j)) {
+    return 0;
+  }
 
   float in_x = x - i * this->cell_size;
   float in_y = y - j * this->cell_size;
@@ -715,9 +723,9 @@ void Fluid<H, W>::extrapolate() {
 template <int H, int W>
 void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
-  // this->apply_projection();
-  // this->extrapolate();
+  this->apply_projection();
+  this->extrapolate();
 
-  // this->apply_velocity_advection(d_t);
-  // this->apply_smoke_advection(d_t);
+  this->apply_velocity_advection(d_t);
+  this->apply_smoke_advection(d_t);
 }
