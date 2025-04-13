@@ -464,7 +464,7 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
     }
   }
 
-  return avg_v / 4;
+  return avg_v;
 }
 
 template <int H, int W>
@@ -531,7 +531,7 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
     }
   }
 
-  return avg_u / 4;
+  return avg_u;
 }
 
 template <int H, int W>
