@@ -572,7 +572,6 @@ void Fluid<H, W>::apply_smoke_advection(float d_t) {
     }
   }
 
-  // move velocities
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       float new_density = this->get_smoke_buffer(i, j);
@@ -585,7 +584,6 @@ template <int H, int W>
 void Fluid<H, W>::apply_velocity_advection(float d_t) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      // update u
       Vector2d<float> current_pos = this->get_u_position(i, j);
       Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
       auto prev_pos = current_pos - current_velocity * d_t;
@@ -593,7 +591,6 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
           this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
       this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
 
-      // update v
       current_pos = this->get_v_position(i, j);
       current_velocity = this->get_horizontal_edge_velocity(i, j);
       prev_pos = current_pos - current_velocity * d_t;
