@@ -164,7 +164,8 @@ class Fluid {
 
   void apply_external_forces(float d_t);
   void apply_projection();
-  void apply_advection(float d_t);
+  void apply_smoke_advection(float d_t);
+  void apply_velocity_advection(float d_t);
   void extrapolate();
 
  public:
@@ -559,7 +560,29 @@ inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_advection(float d_t) {
+void Fluid<H, W>::apply_smoke_advection(float d_t) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
+      Vector2d<float> current_pos = this->get_center_position(i, j);
+      Vector2d<float> current_velocity =
+          this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
+      auto prev_pos = current_pos - current_velocity * d_t;
+      float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+      this->set_smoke_buffer(i, j, new_density);
+    }
+  }
+
+  // move velocities
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
+      float new_density = this->get_smoke_buffer(i, j);
+      this->get_mut_cell(i, j).set_density(new_density);
+    }
+  }
+}
+
+template <int H, int W>
+void Fluid<H, W>::apply_velocity_advection(float d_t) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       // update u
@@ -577,14 +600,6 @@ void Fluid<H, W>::apply_advection(float d_t) {
       new_velocity =
           this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
       this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
-
-      // update smoke
-      current_pos = this->get_center_position(i, j);
-      current_velocity =
-          this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
-      prev_pos = current_pos - current_velocity * d_t;
-      float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
-      this->set_smoke_buffer(i, j, new_density);
     }
   }
 
@@ -594,8 +609,6 @@ void Fluid<H, W>::apply_advection(float d_t) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
       this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
                                             new_velocity.get_y());
-      float new_density = this->get_smoke_buffer(i, j);
-      this->get_mut_cell(i, j).set_density(new_density);
     }
   }
 }
@@ -711,5 +724,6 @@ void Fluid<H, W>::update(float d_t) {
   this->apply_projection();
   this->extrapolate();
 
-  this->apply_advection(d_t);
+  this->apply_velocity_advection(d_t);
+  // this->apply_smoke_advection(d_t);
 }
