@@ -232,7 +232,7 @@ void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
       if (cell.is_solid()) {
         continue;
       }
-      float x = (i) * S;
+      float x = (i)*S;
       float y = (H - j - 1 + 0.5) * S;
       Vector2d<float> velocity = fluid.get_vertical_edge_velocity(i, j);
       auto vel_x = velocity.get_x();
@@ -274,14 +274,22 @@ void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update_velocity_arrows(
     const Fluid<H, W>& fluid) {
+#if DRAW_CORNER_ARROW
   SDL_SetRenderDrawColor(renderer, CORNER_ARROW_COLOR);
   this->update_corner_velocity_arrow(fluid);
+#endif
+#if DRAW_CENTER_ARROW
   SDL_SetRenderDrawColor(renderer, CENTER_ARROW_COLOR);
   this->update_center_velocity_arrow(fluid);
+#endif
+#if DRAW_HORIZONTAL_EDGE_ARROW
   SDL_SetRenderDrawColor(renderer, HORIZONTAL_EDGE_ARROW_COLOR);
   this->update_horizontal_edge_velocity_arrow(fluid);
+#endif
+#if DRAW_VERTICAL_EDGE_ARROW
   SDL_SetRenderDrawColor(renderer, VERTICAL_EDGE_ARROW_COLOR);
   this->update_vertical_edge_velocity_arrow(fluid);
+#endif
 }
 
 template <int H, int W, int S>

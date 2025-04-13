@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstdint>
-#include <tuple>
 
 #include "config.hpp"
 #include "helper.hpp"
@@ -201,14 +200,13 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
-      if (std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
-                    std::pow((j - CIRCLE_POSITION_Y), 2)) < CIRCLE_RADIUS ||
-          (i < PIPE_LENGTH && (j == H / 2 - PIPE_HEIGHT / 2 - 1 ||
-                               j == H / 2 + PIPE_HEIGHT / 2 + 1))) {
-        cell = Cell(true);
-      } else {
-        cell = Cell(i == 0 || j == 0 || j == H - 1);
-      }
+      cell = Cell(
+          i == 0 or j == 0 or j == H - 1 or
+          (ENABLE_CIRCLE and std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
+                                       std::pow((j - CIRCLE_POSITION_Y), 2)) <
+                                 CIRCLE_RADIUS or
+           (i < PIPE_LENGTH && (j == H / 2 - PIPE_HEIGHT / 2 - 1 or
+                                j == H / 2 + PIPE_HEIGHT / 2 + 1))));
     }
   }
 }
@@ -425,17 +423,17 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
 
     if (this->is_valid_fluid(i - 1, j)) {
       const Cell& bottom_left_cell = this->get_cell(i - 1, j);
-      avg_v = w_y * (1 - w_x) * bottom_left_cell.get_velocity().get_y();
+      avg_v += w_y * (1 - w_x) * bottom_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i - 1, j + 1)) {
       const Cell& top_left_cell = this->get_cell(i - 1, j + 1);
-      avg_v = (1 - w_y) * (1 - w_x) * top_left_cell.get_velocity().get_y();
+      avg_v += (1 - w_y) * (1 - w_x) * top_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
       const Cell& top_right_cell = this->get_cell(i, j + 1);
-      avg_v = (1 - w_y) * w_x * top_right_cell.get_velocity().get_y();
+      avg_v += (1 - w_y) * w_x * top_right_cell.get_velocity().get_y();
     }
   }
   // take average with the right cell
@@ -528,7 +526,7 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 
     if (this->is_valid_fluid(i + 1, j + 1)) {
       const Cell& top_right_cell = this->get_cell(i + 1, j + 1);
-      avg_u = (1 - w_y) * (1 - w_x) * top_right_cell.get_velocity().get_x();
+      avg_u += (1 - w_y) * (1 - w_x) * top_right_cell.get_velocity().get_x();
     }
   }
 
@@ -600,7 +598,6 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
     }
   }
 
-  // move velocities
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
@@ -722,5 +719,5 @@ void Fluid<H, W>::update(float d_t) {
   this->extrapolate();
 
   this->apply_velocity_advection(d_t);
-  // this->apply_smoke_advection(d_t);
+  this->apply_smoke_advection(d_t);
 }
