@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <omp.h>
 #include <optional>
 
 #include "SDL_events.h"
@@ -17,6 +18,10 @@ void setup() {
 }
 
 int main() {
+
+  omp_set_dynamic(0);
+  omp_set_num_threads(8);
+
   setup();
 
   GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE> graphics(

@@ -156,6 +156,7 @@ void GraphicsHandler<H, W, S>::draw_arrow(int x,
 
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
+#pragma omp parallel for collapse(2)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);

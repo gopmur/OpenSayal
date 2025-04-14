@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # store source files
-file(GLOB_RECURSE PROJECT_SOURCE_FILES 
-  "${PROJECT_SOURCE_DIR}/src/*.cpp" 
+file(GLOB_RECURSE PROJECT_SOURCE_FILES
+  "${PROJECT_SOURCE_DIR}/src/*.cpp"
   "${PROJECT_SOURCE_DIR}/src/*.c"
 )
 
@@ -29,11 +29,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_INCLUDE_DIRECTORIES}
 )
 
+find_package(OpenMP REQUIRED)
+
 # link sdl
 add_subdirectory("lib/sdl")
 target_link_directories(${PROJECT_NAME} PRIVATE
   "lib/sdl"
 )
 target_link_libraries(${PROJECT_NAME}
+  OpenMP::OpenMP_CXX
   SDL2
 )

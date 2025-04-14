@@ -15,7 +15,7 @@
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 3
 #define PIPE_LENGTH 0
-#define WIND_SPEED 200
+#define WIND_SPEED 500
 #define SMOKE_JITTER 0.2
 #define SMOKE_DENSITY 0.8
 

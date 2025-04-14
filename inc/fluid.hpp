@@ -1,5 +1,6 @@
 #pragma once
 
+#include <omp.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -336,8 +337,15 @@ void Fluid<H, W>::step_projection(int i, int j) {
 template <int H, int W>
 void Fluid<H, W>::apply_projection() {
   for (int _ = 0; _ < n; _++) {
-    for (int i = 1; i < W - 1; i++) {
-      for (int j = 1; j < H - 1; j++) {
+#pragma omp parallel for collapse(2)
+    for (int j = 1; j < H - 1; j++) {
+      for (int i = j % 2 + 1; i < W - 1; i += 2) {
+        step_projection(i, j);
+      }
+    }
+#pragma omp parallel for collapse(2)
+    for (int j = 1; j < H - 1; j++) {
+      for (int i = (j + 1) % 2 + 1; i < W - 1; i += 2) {
         step_projection(i, j);
       }
     }
@@ -349,6 +357,7 @@ void Fluid<H, W>::apply_external_forces(double d_t) {
   double smoke_noise = rand() * SMOKE_JITTER / RAND_MAX;
   int negative_noise = rand() % 2;
   smoke_noise *= 1 - 2 * negative_noise;
+#pragma omp parallel for collapse(2)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
@@ -602,6 +611,7 @@ inline Vector2d<double> Fluid<H, W>::get_v_position(int i, int j) const {
 
 template <int H, int W>
 void Fluid<H, W>::apply_smoke_advection(double d_t) {
+#pragma omp parallel for collapse(2)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<double> current_pos = this->get_center_position(i, j);
@@ -624,6 +634,7 @@ void Fluid<H, W>::apply_smoke_advection(double d_t) {
 
 template <int H, int W>
 void Fluid<H, W>::apply_velocity_advection(double d_t) {
+#pragma omp parallel for collapse(2)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<double> current_pos = this->get_u_position(i, j);
@@ -749,7 +760,6 @@ void Fluid<H, W>::extrapolate() {
       top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
     }
   }
-
   for (int j = 0; j < H; j++) {
     {
       Cell& right_cell = this->get_mut_cell(W - 1, j);
@@ -766,6 +776,7 @@ void Fluid<H, W>::extrapolate() {
 
 template <int H, int W>
 void Fluid<H, W>::decay_smoke(double d_t) {
+#pragma omp parallel for collapse(2)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
