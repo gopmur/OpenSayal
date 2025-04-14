@@ -2,9 +2,9 @@
 
 #include <cmath>
 
-#define FLUID_HEIGHT 512 / 4
-#define FLUID_WIDTH 1024 / 4
-#define CELL_SIZE 10
+#define FLUID_HEIGHT 512 / 2
+#define FLUID_WIDTH 1024 / 2
+#define CELL_SIZE 2
 
 #define PROJECTION_O 1.9
 #define PROJECTION_N 20
@@ -15,7 +15,7 @@
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 3
 #define PIPE_LENGTH 0
-#define WIND_SPEED CELL_SIZE
+#define WIND_SPEED 100
 #define SMOKE_DENSITY 1
 
 #define CIRCLE_RADIUS FLUID_HEIGHT / 8.0
@@ -31,13 +31,13 @@
 #define VERTICAL_EDGE_ARROW_COLOR 50, 255, 50, 255
 #define HORIZONTAL_EDGE_ARROW_COLOR 50, 50, 255, 255
 #define CORNER_ARROW_COLOR 50, 255, 255, 255
-#define DRAW_CENTER_ARROW true
+#define DRAW_CENTER_ARROW false
 #define DRAW_VERTICAL_EDGE_ARROW false
 #define DRAW_HORIZONTAL_EDGE_ARROW false
 #define DRAW_CORNER_EDGE_ARROW false
 
 #define D_T 1
-#define USE_REAL_TIME false
-#define REAL_TIME_MULTIPLIER 100
+#define USE_REAL_TIME true
+#define REAL_TIME_MULTIPLIER 1
 
-#define SMOKE_DECAY_RATE 0
+#define SMOKE_DECAY_RATE 0.01
