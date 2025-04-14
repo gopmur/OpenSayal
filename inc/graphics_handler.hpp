@@ -133,12 +133,12 @@ void GraphicsHandler<H, W, S>::draw_arrow(int x,
                                           int y,
                                           float length,
                                           float angle) {
+  length *= ARROW_LENGTH_MULTIPLIER;
   int32_t x_offset = length * std::cos(angle);
   int32_t y_offset = -length * std::sin(angle);
   int x2 = x + x_offset;
   int y2 = y + y_offset;
   SDL_RenderDrawLine(renderer, x, y, x2, y2);
-
   int32_t arrow_x_offset =
       -arrow_head_length * std::cos(angle + arrow_head_angle);
   int32_t arrow_y_offset =
@@ -190,8 +190,7 @@ void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
-      auto length =
-          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
       if (length > this->arrow_disable_thresh_hold) {
         this->draw_arrow(x, y, length, angle);
       }
@@ -214,8 +213,7 @@ void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
-      auto length =
-          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
       if (length > this->arrow_disable_thresh_hold) {
         this->draw_arrow(x, y, length, angle);
       }
@@ -238,8 +236,7 @@ void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
-      auto length =
-          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
       if (length > this->arrow_disable_thresh_hold) {
         this->draw_arrow(x, y, length, angle);
       }
@@ -262,8 +259,7 @@ void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
-      auto length =
-          std::sqrt(vel_x * vel_x + vel_y * vel_y) * ARROW_LENGTH_MULTIPLIER;
+      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
       if (length > this->arrow_disable_thresh_hold) {
         this->draw_arrow(x, y, length, angle);
       }

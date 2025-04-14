@@ -52,7 +52,7 @@ int main() {
       }
 
 #if USE_REAL_TIME
-      
+      d_t *= REAL_TIME_MULTIPLIER;
 #else
       d_t = D_T;
 #endif

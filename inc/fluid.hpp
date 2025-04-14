@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 
 #include "config.hpp"
@@ -143,9 +142,10 @@ inline void Cell::set_velocity(float x, float y) {
 template <int H, int W>
 class Fluid {
  private:
-  std::array<std::array<Cell, H>, W> grid;
-  std::array<std::array<Vector2d<float>, H>, W> velocity_buffer;
-  std::array<std::array<float, H>, W> smoke_buffer;
+  Cell (*grid)[H];
+  Vector2d<float> (*velocity_buffer)[H];
+  float (*smoke_buffer)[H];
+  uint8_t (*total_s)[H];
 
   inline Cell& get_mut_cell(int i, int j);
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
@@ -174,6 +174,7 @@ class Fluid {
   const int n;
 
   Fluid(float o, int n, int cell_size);
+  ~Fluid();
 
   // getters
   inline const Cell& get_cell(int i, int j) const;
@@ -193,10 +194,21 @@ template <int H, int W>
 inline bool Fluid<H, W>::is_edge(int i, int j) const {
   return i == 0 || j == 0 || i == W - 1 || j == H - 1;
 }
+template <int H, int W>
+Fluid<H, W>::~Fluid() {
+  delete[] this->grid;
+  delete[] this->smoke_buffer;
+  delete[] this->velocity_buffer;
+  delete[] this->total_s;
+}
 
 template <int H, int W>
 Fluid<H, W>::Fluid(float o, int n, int cell_size)
     : o(o), n(n), cell_size(cell_size) {
+  this->grid = new Cell[W][H];
+  this->smoke_buffer = new float[W][H];
+  this->velocity_buffer = new Vector2d<float>[W][H];
+  this->total_s = new uint8_t[W][H];
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
@@ -207,32 +219,34 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
                                  CIRCLE_RADIUS or
            (i < PIPE_LENGTH && (j == H / 2 - PIPE_HEIGHT / 2 - 1 or
                                 j == H / 2 + PIPE_HEIGHT / 2 + 1))));
+      this->total_s[i][j] = UINT8_MAX;
     }
   }
 }
 
 template <int H, int W>
 inline const Cell& Fluid<H, W>::get_cell(int i, int j) const {
-  return grid.at(i).at(j);
+  return grid[i][j];
 };
+
 template <int H, int W>
 inline void Fluid<H, W>::set_smoke_buffer(int i, int j, float density) {
-  smoke_buffer.at(i).at(j) = density;
+  smoke_buffer[i][j] = density;
 }
 
 template <int H, int W>
 inline float Fluid<H, W>::get_smoke_buffer(int i, int j) {
-  return smoke_buffer.at(i).at(j);
+  return this->smoke_buffer[i][j];
 }
 
 template <int H, int W>
 inline Vector2d<float>& Fluid<H, W>::get_mut_velocity_buffer(int i, int j) {
-  return this->velocity_buffer.at(i).at(j);
+  return this->velocity_buffer[i][j];
 }
 
 template <int H, int W>
 inline Cell& Fluid<H, W>::get_mut_cell(int i, int j) {
-  return grid.at(i).at(j);
+  return grid[i][j];
 };
 
 template <int H, int W>
@@ -251,9 +265,13 @@ float Fluid<H, W>::get_divergence(int i, int j) const {
   return divergence;
 }
 
-// ! Possible performance gain by memoizing s for each cell
 template <int H, int W>
 uint8_t Fluid<H, W>::get_s(int i, int j) const {
+
+  if (total_s[i][j] != UINT8_MAX) {
+    return total_s[i][j];
+  }
+
   const Cell& top_cell = get_cell(i, j + 1);
   const Cell& bottom_cell = get_cell(i, j - 1);
   const Cell& right_cell = get_cell(i + 1, j);
@@ -265,6 +283,7 @@ uint8_t Fluid<H, W>::get_s(int i, int j) const {
   auto left_s = left_cell.get_s();
 
   auto s = top_s + bottom_s + right_s + left_s;
+  this->total_s[i][j] = s;
 
   return s;
 }
@@ -272,9 +291,6 @@ uint8_t Fluid<H, W>::get_s(int i, int j) const {
 template <int H, int W>
 void Fluid<H, W>::step_projection(int i, int j) {
   Cell& cell = get_mut_cell(i, j);
-  // if (cell.is_solid()) {
-  //   return;
-  // }
 
   Cell& left_cell = get_mut_cell(i - 1, j);
   Cell& right_cell = get_mut_cell(i + 1, j);
