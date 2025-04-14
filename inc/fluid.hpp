@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
+#include <iostream>
 
 #include "config.hpp"
 #include "helper.hpp"
@@ -344,12 +346,15 @@ void Fluid<H, W>::apply_projection() {
 
 template <int H, int W>
 void Fluid<H, W>::apply_external_forces(double d_t) {
+  double smoke_noise = rand() * SMOKE_JITTER / RAND_MAX;
+  int negative_noise = rand() % 2;
+  smoke_noise *= 1 - 2 * negative_noise;
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
       if (i == 1 && j >= H / 2 - PIPE_HEIGHT / 2 &&
           j <= H / 2 + PIPE_HEIGHT / 2) {
-        cell.set_density(SMOKE_DENSITY);
+        cell.set_density(SMOKE_DENSITY + smoke_noise);
         cell.set_velocity_x(WIND_SPEED);
       }
       auto vel_y = cell.get_velocity().get_y();
