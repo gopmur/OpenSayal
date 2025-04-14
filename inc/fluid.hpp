@@ -374,23 +374,27 @@ Vector2d<double> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
   auto u = cell.get_velocity().get_x();
 
   auto avg_v = cell.get_velocity().get_y();
+  int count = 1;
 
   if (is_valid_fluid(i - 1, j + 1)) {
     const Cell& top_left_cell = this->get_cell(i - 1, j + 1);
     avg_v += top_left_cell.get_velocity().get_y();
+    count++;
   }
 
   if (is_valid_fluid(i, j + 1)) {
     const Cell& top_right_cell = this->get_cell(i, j + 1);
     avg_v += top_right_cell.get_velocity().get_y();
+    count++;
   }
 
   if (is_valid_fluid(i - 1, j)) {
     const Cell& bottom_left_cell = this->get_cell(i - 1, j);
     avg_v += bottom_left_cell.get_velocity().get_y();
+    count++;
   }
 
-  avg_v /= 4;
+  avg_v /= count;
 
   return Vector2d<double>(u, avg_v);
 }
@@ -401,23 +405,27 @@ Vector2d<double> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
   auto v = cell.get_velocity().get_y();
 
   double avg_u = cell.get_velocity().get_x();
+  int count = 1;
 
   if (is_valid_fluid(i + 1, j)) {
     const Cell& top_right_cell = this->get_cell(i + 1, j);
     avg_u += top_right_cell.get_velocity().get_x();
+    count++;
   }
 
   if (is_valid_fluid(i, j - 1)) {
     const Cell& bottom_left_cell = this->get_cell(i, j - 1);
     avg_u += bottom_left_cell.get_velocity().get_x();
+    count++;
   }
 
   if (is_valid_fluid(i + 1, j - 1)) {
     const Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
     avg_u += bottom_right_cell.get_velocity().get_x();
+    count++;
   }
 
-  avg_u /= 4;
+  avg_u /= count;
 
   return Vector2d<double>(avg_u, v);
 }
