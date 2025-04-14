@@ -291,6 +291,9 @@ uint8_t Fluid<H, W>::get_s(int i, int j) const {
 template <int H, int W>
 void Fluid<H, W>::step_projection(int i, int j) {
   Cell& cell = get_mut_cell(i, j);
+  if (cell.is_solid()) {
+    return;
+  }
 
   Cell& left_cell = get_mut_cell(i - 1, j);
   Cell& right_cell = get_mut_cell(i + 1, j);
