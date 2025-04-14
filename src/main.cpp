@@ -44,9 +44,9 @@ int main() {
       auto passed_time_ns = duration_cast<nanoseconds>(passed_time);
       auto nano_seconds = passed_time_ns.count();
 
-      float d_t = 0;
+      double d_t = 0;
       if (nano_seconds != 0) {
-        d_t = static_cast<float>(nano_seconds) / 1'000'000'000;
+        d_t = static_cast<double>(nano_seconds) / 1'000'000'000;
         auto fps = static_cast<uint32_t>(1 / d_t);
         Logger::log_fps(d_t);
       }

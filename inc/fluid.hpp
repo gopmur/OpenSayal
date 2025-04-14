@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 
 #include "config.hpp"
@@ -8,8 +9,8 @@
 class FluidCell {
  private:
   bool is_solid;
-  Vector2d<float> velocity;
-  float pressure;
+  Vector2d<double> velocity;
+  double pressure;
 
  public:
   inline FluidCell();
@@ -18,13 +19,13 @@ class FluidCell {
   // getters
   inline bool get_is_solid() const;
   inline uint8_t get_s() const;
-  inline Vector2d<float> get_velocity() const;
-  inline float get_pressure() const;
+  inline Vector2d<double> get_velocity() const;
+  inline double get_pressure() const;
 
   // setters
-  inline void set_velocity_x(float x);
-  inline void set_velocity_y(float y);
-  inline void set_velocity(float x, float y);
+  inline void set_velocity_x(double x);
+  inline void set_velocity_y(double y);
+  inline void set_velocity(double x, double y);
 };
 
 inline FluidCell::FluidCell() : velocity(0, 0), is_solid(0), pressure(0) {}
@@ -36,11 +37,11 @@ inline bool FluidCell::get_is_solid() const {
   return is_solid;
 }
 
-inline Vector2d<float> FluidCell::get_velocity() const {
+inline Vector2d<double> FluidCell::get_velocity() const {
   return velocity;
 }
 
-inline float FluidCell::get_pressure() const {
+inline double FluidCell::get_pressure() const {
   return pressure;
 }
 
@@ -48,15 +49,15 @@ inline uint8_t FluidCell::get_s() const {
   return !is_solid;
 }
 
-inline void FluidCell::set_velocity_x(float x) {
+inline void FluidCell::set_velocity_x(double x) {
   this->velocity.set_x(x);
 }
 
-inline void FluidCell::set_velocity_y(float y) {
+inline void FluidCell::set_velocity_y(double y) {
   this->velocity.set_y(y);
 }
 
-inline void FluidCell::set_velocity(float x, float y) {
+inline void FluidCell::set_velocity(double x, double y) {
   this->set_velocity_x(x);
   this->set_velocity_y(y);
 }
@@ -64,21 +65,21 @@ inline void FluidCell::set_velocity(float x, float y) {
 class SmokeCell {
  private:
   // This value should be between 0 and 1
-  float density;
+  double density;
 
  public:
   inline SmokeCell();
-  inline float get_density() const;
-  inline void set_density(float density);
+  inline double get_density() const;
+  inline void set_density(double density);
 };
 
 inline SmokeCell::SmokeCell() : density(0) {}
 
-inline float SmokeCell::get_density() const {
+inline double SmokeCell::get_density() const {
   return this->density;
 }
 
-inline void SmokeCell::set_density(float density) {
+inline void SmokeCell::set_density(double density) {
   this->density = density;
 }
 
@@ -91,30 +92,30 @@ class Cell {
   inline Cell(bool is_solid);
 
   // getters
-  inline const Vector2d<float> get_velocity() const;
-  inline const float get_density() const;
+  inline const Vector2d<double> get_velocity() const;
+  inline const double get_density() const;
   inline const bool is_solid() const;
   inline const uint8_t get_s() const;
 
   // setters
-  inline void set_velocity_x(float x);
-  inline void set_velocity_y(float y);
-  inline void set_velocity(float x, float y);
-  inline void set_density(float density);
+  inline void set_velocity_x(double x);
+  inline void set_velocity_y(double y);
+  inline void set_velocity(double x, double y);
+  inline void set_density(double density);
 };
 
 inline Cell::Cell(bool is_solid) : smoke(), fluid(is_solid) {}
 inline Cell::Cell() : smoke(), fluid() {}
 
-inline void Cell::set_density(float density) {
+inline void Cell::set_density(double density) {
   this->smoke.set_density(density);
 }
 
-inline const Vector2d<float> Cell::get_velocity() const {
+inline const Vector2d<double> Cell::get_velocity() const {
   return this->fluid.get_velocity();
 }
 
-inline const float Cell::get_density() const {
+inline const double Cell::get_density() const {
   return this->smoke.get_density();
 }
 
@@ -126,15 +127,15 @@ inline const uint8_t Cell::get_s() const {
   return this->fluid.get_s();
 }
 
-inline void Cell::set_velocity_x(float x) {
+inline void Cell::set_velocity_x(double x) {
   this->fluid.set_velocity_x(x);
 }
 
-inline void Cell::set_velocity_y(float y) {
+inline void Cell::set_velocity_y(double y) {
   this->fluid.set_velocity_y(y);
 }
 
-inline void Cell::set_velocity(float x, float y) {
+inline void Cell::set_velocity(double x, double y) {
   this->set_velocity_x(x);
   this->set_velocity_y(y);
 }
@@ -143,51 +144,52 @@ template <int H, int W>
 class Fluid {
  private:
   Cell (*grid)[H];
-  Vector2d<float> (*velocity_buffer)[H];
-  float (*smoke_buffer)[H];
+  Vector2d<double> (*velocity_buffer)[H];
+  double (*smoke_buffer)[H];
   uint8_t (*total_s)[H];
 
   inline Cell& get_mut_cell(int i, int j);
-  inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
-  inline void set_smoke_buffer(int i, int j, float density);
-  inline float get_smoke_buffer(int i, int j);
+  inline Vector2d<double>& get_mut_velocity_buffer(int i, int j);
+  inline void set_smoke_buffer(int i, int j, double density);
+  inline double get_smoke_buffer(int i, int j);
   void step_projection(int i, int j);
-  float interpolate_smoke(float x, float y) const;
-  float get_general_velocity_y(float x, float y) const;
-  float get_general_velocity_x(float x, float y) const;
+  double interpolate_smoke(double x, double y) const;
+  double get_general_velocity_y(double x, double y) const;
+  double get_general_velocity_x(double x, double y) const;
   inline bool index_is_valid(int i, int j) const;
   inline bool is_valid_fluid(int i, int j) const;
-  inline Vector2d<float> get_center_position(int i, int j) const;
-  inline Vector2d<float> get_u_position(int i, int j) const;
-  inline Vector2d<float> get_v_position(int, int j) const;
+  inline Vector2d<double> get_center_position(int i, int j) const;
+  inline Vector2d<double> get_u_position(int i, int j) const;
+  inline Vector2d<double> get_v_position(int, int j) const;
 
-  void apply_external_forces(float d_t);
+  void apply_external_forces(double d_t);
   void apply_projection();
-  void apply_smoke_advection(float d_t);
-  void apply_velocity_advection(float d_t);
+  void apply_smoke_advection(double d_t);
+  void apply_velocity_advection(double d_t);
   void extrapolate();
+  void decay_smoke(double d_t);
 
  public:
-  const float g = PHYSICS_G;
-  const float o;
+  const double g = PHYSICS_G;
+  const double o;
   const int cell_size;
   const int n;
 
-  Fluid(float o, int n, int cell_size);
+  Fluid(double o, int n, int cell_size);
   ~Fluid();
 
   // getters
   inline const Cell& get_cell(int i, int j) const;
-  float get_divergence(int i, int j) const;
+  double get_divergence(int i, int j) const;
   uint8_t get_s(int i, int j) const;
 
   inline bool is_edge(int i, int j) const;
 
-  inline Vector2d<float> get_general_velocity(float x, float y) const;
-  Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
-  Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
+  inline Vector2d<double> get_general_velocity(double x, double y) const;
+  Vector2d<double> get_vertical_edge_velocity(int i, int j) const;
+  Vector2d<double> get_horizontal_edge_velocity(int i, int j) const;
 
-  void update(float d_t);
+  void update(double d_t);
 };
 
 template <int H, int W>
@@ -203,11 +205,11 @@ Fluid<H, W>::~Fluid() {
 }
 
 template <int H, int W>
-Fluid<H, W>::Fluid(float o, int n, int cell_size)
+Fluid<H, W>::Fluid(double o, int n, int cell_size)
     : o(o), n(n), cell_size(cell_size) {
   this->grid = new Cell[W][H];
-  this->smoke_buffer = new float[W][H];
-  this->velocity_buffer = new Vector2d<float>[W][H];
+  this->smoke_buffer = new double[W][H];
+  this->velocity_buffer = new Vector2d<double>[W][H];
   this->total_s = new uint8_t[W][H];
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
@@ -230,17 +232,17 @@ inline const Cell& Fluid<H, W>::get_cell(int i, int j) const {
 };
 
 template <int H, int W>
-inline void Fluid<H, W>::set_smoke_buffer(int i, int j, float density) {
+inline void Fluid<H, W>::set_smoke_buffer(int i, int j, double density) {
   smoke_buffer[i][j] = density;
 }
 
 template <int H, int W>
-inline float Fluid<H, W>::get_smoke_buffer(int i, int j) {
+inline double Fluid<H, W>::get_smoke_buffer(int i, int j) {
   return this->smoke_buffer[i][j];
 }
 
 template <int H, int W>
-inline Vector2d<float>& Fluid<H, W>::get_mut_velocity_buffer(int i, int j) {
+inline Vector2d<double>& Fluid<H, W>::get_mut_velocity_buffer(int i, int j) {
   return this->velocity_buffer[i][j];
 }
 
@@ -250,7 +252,7 @@ inline Cell& Fluid<H, W>::get_mut_cell(int i, int j) {
 };
 
 template <int H, int W>
-float Fluid<H, W>::get_divergence(int i, int j) const {
+double Fluid<H, W>::get_divergence(int i, int j) const {
   const Cell& cell = get_cell(i, j);
   const Cell& top_cell = get_cell(i, j + 1);
   const Cell& right_cell = get_cell(i + 1, j);
@@ -267,7 +269,6 @@ float Fluid<H, W>::get_divergence(int i, int j) const {
 
 template <int H, int W>
 uint8_t Fluid<H, W>::get_s(int i, int j) const {
-
   if (total_s[i][j] != UINT8_MAX) {
     return total_s[i][j];
   }
@@ -342,13 +343,13 @@ void Fluid<H, W>::apply_projection() {
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_external_forces(float d_t) {
+void Fluid<H, W>::apply_external_forces(double d_t) {
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = get_mut_cell(i, j);
       if (i == 1 && j >= H / 2 - PIPE_HEIGHT / 2 &&
           j <= H / 2 + PIPE_HEIGHT / 2) {
-        cell.set_density(1);
+        cell.set_density(SMOKE_DENSITY);
         cell.set_velocity_x(WIND_SPEED);
       }
       auto vel_y = cell.get_velocity().get_y();
@@ -368,7 +369,7 @@ inline bool Fluid<H, W>::is_valid_fluid(int i, int j) const {
 }
 
 template <int H, int W>
-Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
+Vector2d<double> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto u = cell.get_velocity().get_x();
 
@@ -391,15 +392,15 @@ Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
 
   avg_v /= 4;
 
-  return Vector2d<float>(u, avg_v);
+  return Vector2d<double>(u, avg_v);
 }
 
 template <int H, int W>
-Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
+Vector2d<double> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto v = cell.get_velocity().get_y();
 
-  float avg_u = cell.get_velocity().get_x();
+  double avg_u = cell.get_velocity().get_x();
 
   if (is_valid_fluid(i + 1, j)) {
     const Cell& top_right_cell = this->get_cell(i + 1, j);
@@ -418,11 +419,11 @@ Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
 
   avg_u /= 4;
 
-  return Vector2d<float>(avg_u, v);
+  return Vector2d<double>(avg_u, v);
 }
 
 template <int H, int W>
-float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
+double Fluid<H, W>::get_general_velocity_y(double x, double y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -430,16 +431,16 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
     return 0;
   }
 
-  float in_x = x - i * this->cell_size;
-  float in_y = y - j * this->cell_size;
+  double in_x = x - i * this->cell_size;
+  double in_y = y - j * this->cell_size;
 
-  float avg_v = 0;
+  double avg_v = 0;
 
   // take average with the left cell
   if (in_x < this->cell_size / 2.0) {
-    float d_x = this->cell_size / 2.0 - in_x;
-    float w_x = 1 - d_x / this->cell_size;
-    float w_y = 1 - in_y / this->cell_size;
+    double d_x = this->cell_size / 2.0 - in_x;
+    double w_x = 1 - d_x / this->cell_size;
+    double w_y = 1 - in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& bottom_right_cell = this->get_cell(i, j);
@@ -463,9 +464,9 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   }
   // take average with the right cell
   else {
-    float d_x = in_x - this->cell_size / 2.0;
-    float w_x = 1 - d_x / this->cell_size;
-    float w_y = 1 - in_y / this->cell_size;
+    double d_x = in_x - this->cell_size / 2.0;
+    double w_x = 1 - d_x / this->cell_size;
+    double w_y = 1 - in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& bottom_left_cell = this->get_cell(i, j);
@@ -492,7 +493,7 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
 }
 
 template <int H, int W>
-float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
+double Fluid<H, W>::get_general_velocity_x(double x, double y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -500,16 +501,16 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
     return 0;
   }
 
-  float in_x = x - i * this->cell_size;
-  float in_y = y - j * this->cell_size;
+  double in_x = x - i * this->cell_size;
+  double in_y = y - j * this->cell_size;
 
-  float avg_u = 0;
+  double avg_u = 0;
 
   // take average with the bottom cell
   if (in_y <= this->cell_size / 2.0) {
-    float d_y = this->cell_size / 2.0 - in_y;
-    float w_x = 1 - in_x / this->cell_size;
-    float w_y = 1 - d_y / this->cell_size;
+    double d_y = this->cell_size / 2.0 - in_y;
+    double w_x = 1 - in_x / this->cell_size;
+    double w_y = 1 - d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& top_left_cell = this->get_cell(i, j);
@@ -534,9 +535,9 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 
   // take average with the top cell
   else {
-    float d_y = in_y - this->cell_size / 2.0;
-    float w_x = 1 - in_x / this->cell_size;
-    float w_y = 1 - d_y / this->cell_size;
+    double d_y = in_y - this->cell_size / 2.0;
+    double w_x = 1 - in_x / this->cell_size;
+    double w_y = 1 - d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
       const Cell& bottom_left_cell = this->get_cell(i, j);
@@ -563,58 +564,60 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 }
 
 template <int H, int W>
-inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
-                                                         float y) const {
-  float u = this->get_general_velocity_x(x, y);
-  float v = this->get_general_velocity_y(x, y);
-  return Vector2d<float>(u, v);
+inline Vector2d<double> Fluid<H, W>::get_general_velocity(double x,
+                                                          double y) const {
+  double u = this->get_general_velocity_x(x, y);
+  double v = this->get_general_velocity_y(x, y);
+  return Vector2d<double>(u, v);
 }
 
 template <int H, int W>
-inline Vector2d<float> Fluid<H, W>::get_center_position(int i, int j) const {
-  return Vector2d<float>((i + 0.5) * this->cell_size,
-                         (j + 0.5) * this->cell_size);
+inline Vector2d<double> Fluid<H, W>::get_center_position(int i, int j) const {
+  return Vector2d<double>((i + 0.5) * this->cell_size,
+                          (j + 0.5) * this->cell_size);
 }
 
 template <int H, int W>
-inline Vector2d<float> Fluid<H, W>::get_u_position(int i, int j) const {
-  return Vector2d<float>(i * this->cell_size, (j + 0.5) * this->cell_size);
+inline Vector2d<double> Fluid<H, W>::get_u_position(int i, int j) const {
+  return Vector2d<double>(i * this->cell_size, (j + 0.5) * this->cell_size);
 }
 
 template <int H, int W>
-inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
-  return Vector2d<float>((i + 0.5) * this->cell_size, j * this->cell_size);
+inline Vector2d<double> Fluid<H, W>::get_v_position(int i, int j) const {
+  return Vector2d<double>((i + 0.5) * this->cell_size, j * this->cell_size);
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_smoke_advection(float d_t) {
+void Fluid<H, W>::apply_smoke_advection(double d_t) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> current_pos = this->get_center_position(i, j);
-      Vector2d<float> current_velocity =
+      Vector2d<double> current_pos = this->get_center_position(i, j);
+      Vector2d<double> current_velocity =
           this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
       auto prev_pos = current_pos - current_velocity * d_t;
-      float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+      double new_density =
+          interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
       this->set_smoke_buffer(i, j, new_density);
     }
   }
 
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float new_density = this->get_smoke_buffer(i, j);
+      double new_density = this->get_smoke_buffer(i, j);
       this->get_mut_cell(i, j).set_density(new_density);
     }
   }
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_velocity_advection(float d_t) {
+void Fluid<H, W>::apply_velocity_advection(double d_t) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> current_pos = this->get_u_position(i, j);
-      Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
+      Vector2d<double> current_pos = this->get_u_position(i, j);
+      Vector2d<double> current_velocity =
+          this->get_vertical_edge_velocity(i, j);
       auto prev_pos = current_pos - current_velocity * d_t;
-      float new_velocity =
+      double new_velocity =
           this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
       this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
 
@@ -629,7 +632,7 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
 
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
+      Vector2d<double> new_velocity = this->get_mut_velocity_buffer(i, j);
       this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
                                             new_velocity.get_y());
     }
@@ -637,20 +640,20 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
 }
 
 template <int H, int W>
-float Fluid<H, W>::interpolate_smoke(float x, float y) const {
+double Fluid<H, W>::interpolate_smoke(double x, double y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
-  float in_x = x - i * this->cell_size;
-  float in_y = y - j * this->cell_size;
+  double in_x = x - i * this->cell_size;
+  double in_y = y - j * this->cell_size;
 
   Vector2d<int> indices_1(i, j);
   Vector2d<int> indices_2;
   Vector2d<int> indices_3;
   Vector2d<int> indices_4;
 
-  float distance_sum = 0;
-  float avg_density = 0;
+  double distance_sum = 0;
+  double avg_density = 0;
 
   if (in_x < this->cell_size / 2.0 && in_y < this->cell_size / 2.0) {
     indices_2 = Vector2d<int>(i - 1, j);
@@ -670,26 +673,33 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
     indices_4 = Vector2d<int>(i + 1, j + 1);
   }
 
-  Vector2d<float> pos_1 =
+  Vector2d<double> pos_1 =
       get_center_position(indices_1.get_x(), indices_1.get_y());
-  Vector2d<float> pos_2 =
+  Vector2d<double> pos_2 =
       get_center_position(indices_2.get_x(), indices_2.get_y());
-  Vector2d<float> pos_3 =
+  Vector2d<double> pos_3 =
       get_center_position(indices_3.get_x(), indices_3.get_y());
-  Vector2d<float> pos_4 =
+  Vector2d<double> pos_4 =
       get_center_position(indices_4.get_x(), indices_4.get_y());
 
-  auto distance_1 = get_distance(Vector2d<float>(x, y), pos_1);
-  auto distance_2 = get_distance(Vector2d<float>(x, y), pos_2);
-  auto distance_3 = get_distance(Vector2d<float>(x, y), pos_3);
-  auto distance_4 = get_distance(Vector2d<float>(x, y), pos_4);
+  auto distance_1 = get_distance(Vector2d<double>(x, y), pos_1);
+  auto distance_2 = get_distance(Vector2d<double>(x, y), pos_2);
+  auto distance_3 = get_distance(Vector2d<double>(x, y), pos_3);
+  auto distance_4 = get_distance(Vector2d<double>(x, y), pos_4);
 
   distance_sum = distance_1 + distance_2 + distance_3 + distance_4;
 
-  auto w1 = distance_1 / distance_sum;
-  auto w2 = distance_2 / distance_sum;
-  auto w3 = distance_3 / distance_sum;
-  auto w4 = distance_4 / distance_sum;
+  double inv1 = 1.0 / (distance_1 + 1e-6);
+  double inv2 = 1.0 / (distance_2 + 1e-6);
+  double inv3 = 1.0 / (distance_3 + 1e-6);
+  double inv4 = 1.0 / (distance_4 + 1e-6);
+
+  double sum_inv = inv1 + inv2 + inv3 + inv4;
+
+  double w1 = inv1 / sum_inv;
+  double w2 = inv2 / sum_inv;
+  double w3 = inv3 / sum_inv;
+  double w4 = inv4 / sum_inv;
 
   if (is_valid_fluid(indices_1.get_x(), indices_1.get_y())) {
     const Cell& cell = this->get_cell(indices_1.get_x(), indices_1.get_y());
@@ -699,11 +709,11 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
     const Cell& cell = this->get_cell(indices_2.get_x(), indices_2.get_y());
     avg_density += w2 * cell.get_density();
   }
-  if (is_valid_fluid(indices_3.get_x(), indices_1.get_y())) {
+  if (is_valid_fluid(indices_3.get_x(), indices_3.get_y())) {
     const Cell& cell = this->get_cell(indices_3.get_x(), indices_3.get_y());
     avg_density += w3 * cell.get_density();
   }
-  if (is_valid_fluid(indices_4.get_x(), indices_1.get_y())) {
+  if (is_valid_fluid(indices_4.get_x(), indices_4.get_y())) {
     const Cell& cell = this->get_cell(indices_4.get_x(), indices_4.get_y());
     avg_density += w4 * cell.get_density();
   }
@@ -742,10 +752,22 @@ void Fluid<H, W>::extrapolate() {
 }
 
 template <int H, int W>
-void Fluid<H, W>::update(float d_t) {
+void Fluid<H, W>::decay_smoke(double d_t) {
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
+      Cell& cell = this->get_mut_cell(i, j);
+      double density = cell.get_density();
+      cell.set_density(std::max({density - SMOKE_DECAY_RATE * d_t, 0.0}));
+    }
+  }
+}
+
+template <int H, int W>
+void Fluid<H, W>::update(double d_t) {
   this->apply_external_forces(d_t);
   this->apply_projection();
   this->extrapolate();
   this->apply_velocity_advection(d_t);
   this->apply_smoke_advection(d_t);
+  this->decay_smoke(d_t);
 }
