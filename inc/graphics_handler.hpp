@@ -16,16 +16,16 @@
 template <int H, int W, int S>
 class GraphicsHandler {
  private:
-  double arrow_head_length;
-  double arrow_head_angle;
-  double arrow_disable_thresh_hold;
+  float arrow_head_length;
+  float arrow_head_angle;
+  float arrow_disable_thresh_hold;
   SDL_Renderer* renderer;
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
   std::array<std::array<int, W>, H> fluid_pixels;
 
-  void draw_arrow(int x, int y, double length, double angle);
+  void draw_arrow(int x, int y, float length, float angle);
   void update_fluid_pixels(const Fluid<H, W>& fluid);
   void update_velocity_arrows(const Fluid<H, W>& fluid);
   void update_center_velocity_arrow(const Fluid<H, W>& fluid);
@@ -35,17 +35,17 @@ class GraphicsHandler {
   void cleanup();
 
  public:
-  GraphicsHandler(double arrow_head_length,
-                  double arrow_head_angle,
-                  double arrow_disable_thresh_hold);
+  GraphicsHandler(float arrow_head_length,
+                  float arrow_head_angle,
+                  float arrow_disable_thresh_hold);
   ~GraphicsHandler();
   void update(const Fluid<H, W>& fluid);
 };
 
 template <int H, int W, int S>
-GraphicsHandler<H, W, S>::GraphicsHandler(double arrow_head_length,
-                                          double arrow_head_angle,
-                                          double arrow_disable_thresh_hold)
+GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
+                                          float arrow_head_angle,
+                                          float arrow_disable_thresh_hold)
     : arrow_head_angle(arrow_head_angle),
       arrow_head_length(arrow_head_length),
       arrow_disable_thresh_hold(arrow_disable_thresh_hold) {
@@ -131,8 +131,8 @@ void GraphicsHandler<H, W, S>::cleanup() {
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::draw_arrow(int x,
                                           int y,
-                                          double length,
-                                          double angle) {
+                                          float length,
+                                          float angle) {
   length *= ARROW_LENGTH_MULTIPLIER;
   int32_t x_offset = length * std::cos(angle);
   int32_t y_offset = -length * std::sin(angle);
@@ -185,9 +185,9 @@ void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
       if (cell.is_solid()) {
         continue;
       }
-      double x = (i + 0.5) * S;
-      double y = (H - j - 1 + 0.5) * S;
-      Vector2d<double> velocity = fluid.get_general_velocity(x, H * S - y);
+      float x = (i + 0.5) * S;
+      float y = (H - j - 1 + 0.5) * S;
+      Vector2d<float> velocity = fluid.get_general_velocity(x, H * S - y);
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
@@ -208,9 +208,9 @@ void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
       if (cell.is_solid()) {
         continue;
       }
-      double x = (i + 0.5) * S;
-      double y = (H - j - 1) * S;
-      Vector2d<double> velocity = fluid.get_horizontal_edge_velocity(i, j);
+      float x = (i + 0.5) * S;
+      float y = (H - j - 1) * S;
+      Vector2d<float> velocity = fluid.get_horizontal_edge_velocity(i, j);
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
@@ -231,9 +231,9 @@ void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
       if (cell.is_solid()) {
         continue;
       }
-      double x = (i)*S;
-      double y = (H - j - 1 + 0.5) * S;
-      Vector2d<double> velocity = fluid.get_vertical_edge_velocity(i, j);
+      float x = (i)*S;
+      float y = (H - j - 1 + 0.5) * S;
+      Vector2d<float> velocity = fluid.get_vertical_edge_velocity(i, j);
       auto vel_x = velocity.get_x();
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);

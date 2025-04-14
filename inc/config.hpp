@@ -2,24 +2,26 @@
 
 #include <cmath>
 
-#define FLUID_HEIGHT 512 / 2
-#define FLUID_WIDTH 1024 / 2
-#define CELL_SIZE 2
+#define THREAD_COUNT 8
+
+#define FLUID_HEIGHT 400
+#define FLUID_WIDTH 800
+#define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
 #define PROJECTION_N 20
 
-#define FPS_AVG_SIZE 15
+#define FPS_AVG_SIZE 100
 
 #define PHYSICS_G 0
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 3
 #define PIPE_LENGTH 0
-#define WIND_SPEED 500
+#define WIND_SPEED 200
 #define SMOKE_JITTER 0.2
 #define SMOKE_DENSITY 0.8
 
-#define CIRCLE_RADIUS FLUID_HEIGHT / 10.0
+#define CIRCLE_RADIUS FLUID_HEIGHT / 30.0
 #define CIRCLE_POSITION_X FLUID_WIDTH / 2 + 40
 #define CIRCLE_POSITION_Y FLUID_HEIGHT / 2
 #define ENABLE_CIRCLE true

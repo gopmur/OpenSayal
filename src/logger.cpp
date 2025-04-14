@@ -48,8 +48,11 @@ uint32_t Logger::avg_fps() {
 }
 
 void Logger::log_fps(float d_t) {
+  if (fps_memo_length == FPS_AVG_SIZE) return;
   auto fps = static_cast<uint32_t>(1 / d_t);
   Logger::add_fps(fps);
-  auto fps_avg = Logger::avg_fps();
-  std::cout << "FPS: " << fps_avg << std::endl;
+  if (fps_memo_length == FPS_AVG_SIZE) {
+    auto fps_avg = Logger::avg_fps();
+    std::cout << "FPS: " << fps_avg << std::endl;
+  }
 }

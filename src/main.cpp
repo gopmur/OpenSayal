@@ -20,7 +20,7 @@ void setup() {
 int main() {
 
   omp_set_dynamic(0);
-  omp_set_num_threads(8);
+  omp_set_num_threads(THREAD_COUNT);
 
   setup();
 
@@ -49,9 +49,9 @@ int main() {
       auto passed_time_ns = duration_cast<nanoseconds>(passed_time);
       auto nano_seconds = passed_time_ns.count();
 
-      double d_t = 0;
+      float d_t = 0;
       if (nano_seconds != 0) {
-        d_t = static_cast<double>(nano_seconds) / 1'000'000'000;
+        d_t = static_cast<float>(nano_seconds) / 1'000'000'000;
         auto fps = static_cast<uint32_t>(1 / d_t);
         Logger::log_fps(d_t);
       }
