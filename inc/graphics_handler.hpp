@@ -25,13 +25,13 @@ class GraphicsHandler {
   SDL_PixelFormat* format;
   std::array<std::array<int, W>, H> fluid_pixels;
 
-  void draw_arrow(int x, int y, float length, float angle);
-  void update_fluid_pixels(const Fluid<H, W>& fluid);
-  void update_velocity_arrows(const Fluid<H, W>& fluid);
-  void update_center_velocity_arrow(const Fluid<H, W>& fluid);
-  void update_horizontal_edge_velocity_arrow(const Fluid<H, W>& fluid);
-  void update_vertical_edge_velocity_arrow(const Fluid<H, W>& fluid);
-  void update_corner_velocity_arrow(const Fluid<H, W>& fluid);
+  inline void draw_arrow(int x, int y, float length, float angle);
+  inline void update_fluid_pixels(const Fluid<H, W>& fluid);
+  inline void update_velocity_arrows(const Fluid<H, W>& fluid);
+  inline void update_center_velocity_arrow(const Fluid<H, W>& fluid);
+  inline void update_horizontal_edge_velocity_arrow(const Fluid<H, W>& fluid);
+  inline void update_vertical_edge_velocity_arrow(const Fluid<H, W>& fluid);
+  inline void update_corner_velocity_arrow(const Fluid<H, W>& fluid);
   void cleanup();
 
  public:
@@ -129,7 +129,7 @@ void GraphicsHandler<H, W, S>::cleanup() {
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::draw_arrow(int x,
+inline void GraphicsHandler<H, W, S>::draw_arrow(int x,
                                           int y,
                                           float length,
                                           float angle) {
@@ -155,7 +155,7 @@ void GraphicsHandler<H, W, S>::draw_arrow(int x,
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
+inline void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
 #pragma omp parallel for collapse(2)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
@@ -177,7 +177,7 @@ void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
+inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
     const Fluid<H, W>& fluid) {
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
@@ -200,7 +200,7 @@ void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
+inline void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
     const Fluid<H, W>& fluid) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
@@ -223,7 +223,7 @@ void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
+inline void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
     const Fluid<H, W>& fluid) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
@@ -246,7 +246,7 @@ void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
+inline void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
     const Fluid<H, W>& fluid) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
@@ -269,7 +269,7 @@ void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update_velocity_arrows(
+inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
     const Fluid<H, W>& fluid) {
 #if DRAW_CORNER_ARROW
   SDL_SetRenderDrawColor(renderer, CORNER_ARROW_COLOR);

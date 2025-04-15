@@ -154,22 +154,22 @@ class Fluid {
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
   inline void set_smoke_buffer(int i, int j, float density);
   inline float get_smoke_buffer(int i, int j);
-  void step_projection(int i, int j);
-  float interpolate_smoke(float x, float y) const;
-  float get_general_velocity_y(float x, float y) const;
-  float get_general_velocity_x(float x, float y) const;
+  inline void step_projection(int i, int j);
+  inline float interpolate_smoke(float x, float y) const;
+  inline float get_general_velocity_y(float x, float y) const;
+  inline float get_general_velocity_x(float x, float y) const;
   inline bool index_is_valid(int i, int j) const;
   inline bool is_valid_fluid(int i, int j) const;
   inline Vector2d<float> get_center_position(int i, int j) const;
   inline Vector2d<float> get_u_position(int i, int j) const;
   inline Vector2d<float> get_v_position(int, int j) const;
 
-  void apply_external_forces(float d_t);
-  void apply_projection();
-  void apply_smoke_advection(float d_t);
-  void apply_velocity_advection(float d_t);
-  void extrapolate();
-  void decay_smoke(float d_t);
+  inline void apply_external_forces(float d_t);
+  inline void apply_projection();
+  inline void apply_smoke_advection(float d_t);
+  inline void apply_velocity_advection(float d_t);
+  inline void extrapolate();
+  inline void decay_smoke(float d_t);
 
  public:
   const float g = PHYSICS_G;
@@ -188,10 +188,10 @@ class Fluid {
   inline bool is_edge(int i, int j) const;
 
   inline Vector2d<float> get_general_velocity(float x, float y) const;
-  Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
-  Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
+  inline Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
+  inline Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
 
-  void update(float d_t);
+  inline void update(float d_t);
 };
 
 template <int H, int W>
@@ -292,7 +292,7 @@ uint8_t Fluid<H, W>::get_s(int i, int j) const {
 }
 
 template <int H, int W>
-void Fluid<H, W>::step_projection(int i, int j) {
+inline void Fluid<H, W>::step_projection(int i, int j) {
   Cell& cell = get_mut_cell(i, j);
   if (cell.is_solid()) {
     return;
@@ -334,7 +334,7 @@ void Fluid<H, W>::step_projection(int i, int j) {
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_projection() {
+inline void Fluid<H, W>::apply_projection() {
   for (int _ = 0; _ < n; _++) {
 #pragma omp parallel for collapse(2) schedule(static)
     for (int j = H - 1; j >= 1; j--) {
@@ -352,7 +352,7 @@ void Fluid<H, W>::apply_projection() {
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_external_forces(float d_t) {
+inline void Fluid<H, W>::apply_external_forces(float d_t) {
   float smoke_noise = rand() * SMOKE_JITTER / RAND_MAX;
   int negative_noise = rand() % 2;
   smoke_noise *= 1 - 2 * negative_noise;
@@ -382,7 +382,7 @@ inline bool Fluid<H, W>::is_valid_fluid(int i, int j) const {
 }
 
 template <int H, int W>
-Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
+inline Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto u = cell.get_velocity().get_x();
 
@@ -413,7 +413,7 @@ Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
 }
 
 template <int H, int W>
-Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
+inline Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto v = cell.get_velocity().get_y();
 
@@ -444,7 +444,7 @@ Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
 }
 
 template <int H, int W>
-float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
+inline float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -514,7 +514,7 @@ float Fluid<H, W>::get_general_velocity_y(float x, float y) const {
 }
 
 template <int H, int W>
-float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
+inline float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -609,7 +609,7 @@ inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_smoke_advection(float d_t) {
+inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
@@ -632,7 +632,7 @@ void Fluid<H, W>::apply_smoke_advection(float d_t) {
 }
 
 template <int H, int W>
-void Fluid<H, W>::apply_velocity_advection(float d_t) {
+inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
@@ -663,7 +663,7 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
 }
 
 template <int H, int W>
-float Fluid<H, W>::interpolate_smoke(float x, float y) const {
+inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -745,7 +745,7 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 }
 
 template <int H, int W>
-void Fluid<H, W>::extrapolate() {
+inline void Fluid<H, W>::extrapolate() {
 #pragma parallel for schedule(static)
   for (int i = 0; i < W; i++) {
     {
@@ -777,7 +777,7 @@ void Fluid<H, W>::extrapolate() {
 }
 
 template <int H, int W>
-void Fluid<H, W>::decay_smoke(float d_t) {
+inline void Fluid<H, W>::decay_smoke(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
@@ -789,7 +789,7 @@ void Fluid<H, W>::decay_smoke(float d_t) {
 }
 
 template <int H, int W>
-void Fluid<H, W>::update(float d_t) {
+inline void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
   this->apply_projection();
   this->extrapolate();
