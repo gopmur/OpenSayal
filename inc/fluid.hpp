@@ -746,7 +746,7 @@ inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 
 template <int H, int W>
 inline void Fluid<H, W>::extrapolate() {
-#pragma parallel for schedule(static)
+#pragma omp parallel for schedule(static)
   for (int i = 0; i < W; i++) {
     {
       Cell& bottom_cell = this->get_mut_cell(i, 0);
@@ -761,7 +761,7 @@ inline void Fluid<H, W>::extrapolate() {
       top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
     }
   }
-#pragma parallel for schedule(static)
+#pragma omp parallel for schedule(static)
   for (int j = 0; j < H; j++) {
     {
       Cell& right_cell = this->get_mut_cell(W - 1, j);
