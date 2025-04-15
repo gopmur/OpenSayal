@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
 
 #include "config.hpp"
 #include "helper.hpp"
@@ -338,13 +337,13 @@ template <int H, int W>
 void Fluid<H, W>::apply_projection() {
   for (int _ = 0; _ < n; _++) {
 #pragma omp parallel for collapse(2) schedule(static)
-    for (int j = 1; j < H - 1; j++) {
+    for (int j = H - 1; j >= 1; j--) {
       for (int i = j % 2 + 1; i < W - 1; i += 2) {
         step_projection(i, j);
       }
     }
 #pragma omp parallel for collapse(2) schedule(static)
-    for (int j = 1; j < H - 1; j++) {
+    for (int j = H - 1; j >= 1; j--) {
       for (int i = (j + 1) % 2 + 1; i < W - 1; i += 2) {
         step_projection(i, j);
       }
@@ -358,8 +357,8 @@ void Fluid<H, W>::apply_external_forces(float d_t) {
   int negative_noise = rand() % 2;
   smoke_noise *= 1 - 2 * negative_noise;
 #pragma omp parallel for collapse(2) schedule(static)
-  for (int i = 0; i < W; i++) {
-    for (int j = 0; j < H; j++) {
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
       Cell& cell = get_mut_cell(i, j);
       if (i == 1 && j >= H / 2 - PIPE_HEIGHT / 2 &&
           j <= H / 2 + PIPE_HEIGHT / 2) {
@@ -587,7 +586,7 @@ float Fluid<H, W>::get_general_velocity_x(float x, float y) const {
 
 template <int H, int W>
 inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
-                                                          float y) const {
+                                                         float y) const {
   float u = this->get_general_velocity_x(x, y);
   float v = this->get_general_velocity_y(x, y);
   return Vector2d<float>(u, v);
@@ -596,7 +595,7 @@ inline Vector2d<float> Fluid<H, W>::get_general_velocity(float x,
 template <int H, int W>
 inline Vector2d<float> Fluid<H, W>::get_center_position(int i, int j) const {
   return Vector2d<float>((i + 0.5) * this->cell_size,
-                          (j + 0.5) * this->cell_size);
+                         (j + 0.5) * this->cell_size);
 }
 
 template <int H, int W>
@@ -618,12 +617,12 @@ void Fluid<H, W>::apply_smoke_advection(float d_t) {
       Vector2d<float> current_velocity =
           this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
       auto prev_pos = current_pos - current_velocity * d_t;
-      float new_density =
-          interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+      float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
       this->set_smoke_buffer(i, j, new_density);
     }
   }
 
+#pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       float new_density = this->get_smoke_buffer(i, j);
@@ -638,8 +637,7 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> current_pos = this->get_u_position(i, j);
-      Vector2d<float> current_velocity =
-          this->get_vertical_edge_velocity(i, j);
+      Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
       auto prev_pos = current_pos - current_velocity * d_t;
       float new_velocity =
           this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
@@ -654,6 +652,7 @@ void Fluid<H, W>::apply_velocity_advection(float d_t) {
     }
   }
 
+#pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
@@ -747,11 +746,13 @@ float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 
 template <int H, int W>
 void Fluid<H, W>::extrapolate() {
+#pragma parallel for schedule(static)
   for (int i = 0; i < W; i++) {
     {
       Cell& bottom_cell = this->get_mut_cell(i, 0);
       Cell& top_cell = this->get_mut_cell(i, 1);
       bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
+      top_cell.set_velocity_y(0);
     }
 
     {
@@ -760,6 +761,7 @@ void Fluid<H, W>::extrapolate() {
       top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
     }
   }
+#pragma parallel for schedule(static)
   for (int j = 0; j < H; j++) {
     {
       Cell& right_cell = this->get_mut_cell(W - 1, j);

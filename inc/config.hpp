@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#define THREAD_COUNT 8
+#define THREAD_COUNT 4
 
 #define FLUID_HEIGHT 400
 #define FLUID_WIDTH 800
@@ -13,18 +13,18 @@
 
 #define FPS_AVG_SIZE 100
 
-#define PHYSICS_G 0
+#define PHYSICS_G -30
 
-#define PIPE_HEIGHT FLUID_HEIGHT / 3
+#define PIPE_HEIGHT FLUID_HEIGHT / 4
 #define PIPE_LENGTH 0
 #define WIND_SPEED 200
-#define SMOKE_JITTER 0.2
+#define SMOKE_JITTER 0
 #define SMOKE_DENSITY 0.8
 
 #define CIRCLE_RADIUS FLUID_HEIGHT / 30.0
 #define CIRCLE_POSITION_X FLUID_WIDTH / 2 + 40
 #define CIRCLE_POSITION_Y FLUID_HEIGHT / 2
-#define ENABLE_CIRCLE true
+#define ENABLE_CIRCLE false
 
 #define ARROW_HEAD_ANGLE M_PI / 8
 #define ARROW_HEAD_LENGTH 5
@@ -39,7 +39,7 @@
 #define DRAW_HORIZONTAL_EDGE_ARROW false
 #define DRAW_CORNER_EDGE_ARROW false
 
-#define D_T 1
+#define D_T 0.014
 #define USE_REAL_TIME true
 #define REAL_TIME_MULTIPLIER 1
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <string>
 
 #include "config.hpp"
@@ -9,12 +8,17 @@
 class Logger {
  private:
   static bool is_dyn_debug;
-  static std::array<uint32_t, FPS_AVG_SIZE> fps_memo;
-  static uint32_t fps_memo_length;
-  static uint32_t fps_memo_index;
+  static std::array<int, FPS_AVG_SIZE> fps_memo;
+  static int fps_memo_length;
+  static int fps_memo_index;
+  static int d_t_memo_length;
+  static int d_t_memo_index;
+  static std::array<int, FPS_AVG_SIZE> d_t_memo;
 
-  static uint32_t avg_fps();
-  static void add_fps(uint32_t fps);
+  static int avg_fps();
+  static int avg_d_t();
+  static void add_fps(int fps);
+  static void add_d_t(int d_t);
 
  public:
   static void init();
