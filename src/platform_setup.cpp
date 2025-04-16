@@ -6,7 +6,7 @@
 void setup_platform() {
 #ifdef __linux__
 
-  Logger::static_debug("System is linux");
+  Logger::static_debug("system is linux");
 
   auto session_type = getenv("XDG_SESSION_TYPE");
 

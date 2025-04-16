@@ -622,7 +622,6 @@ inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
     }
   }
 
-#pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       float new_density = this->get_smoke_buffer(i, j);
@@ -652,7 +651,6 @@ inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
     }
   }
 
-#pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);

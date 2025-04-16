@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include <iostream>
 
 #include "SDL.h"
@@ -60,8 +61,8 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
   auto sdl_status = SDL_Init(SDL_INIT_VIDEO);
   if (sdl_status < 0) {
     auto sdl_error_message = SDL_GetError();
-    std::cerr << "Video initialization failed: " << sdl_error_message
-              << std::endl;
+    Logger::error(
+        std::format("video initialization failed: ", sdl_error_message));
     exit(EXIT_FAILURE);
   }
 
@@ -70,7 +71,7 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
                                   window_height, SDL_WINDOW_SHOWN);
   if (this->window == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    std::cerr << "Window creation failed: " << sdl_error_message << std::endl;
+    Logger::error(std::format("window creation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
@@ -79,7 +80,7 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
       SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
   if (this->renderer == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    std::cout << "Renderer creation failed: " << sdl_error_message << std::endl;
+    Logger::error(std::format("renderer creation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
@@ -89,7 +90,7 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
                         SDL_TEXTUREACCESS_STREAMING, W, H);
   if (this->fluid_texture == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    std::cout << "Texture creation failed: " << sdl_error_message << std::endl;
+    Logger::error(std::format("texture creation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
@@ -97,12 +98,12 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
   this->format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
   if (this->format == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    std::cout << "Format allocation failed: " << sdl_error_message << std::endl;
+    Logger::error(std::format("format allocation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
 
-  Logger::static_debug("Graphics initialized successfully");
+  Logger::static_debug("graphics initialized successfully");
 }
 
 template <int H, int W, int S>
@@ -112,7 +113,7 @@ GraphicsHandler<H, W, S>::~GraphicsHandler() {
 
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::cleanup() {
-  Logger::static_debug("Cleaning up graphics");
+  Logger::static_debug("cleaning up graphics");
   if (this->window != nullptr) {
     SDL_DestroyWindow(this->window);
   }
@@ -130,9 +131,9 @@ void GraphicsHandler<H, W, S>::cleanup() {
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::draw_arrow(int x,
-                                          int y,
-                                          float length,
-                                          float angle) {
+                                                 int y,
+                                                 float length,
+                                                 float angle) {
   length *= ARROW_LENGTH_MULTIPLIER;
   int32_t x_offset = length * std::cos(angle);
   int32_t y_offset = -length * std::sin(angle);
@@ -155,7 +156,8 @@ inline void GraphicsHandler<H, W, S>::draw_arrow(int x,
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W>& fluid) {
+inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
+    const Fluid<H, W>& fluid) {
 #pragma omp parallel for collapse(2)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {

@@ -45,3 +45,7 @@
 #define REAL_TIME_MULTIPLIER 1
 
 #define SMOKE_DECAY_RATE 0.01
+
+#define REPORT_FILE_NAME "report.log"
+#define ALLOW_LOG_ON_RELEASE true
+#define FPS_LOG_SPACER 1

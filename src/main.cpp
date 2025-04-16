@@ -1,7 +1,9 @@
+#include <omp.h>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
-#include <omp.h>
+#include <cstring>
+#include <format>
 #include <optional>
 
 #include "SDL_events.h"
@@ -12,17 +14,32 @@
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
-void setup() {
-  Logger::init();
-  setup_platform();
-}
-
-int main() {
+void setup(int argc, char* argv[]) {
+  if (argc > 2 or
+      (argc == 2 and (std::strcmp(argv[1], "--save-report") != 0 and
+                      std::strcmp(argv[1], "--compare-performance") != 0))) {
+    Logger::error(
+        "usage: fluid-simulator [--save-report] [--compare-performance]");
+    exit(1);
+  }
 
   omp_set_dynamic(0);
   omp_set_num_threads(THREAD_COUNT);
+  Logger::static_debug(
+      std::format("requested {} threads from OpenMP", THREAD_COUNT));
 
-  setup();
+  if (argc == 2) {
+    Logger::init(std::strcmp(argv[1], "--save-report") == 0,
+                 std::strcmp(argv[1], "--compare-performance") == 0);
+  } else {
+    Logger::init(0, 0);
+  }
+
+  setup_platform();
+}
+
+int main(int argc, char* argv[]) {
+  setup(argc, argv);
 
   GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE> graphics(
       ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE, ARROW_DISABLE_THRESH_HOLD);
@@ -67,6 +84,8 @@ int main() {
       prev_time = now;
     }
   }
+
+  Logger::report();
 
   return EXIT_SUCCESS;
 }
