@@ -30,7 +30,12 @@ class FluidCell {
   inline void set_velocity_x(float x);
   inline void set_velocity_y(float y);
   inline void set_velocity(float x, float y);
+  inline void set_pressure(float pressure);
 };
+
+inline void FluidCell::set_pressure(float pressure) {
+  this->pressure = pressure;
+}
 
 inline FluidCell::FluidCell() : velocity(0, 0), is_solid(0), pressure(0) {}
 
@@ -100,13 +105,23 @@ class Cell {
   inline const float get_smoke() const;
   inline const bool is_solid() const;
   inline const uint8_t get_s() const;
+  inline float get_pressure() const;
 
   // setters
   inline void set_velocity_x(float x);
   inline void set_velocity_y(float y);
   inline void set_velocity(float x, float y);
   inline void set_smoke(float smoke);
+  inline void set_pressure(float pressure);
 };
+
+inline float Cell::get_pressure() const {
+  return this->fluid.get_pressure();
+}
+
+inline void Cell::set_pressure(float pressure) {
+  this->fluid.set_pressure(pressure);
+}
 
 inline Cell::Cell(bool is_solid) : smoke(), fluid(is_solid) {}
 inline Cell::Cell() : smoke(), fluid() {}
@@ -156,7 +171,7 @@ class Fluid {
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
   inline void set_smoke_buffer(int i, int j, float smoke);
   inline float get_smoke_buffer(int i, int j);
-  inline void step_projection(int i, int j);
+  inline void step_projection(int i, int j, float d_t);
   inline float interpolate_smoke(float x, float y) const;
   inline float get_general_velocity_y(float x, float y) const;
   inline float get_general_velocity_x(float x, float y) const;
@@ -165,9 +180,12 @@ class Fluid {
   inline Vector2d<float> get_center_position(int i, int j) const;
   inline Vector2d<float> get_u_position(int i, int j) const;
   inline Vector2d<float> get_v_position(int, int j) const;
+  inline void set_pressure(int i, int j, float pressure);
 
+  inline void zero_pressure();
+  inline void update_pressure(int i, int j, float velocity_diff, float d_t);
   inline void apply_external_forces(float d_t);
-  inline void apply_projection();
+  inline void apply_projection(float d_t);
   inline void apply_smoke_advection(float d_t);
   inline void apply_velocity_advection(float d_t);
   inline void extrapolate();
@@ -185,6 +203,7 @@ class Fluid {
   // getters
   inline const Cell& get_cell(int i, int j) const;
   float get_divergence(int i, int j) const;
+  inline float get_pressure(int i, int j) const;
   uint8_t get_s(int i, int j) const;
 
   inline bool is_edge(int i, int j) const;
@@ -198,6 +217,17 @@ class Fluid {
 
   inline void update(float d_t);
 };
+
+template <int H, int W>
+inline float Fluid<H, W>::get_pressure(int i, int j) const {
+  return this->get_cell(i, j).get_pressure();
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::set_pressure(int i, int j, float pressure) {
+  Cell& cell = this->get_mut_cell(i, j);
+  cell.set_pressure(pressure);
+}
 
 template <int H, int W>
 inline std::array<SDL_Point, TRACE_LENGTH> Fluid<H, W>::trace(int i,
@@ -242,6 +272,9 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
       Cell& cell = this->get_mut_cell(i, j);
       cell = Cell(
           i == 0 or j == 0 or j == H - 1 or
+#if ENABLE_RIGHT_WALL
+          i == W - 1 or
+#endif
           (ENABLE_CIRCLE and std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
                                        std::pow((j - CIRCLE_POSITION_Y), 2)) <
                                  CIRCLE_RADIUS or
@@ -316,7 +349,25 @@ uint8_t Fluid<H, W>::get_s(int i, int j) const {
 }
 
 template <int H, int W>
-inline void Fluid<H, W>::step_projection(int i, int j) {
+inline void Fluid<H, W>::zero_pressure() {
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
+      this->get_mut_cell(i, j).set_pressure(0);
+    }
+  }
+}
+template <int H, int W>
+inline void Fluid<H, W>::update_pressure(int i,
+                                         int j,
+                                         float velocity_diff,
+                                         float d_t) {
+  float pressure = this->get_pressure(i, j);
+  pressure += velocity_diff * FLUID_DENSITY * CELL_SIZE / d_t;
+  this->set_pressure(i, j, pressure);
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
   Cell& cell = get_mut_cell(i, j);
   if (cell.is_solid()) {
     return;
@@ -335,6 +386,11 @@ inline void Fluid<H, W>::step_projection(int i, int j) {
   auto divergence = get_divergence(i, j);
   auto s = get_s(i, j);
   auto velocity_diff = this->o * (divergence / s);
+
+#if ENABLE_PRESSURE
+  if (i >= 2)
+    this->update_pressure(i, j, velocity_diff, d_t);
+#endif
 
   if (left_cell.get_s()) {
     u += velocity_diff;
@@ -358,18 +414,22 @@ inline void Fluid<H, W>::step_projection(int i, int j) {
 }
 
 template <int H, int W>
-inline void Fluid<H, W>::apply_projection() {
+inline void Fluid<H, W>::apply_projection(float d_t) {
+#if ENABLE_PRESSURE
+  this->zero_pressure();
+#endif
+
   for (int _ = 0; _ < n; _++) {
 #pragma omp parallel for schedule(static)
-    for (int j = H - 1; j >= 1; j--) {
+    for (int j = H - 2; j >= 1; j--) {
       for (int i = j % 2 + 1; i < W - 1; i += 2) {
-        step_projection(i, j);
+        this->step_projection(i, j, d_t);
       }
     }
 #pragma omp parallel for schedule(static)
-    for (int j = H - 1; j >= 1; j--) {
+    for (int j = H - 2; j >= 1; j--) {
       for (int i = (j + 1) % 2 + 1; i < W - 1; i += 2) {
-        step_projection(i, j);
+        this->step_projection(i, j, d_t);
       }
     }
   }
@@ -815,9 +875,11 @@ inline void Fluid<H, W>::decay_smoke(float d_t) {
 template <int H, int W>
 inline void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
-  this->apply_projection();
+  this->apply_projection(d_t);
   this->extrapolate();
   this->apply_velocity_advection(d_t);
+#if ENABLE_SMOKE
   this->apply_smoke_advection(d_t);
   this->decay_smoke(d_t);
+#endif
 }

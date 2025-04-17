@@ -9,7 +9,7 @@
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
-#define PROJECTION_N 20
+#define PROJECTION_N 50
 
 #define FPS_AVG_SIZE 1000
 
@@ -20,6 +20,8 @@
 #define WIND_SPEED 200
 #define SMOKE_JITTER 0
 #define WIND_SMOKE 0.8
+
+#define ENABLE_RIGHT_WALL false
 
 #define CIRCLE_RADIUS FLUID_HEIGHT / 30.0
 #define CIRCLE_POSITION_X FLUID_WIDTH / 2 + 40
@@ -50,6 +52,10 @@
 #define ALLOW_LOG_ON_RELEASE true
 #define FPS_LOG_SPACER 1
 
-#define TRACE_LENGTH 20
+#define TRACE_LENGTH 80
 #define TRACE_SPACER 40
-#define ENABLE_TRACES true
+#define ENABLE_TRACES false
+
+#define ENABLE_PRESSURE true
+#define ENABLE_SMOKE true
+#define FLUID_DENSITY 1
