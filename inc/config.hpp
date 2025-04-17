@@ -13,15 +13,15 @@
 
 #define FPS_AVG_SIZE 1000
 
-#define PHYSICS_G -9
+#define PHYSICS_G 0
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 4
 #define PIPE_LENGTH 0
-#define WIND_SPEED 0
+#define WIND_SPEED 200
 #define SMOKE_JITTER 0
-#define WIND_SMOKE 0
+#define WIND_SMOKE 1
 
-#define ENABLE_RIGHT_WALL true
+#define ENABLE_RIGHT_WALL false
 
 #define CIRCLE_RADIUS FLUID_HEIGHT / 30.0
 #define CIRCLE_POSITION_X FLUID_WIDTH / 2 + 40
@@ -43,7 +43,7 @@
 #define DRAW_CORNER_ARROW false
 
 #define D_T 0.014
-#define USE_REAL_TIME false
+#define USE_REAL_TIME true
 #define REAL_TIME_MULTIPLIER 1
 
 #define SMOKE_DECAY_RATE 0.01
@@ -54,8 +54,8 @@
 
 #define TRACE_LENGTH 50
 #define TRACE_SPACER 40
-#define ENABLE_TRACES true
+#define ENABLE_TRACES false
 
 #define ENABLE_PRESSURE true
-#define ENABLE_SMOKE false
+#define ENABLE_SMOKE true
 #define FLUID_DENSITY 1

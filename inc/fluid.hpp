@@ -444,7 +444,7 @@ inline void Fluid<H, W>::apply_external_forces(float d_t) {
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Cell& cell = get_mut_cell(i, j);
-      if (i == 1 && j >= H / 2 - PIPE_HEIGHT / 2 &&
+      if (i <= 20 and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
           j <= H / 2 + PIPE_HEIGHT / 2) {
         cell.set_smoke(WIND_SMOKE + smoke_noise);
         cell.set_velocity_x(WIND_SPEED);
