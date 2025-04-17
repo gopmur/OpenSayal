@@ -22,6 +22,11 @@ void setup(int argc, char* argv[]) {
     exit(1);
   }
 
+  omp_set_dynamic(0);
+  omp_set_num_threads(THREAD_COUNT);
+  Logger::static_debug(
+      std::format("requested {} threads from OpenMP", THREAD_COUNT));
+
   if (argc == 2) {
     Logger::init(std::strcmp(argv[1], "--save-report") == 0,
                  std::strcmp(argv[1], "--compare-performance") == 0);
