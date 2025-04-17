@@ -1,4 +1,3 @@
-#include <omp.h>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -11,6 +10,7 @@
 #include "config.hpp"
 #include "fluid.hpp"
 #include "graphics_handler.hpp"
+#include "helper.hpp"
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
@@ -22,11 +22,6 @@ void setup(int argc, char* argv[]) {
         "usage: fluid-simulator [--save-report] [--compare-performance]");
     exit(1);
   }
-
-  omp_set_dynamic(0);
-  omp_set_num_threads(THREAD_COUNT);
-  Logger::static_debug(
-      std::format("requested {} threads from OpenMP", THREAD_COUNT));
 
   if (argc == 2) {
     Logger::init(std::strcmp(argv[1], "--save-report") == 0,
@@ -52,6 +47,7 @@ int main(int argc, char* argv[]) {
 
     bool is_running = true;
     std::optional<time_point<high_resolution_clock>> prev_time = std::nullopt;
+    uint64_t work = 0;
     while (is_running) {
       while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
@@ -70,7 +66,7 @@ int main(int argc, char* argv[]) {
       if (nano_seconds != 0) {
         d_t = static_cast<float>(nano_seconds) / 1'000'000'000;
         auto fps = static_cast<uint32_t>(1 / d_t);
-        Logger::log_fps(d_t);
+        Logger::log_fps(d_t, work);
       }
 
 #if USE_REAL_TIME
@@ -79,8 +75,10 @@ int main(int argc, char* argv[]) {
       d_t = D_T;
 #endif
 
+      auto perf_fd = start_perf_counter();
       fluid.update(d_t);
       graphics.update(fluid, d_t);
+      work = stop_perf_counter(perf_fd);
       prev_time = now;
     }
   }

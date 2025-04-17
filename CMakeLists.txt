@@ -29,14 +29,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_INCLUDE_DIRECTORIES}
 )
 
-find_package(OpenMP REQUIRED)
-
 # link sdl
 add_subdirectory("lib/sdl")
 target_link_directories(${PROJECT_NAME} PRIVATE
   "lib/sdl"
 )
 target_link_libraries(${PROJECT_NAME}
-  OpenMP::OpenMP_CXX
   SDL2
 )
