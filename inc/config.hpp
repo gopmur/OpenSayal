@@ -19,7 +19,7 @@
 #define PIPE_LENGTH 0
 #define WIND_SPEED 200
 #define SMOKE_JITTER 0
-#define WIND_SMOKE 0.8
+#define WIND_SMOKE 0
 
 #define ENABLE_RIGHT_WALL false
 
@@ -40,7 +40,7 @@
 #define DRAW_CENTER_ARROW false
 #define DRAW_VERTICAL_EDGE_ARROW false
 #define DRAW_HORIZONTAL_EDGE_ARROW false
-#define DRAW_CORNER_EDGE_ARROW false
+#define DRAW_CORNER_ARROW true
 
 #define D_T 0.014
 #define USE_REAL_TIME false
@@ -52,10 +52,10 @@
 #define ALLOW_LOG_ON_RELEASE true
 #define FPS_LOG_SPACER 1
 
-#define TRACE_LENGTH 80
+#define TRACE_LENGTH 50
 #define TRACE_SPACER 40
 #define ENABLE_TRACES false
 
-#define ENABLE_PRESSURE true
+#define ENABLE_PRESSURE false
 #define ENABLE_SMOKE true
 #define FLUID_DENSITY 1

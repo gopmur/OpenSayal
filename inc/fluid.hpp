@@ -879,7 +879,9 @@ inline void Fluid<H, W>::update(float d_t) {
   this->extrapolate();
   this->apply_velocity_advection(d_t);
 #if ENABLE_SMOKE
-  this->apply_smoke_advection(d_t);
-  this->decay_smoke(d_t);
+  if (WIND_SMOKE != 0) {
+    this->apply_smoke_advection(d_t);
+    this->decay_smoke(d_t);
+  }
 #endif
 }
