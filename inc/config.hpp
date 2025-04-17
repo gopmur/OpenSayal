@@ -11,7 +11,7 @@
 #define PROJECTION_O 1.9
 #define PROJECTION_N 50
 
-#define FPS_AVG_SIZE 1000
+#define FPS_AVG_SIZE 200
 
 #define PHYSICS_G 0
 

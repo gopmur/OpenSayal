@@ -2,6 +2,11 @@
 
 #include <cmath>
 #include <concepts>
+#include <cstdio>
+#include <linux/perf_event.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 #include "fluid.hpp"
 
 template <typename T>
