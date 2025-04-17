@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <format>
+#include <ctime>
 #include <optional>
 
 #include "SDL_events.h"
@@ -10,7 +10,6 @@
 #include "config.hpp"
 #include "fluid.hpp"
 #include "graphics_handler.hpp"
-#include "helper.hpp"
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
@@ -47,6 +46,7 @@ int main(int argc, char* argv[]) {
 
     bool is_running = true;
     std::optional<time_point<high_resolution_clock>> prev_time = std::nullopt;
+    clock_t prev_clock = 0;
     uint64_t work = 0;
     while (is_running) {
       while (SDL_PollEvent(&event) != 0) {
@@ -74,11 +74,10 @@ int main(int argc, char* argv[]) {
 #else
       d_t = D_T;
 #endif
-
-      auto perf_fd = start_perf_counter();
+      prev_clock = std::clock();
       fluid.update(d_t);
       graphics.update(fluid, d_t);
-      work = stop_perf_counter(perf_fd);
+      work = std::clock() - prev_clock;
       prev_time = now;
     }
   }

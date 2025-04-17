@@ -187,7 +187,7 @@ inline void Logger::log_fps(float d_t, uint64_t work) {
     Logger::green(std::format("FPS: {}, DT: {}us, Work: {}\n", fps_avg, d_t_avg, work_avg));
   } else if (not Logger::first_add) {
     std::cout << "FPS: " << fps_avg << ", DT: " << d_t_avg
-              << "us, Work: " << work_avg << " instructions" << std::endl;
+              << "us, Work: " << work_avg << std::endl;
   }
   Logger::first_add = false;
 }
