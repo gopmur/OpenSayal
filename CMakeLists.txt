@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -fopenmp")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -fopenmp")
+
 # store source files
 file(GLOB_RECURSE PROJECT_SOURCE_FILES
   "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -29,14 +32,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_INCLUDE_DIRECTORIES}
 )
 
-find_package(OpenMP REQUIRED)
-
 # link sdl
 add_subdirectory("lib/sdl")
 target_link_directories(${PROJECT_NAME} PRIVATE
   "lib/sdl"
 )
 target_link_libraries(${PROJECT_NAME}
-  OpenMP::OpenMP_CXX
   SDL2
 )

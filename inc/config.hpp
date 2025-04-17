@@ -2,10 +2,10 @@
 
 #include <cmath>
 
-#define THREAD_COUNT 2
+#define THREAD_COUNT 16
 
-#define FLUID_HEIGHT 400
-#define FLUID_WIDTH 800
+#define FLUID_HEIGHT 400 / 2
+#define FLUID_WIDTH 800 / 2
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
