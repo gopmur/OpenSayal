@@ -251,7 +251,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
   }
 #endif
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) schedule(static)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       const Cell& cell = fluid.get_cell(i, j);
@@ -278,7 +278,7 @@ template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
     const Fluid<H, W>& fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
       const Cell& cell = fluid.get_cell(i, j);
@@ -307,7 +307,7 @@ template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
     const Fluid<H, W>& fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
       const Cell& cell = fluid.get_cell(i, j);
@@ -336,6 +336,7 @@ template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
     const Fluid<H, W>& fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
+#pragma omp parallel for schedule(static)
 
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
@@ -365,7 +366,7 @@ template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
     const Fluid<H, W>& fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
-
+#pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
       const Cell& cell = fluid.get_cell(i, j);
