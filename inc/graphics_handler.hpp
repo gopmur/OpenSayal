@@ -170,8 +170,8 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
       if (cell.is_solid()) {
         this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
-        auto smoke_density = cell.get_density();
-        uint8_t color = 255 - static_cast<uint8_t>(smoke_density * 255);
+        auto smoke = cell.get_smoke();
+        uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
         this->fluid_pixels[y][x] =
             SDL_MapRGBA(this->format, 255, color, color, 255);
       }

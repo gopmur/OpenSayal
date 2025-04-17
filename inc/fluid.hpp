@@ -69,22 +69,22 @@ inline void FluidCell::set_velocity(float x, float y) {
 class SmokeCell {
  private:
   // This value should be between 0 and 1
-  float density;
+  float smoke;
 
  public:
   inline SmokeCell();
-  inline float get_density() const;
-  inline void set_density(float density);
+  inline float get_smoke() const;
+  inline void set_smoke(float smoke);
 };
 
-inline SmokeCell::SmokeCell() : density(0) {}
+inline SmokeCell::SmokeCell() : smoke(0) {}
 
-inline float SmokeCell::get_density() const {
-  return this->density;
+inline float SmokeCell::get_smoke() const {
+  return this->smoke;
 }
 
-inline void SmokeCell::set_density(float density) {
-  this->density = density;
+inline void SmokeCell::set_smoke(float smoke) {
+  this->smoke = smoke;
 }
 
 class Cell {
@@ -97,7 +97,7 @@ class Cell {
 
   // getters
   inline const Vector2d<float> get_velocity() const;
-  inline const float get_density() const;
+  inline const float get_smoke() const;
   inline const bool is_solid() const;
   inline const uint8_t get_s() const;
 
@@ -105,22 +105,22 @@ class Cell {
   inline void set_velocity_x(float x);
   inline void set_velocity_y(float y);
   inline void set_velocity(float x, float y);
-  inline void set_density(float density);
+  inline void set_smoke(float smoke);
 };
 
 inline Cell::Cell(bool is_solid) : smoke(), fluid(is_solid) {}
 inline Cell::Cell() : smoke(), fluid() {}
 
-inline void Cell::set_density(float density) {
-  this->smoke.set_density(density);
+inline void Cell::set_smoke(float smoke) {
+  this->smoke.set_smoke(smoke);
 }
 
 inline const Vector2d<float> Cell::get_velocity() const {
   return this->fluid.get_velocity();
 }
 
-inline const float Cell::get_density() const {
-  return this->smoke.get_density();
+inline const float Cell::get_smoke() const {
+  return this->smoke.get_smoke();
 }
 
 inline const bool Cell::is_solid() const {
@@ -154,7 +154,7 @@ class Fluid {
 
   inline Cell& get_mut_cell(int i, int j);
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
-  inline void set_smoke_buffer(int i, int j, float density);
+  inline void set_smoke_buffer(int i, int j, float smoke);
   inline float get_smoke_buffer(int i, int j);
   inline void step_projection(int i, int j);
   inline float interpolate_smoke(float x, float y) const;
@@ -258,8 +258,8 @@ inline const Cell& Fluid<H, W>::get_cell(int i, int j) const {
 };
 
 template <int H, int W>
-inline void Fluid<H, W>::set_smoke_buffer(int i, int j, float density) {
-  smoke_buffer[i][j] = density;
+inline void Fluid<H, W>::set_smoke_buffer(int i, int j, float smoke) {
+  smoke_buffer[i][j] = smoke;
 }
 
 template <int H, int W>
@@ -386,7 +386,7 @@ inline void Fluid<H, W>::apply_external_forces(float d_t) {
       Cell& cell = get_mut_cell(i, j);
       if (i == 1 && j >= H / 2 - PIPE_HEIGHT / 2 &&
           j <= H / 2 + PIPE_HEIGHT / 2) {
-        cell.set_density(SMOKE_DENSITY + smoke_noise);
+        cell.set_smoke(WIND_SMOKE + smoke_noise);
         cell.set_velocity_x(WIND_SPEED);
       }
       auto vel_y = cell.get_velocity().get_y();
@@ -643,15 +643,15 @@ inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
       Vector2d<float> current_velocity =
           this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
       auto prev_pos = current_pos - current_velocity * d_t;
-      float new_density = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
-      this->set_smoke_buffer(i, j, new_density);
+      float new_smoke = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+      this->set_smoke_buffer(i, j, new_smoke);
     }
   }
 
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float new_density = this->get_smoke_buffer(i, j);
-      this->get_mut_cell(i, j).set_density(new_density);
+      float new_smoke = this->get_smoke_buffer(i, j);
+      this->get_mut_cell(i, j).set_smoke(new_smoke);
     }
   }
 }
@@ -700,7 +700,7 @@ inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
   Vector2d<int> indices_4;
 
   float distance_sum = 0;
-  float avg_density = 0;
+  float avg_smoke = 0;
 
   if (in_x < this->cell_size / 2.0 && in_y < this->cell_size / 2.0) {
     indices_2 = Vector2d<int>(i - 1, j);
@@ -750,22 +750,22 @@ inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 
   if (is_valid_fluid(indices_1.get_x(), indices_1.get_y())) {
     const Cell& cell = this->get_cell(indices_1.get_x(), indices_1.get_y());
-    avg_density += w1 * cell.get_density();
+    avg_smoke += w1 * cell.get_smoke();
   }
   if (is_valid_fluid(indices_2.get_x(), indices_2.get_y())) {
     const Cell& cell = this->get_cell(indices_2.get_x(), indices_2.get_y());
-    avg_density += w2 * cell.get_density();
+    avg_smoke += w2 * cell.get_smoke();
   }
   if (is_valid_fluid(indices_3.get_x(), indices_3.get_y())) {
     const Cell& cell = this->get_cell(indices_3.get_x(), indices_3.get_y());
-    avg_density += w3 * cell.get_density();
+    avg_smoke += w3 * cell.get_smoke();
   }
   if (is_valid_fluid(indices_4.get_x(), indices_4.get_y())) {
     const Cell& cell = this->get_cell(indices_4.get_x(), indices_4.get_y());
-    avg_density += w4 * cell.get_density();
+    avg_smoke += w4 * cell.get_smoke();
   }
 
-  return avg_density;
+  return avg_smoke;
 }
 
 template <int H, int W>
@@ -806,8 +806,8 @@ inline void Fluid<H, W>::decay_smoke(float d_t) {
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
-      float density = cell.get_density();
-      cell.set_density(std::max({density - SMOKE_DECAY_RATE * d_t, 0.0}));
+      float smoke = cell.get_smoke();
+      cell.set_smoke(std::max({smoke - SMOKE_DECAY_RATE * d_t, 0.0}));
     }
   }
 }
