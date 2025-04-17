@@ -35,13 +35,13 @@
 #define VERTICAL_EDGE_ARROW_COLOR 50, 255, 50, 255
 #define HORIZONTAL_EDGE_ARROW_COLOR 50, 50, 255, 255
 #define CORNER_ARROW_COLOR 50, 255, 255, 255
-#define DRAW_CENTER_ARROW true
+#define DRAW_CENTER_ARROW false
 #define DRAW_VERTICAL_EDGE_ARROW false
 #define DRAW_HORIZONTAL_EDGE_ARROW false
 #define DRAW_CORNER_EDGE_ARROW false
 
 #define D_T 0.014
-#define USE_REAL_TIME true
+#define USE_REAL_TIME false
 #define REAL_TIME_MULTIPLIER 1
 
 #define SMOKE_DECAY_RATE 0.01
@@ -49,3 +49,6 @@
 #define REPORT_FILE_NAME "report.log"
 #define ALLOW_LOG_ON_RELEASE true
 #define FPS_LOG_SPACER 1
+
+#define TRACE_LENGTH 20
+#define TRACE_SPACER 40

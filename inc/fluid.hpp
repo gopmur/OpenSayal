@@ -2,9 +2,11 @@
 
 #include <omp.h>
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 
+#include "SDL_rect.h"
 #include "config.hpp"
 #include "helper.hpp"
 
@@ -190,9 +192,31 @@ class Fluid {
   inline Vector2d<float> get_general_velocity(float x, float y) const;
   inline Vector2d<float> get_vertical_edge_velocity(int i, int j) const;
   inline Vector2d<float> get_horizontal_edge_velocity(int i, int j) const;
+  inline std::array<SDL_Point, TRACE_LENGTH> trace(int i,
+                                                   int j,
+                                                   float d_t) const;
 
   inline void update(float d_t);
 };
+
+template <int H, int W>
+inline std::array<SDL_Point, TRACE_LENGTH> Fluid<H, W>::trace(int i,
+                                                              int j,
+                                                              float d_t) const {
+  Vector2d<float> position = this->get_center_position(i, j);
+  std::array<SDL_Point, TRACE_LENGTH> trace_points;
+  trace_points[0] = {static_cast<int>(position.get_x()),
+                     H - 1 - static_cast<int>(position.get_y())};
+  for (int k = 1; k < TRACE_LENGTH; k++) {
+    auto x = position.get_x();
+    auto y = position.get_y();
+    Vector2d<float> velocity = this->get_general_velocity(x, y);
+    position = position + velocity * d_t;
+    trace_points[k] = {static_cast<int>(position.get_x()),
+                       H - 1 - static_cast<int>(position.get_y())};
+  }
+  return trace_points;
+}
 
 template <int H, int W>
 inline bool Fluid<H, W>::is_edge(int i, int j) const {
@@ -382,7 +406,8 @@ inline bool Fluid<H, W>::is_valid_fluid(int i, int j) const {
 }
 
 template <int H, int W>
-inline Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
+inline Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i,
+                                                               int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto u = cell.get_velocity().get_x();
 
@@ -413,7 +438,8 @@ inline Vector2d<float> Fluid<H, W>::get_vertical_edge_velocity(int i, int j) con
 }
 
 template <int H, int W>
-inline Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
+inline Vector2d<float> Fluid<H, W>::get_horizontal_edge_velocity(int i,
+                                                                 int j) const {
   const Cell& cell = this->get_cell(i, j);
   auto v = cell.get_velocity().get_y();
 

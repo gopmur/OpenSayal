@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 #endif
 
       fluid.update(d_t);
-      graphics.update(fluid);
+      graphics.update(fluid, d_t);
       prev_time = now;
     }
   }

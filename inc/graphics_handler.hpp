@@ -4,9 +4,9 @@
 #include <cmath>
 #include <cstdint>
 #include <format>
-#include <iostream>
 
 #include "SDL.h"
+#include "SDL_rect.h"
 #include "SDL_render.h"
 
 #include "config.hpp"
@@ -33,6 +33,7 @@ class GraphicsHandler {
   inline void update_horizontal_edge_velocity_arrow(const Fluid<H, W>& fluid);
   inline void update_vertical_edge_velocity_arrow(const Fluid<H, W>& fluid);
   inline void update_corner_velocity_arrow(const Fluid<H, W>& fluid);
+  inline void update_traces(const Fluid<H, W>& fluid, float d_t);
   void cleanup();
 
  public:
@@ -40,7 +41,7 @@ class GraphicsHandler {
                   float arrow_head_angle,
                   float arrow_disable_thresh_hold);
   ~GraphicsHandler();
-  void update(const Fluid<H, W>& fluid);
+  void update(const Fluid<H, W>& fluid, float d_t);
 };
 
 template <int H, int W, int S>
@@ -292,7 +293,27 @@ inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid) {
+inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
+                                                    float d_t) {
+  std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
+                                            [H / TRACE_SPACER];
+#pragma omp parallel for schedule(static) collapse(2)
+  for (int i = 1; i < W - 1; i += TRACE_SPACER) {
+    for (int j = 1; j < H - 1; j += TRACE_SPACER) {
+      std::array<SDL_Point, TRACE_LENGTH> points = fluid.trace(i, j, d_t);
+      traces[i / TRACE_SPACER][j / TRACE_SPACER] = points;
+    }
+  }
+
+  for (int i = 0; i < W / TRACE_SPACER; i++) {
+    for (int j = 0; j < H / TRACE_SPACER; j++) {
+      SDL_RenderDrawLines(renderer, traces[i][j].data(), TRACE_LENGTH);
+    }
+  }
+}
+
+template <int H, int W, int S>
+void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid, float d_t) {
   this->update_fluid_pixels(fluid);
   SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels.data(),
                     W * sizeof(int));
@@ -301,6 +322,7 @@ void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid) {
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, this->fluid_texture, NULL, NULL);
 
+  this->update_traces(fluid, d_t);
   this->update_velocity_arrows(fluid);
 
   SDL_RenderPresent(renderer);
