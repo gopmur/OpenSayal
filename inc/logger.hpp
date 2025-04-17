@@ -173,8 +173,8 @@ inline void Logger::log_fps(float d_t) {
     return;
   fps_log_number %= FPS_LOG_SPACER;
   if (d_t_memo_length == FPS_AVG_SIZE) {
-    Logger::green(std::format("FPS: {}, DT: {}um\n", fps_avg, d_t_avg));
+    Logger::green(std::format("FPS: {}, DT: {}us\n", fps_avg, d_t_avg));
   } else {
-    std::cout << "FPS: " << fps_avg << ", DT: " << d_t_avg << "um" << std::endl;
+    std::cout << "FPS: " << fps_avg << ", DT: " << d_t_avg << "us" << std::endl;
   }
 }

@@ -321,8 +321,9 @@ void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid, float d_t) {
   // Render the texture
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, this->fluid_texture, NULL, NULL);
-
+#if ENABLE_TRACES
   this->update_traces(fluid, d_t);
+#endif
   this->update_velocity_arrows(fluid);
 
   SDL_RenderPresent(renderer);
