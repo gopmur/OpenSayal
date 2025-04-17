@@ -52,4 +52,4 @@
 
 #define TRACE_LENGTH 20
 #define TRACE_SPACER 40
-#define ENABLE_TRACES false
+#define ENABLE_TRACES true

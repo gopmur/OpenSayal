@@ -360,13 +360,13 @@ inline void Fluid<H, W>::step_projection(int i, int j) {
 template <int H, int W>
 inline void Fluid<H, W>::apply_projection() {
   for (int _ = 0; _ < n; _++) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for schedule(static)
     for (int j = H - 1; j >= 1; j--) {
       for (int i = j % 2 + 1; i < W - 1; i += 2) {
         step_projection(i, j);
       }
     }
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for schedule(static)
     for (int j = H - 1; j >= 1; j--) {
       for (int i = (j + 1) % 2 + 1; i < W - 1; i += 2) {
         step_projection(i, j);
