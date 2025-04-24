@@ -4,8 +4,8 @@
 
 #define THREAD_COUNT 16
 
-#define FLUID_HEIGHT 600
-#define FLUID_WIDTH 1000
+#define FLUID_HEIGHT 400
+#define FLUID_WIDTH 800
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9

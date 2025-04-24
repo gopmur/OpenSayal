@@ -389,7 +389,8 @@ inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
   auto velocity_diff = this->o * (divergence / s);
 
 #if ENABLE_PRESSURE
-  if (i >= SMOKE_LENGTH + 1 or j >= H / 2 + PIPE_HEIGHT / 2 or j <= H / 2 - PIPE_HEIGHT / 2)
+  if (i >= SMOKE_LENGTH + 1 or j >= H / 2 + PIPE_HEIGHT / 2 or
+      j <= H / 2 - PIPE_HEIGHT / 2)
     this->update_pressure(i, j, velocity_diff, d_t);
 #endif
 
@@ -421,9 +422,15 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
 #endif
 
   for (int _ = 0; _ < n; _++) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
     for (int i = 1; i < W - 1; i++) {
-      for (int j = 1; j < H - 1; j++) {
+      for (int j = i % 2 + 1; j < H - 1; j += 2) {
+        this->step_projection(i, j, d_t);
+      }
+    }
+#pragma omp parallel for schedule(static)
+    for (int i = 1; i < W - 1; i++) {
+      for (int j = (i + 1) % 2 + 1; j < H - 1; j += 2) {
         this->step_projection(i, j, d_t);
       }
     }
