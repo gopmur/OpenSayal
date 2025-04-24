@@ -93,7 +93,7 @@ inline float get_distance(Vector2d<T> a, Vector2d<T> b) {
                    (a.get_y() - b.get_y()) * (a.get_y() - b.get_y()));
 }
 
-void hsv_to_rgb(float h, float s, float v, uint8_t& r, uint8_t& g, uint8_t& b) {
+inline void hsv_to_rgb(float h, float s, float v, uint8_t& r, uint8_t& g, uint8_t& b) {
   float c = v * s;
   float x = c * (1 - std::fabs(fmod(h / 60.0f, 2) - 1));
   float m = v - c;
