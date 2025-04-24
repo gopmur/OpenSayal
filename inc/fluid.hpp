@@ -420,15 +420,9 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
 #endif
 
   for (int _ = 0; _ < n; _++) {
-#pragma omp parallel for schedule(static)
-    for (int j = H - 2; j >= 1; j--) {
-      for (int i = j % 2 + 1; i < W - 1; i += 2) {
-        this->step_projection(i, j, d_t);
-      }
-    }
-#pragma omp parallel for schedule(static)
-    for (int j = H - 2; j >= 1; j--) {
-      for (int i = (j + 1) % 2 + 1; i < W - 1; i += 2) {
+#pragma omp parallel for schedule(static) collapse(2)
+    for (int i = 1; i < W - 1; i++) {
+      for (int j = 1; j < H - 1; j++) {
         this->step_projection(i, j, d_t);
       }
     }
