@@ -238,12 +238,19 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
   float max_pressure = -INFINITY;
   float min_pressure = INFINITY;
 
+#pragma omp parallel for collapse(2) reduction(max : max_pressure)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       float pressure = fluid.get_pressure(i, j);
       if (pressure > max_pressure) {
         max_pressure = pressure;
       }
+    }
+  }
+#pragma omp parallel for collapse(2) reduction(min : min_pressure)
+  for (int i = 1; i < W - 1; i++) {
+    for (int j = 1; j < H - 1; j++) {
+      float pressure = fluid.get_pressure(i, j);
       if (pressure < min_pressure) {
         min_pressure = pressure;
       }
