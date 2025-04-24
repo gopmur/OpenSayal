@@ -418,8 +418,8 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
   this->zero_pressure();
 #endif
   for (int _ = 0; _ < n; _++) {
-    for (int j = H - 2; j >= 1; j--) {
-      for (int i = 1; i < W - 1; i++) {
+    for (int i = 1; i < W - 1; i++) {
+      for (int j = 1; j < H - 1; j++) {
         this->step_projection(i, j, d_t);
       }
     }
