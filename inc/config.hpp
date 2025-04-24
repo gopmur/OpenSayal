@@ -15,8 +15,8 @@
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 4
 #define PIPE_LENGTH 0
+#define SMOKE_LENGTH 10
 #define WIND_SPEED 200
-#define SMOKE_JITTER 0
 #define WIND_SMOKE 1
 
 #define ENABLE_RIGHT_WALL false
@@ -40,11 +40,11 @@
 #define DRAW_HORIZONTAL_EDGE_ARROW false
 #define DRAW_CORNER_ARROW false
 
-#define D_T 0.014
-#define USE_REAL_TIME true
+#define D_T 0.05
+#define USE_REAL_TIME false
 #define REAL_TIME_MULTIPLIER 1
 
-#define SMOKE_DECAY_RATE 0.01
+#define SMOKE_DECAY_RATE 0.05
 
 #define REPORT_FILE_NAME "report.log"
 #define ALLOW_LOG_ON_RELEASE true

@@ -387,7 +387,8 @@ inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
   auto velocity_diff = this->o * (divergence / s);
 
 #if ENABLE_PRESSURE
-  if (i >= 2)
+  if (i >= SMOKE_LENGTH + 1 or j >= H / 2 + PIPE_HEIGHT / 2 or
+      j <= H / 2 - PIPE_HEIGHT / 2)
     this->update_pressure(i, j, velocity_diff, d_t);
 #endif
 
@@ -428,15 +429,12 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_external_forces(float d_t) {
-  float smoke_noise = rand() * SMOKE_JITTER / RAND_MAX;
-  int negative_noise = rand() % 2;
-  smoke_noise *= 1 - 2 * negative_noise;
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Cell& cell = get_mut_cell(i, j);
-      if (i <= 20 and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
+      if (i <= SMOKE_LENGTH and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
           j <= H / 2 + PIPE_HEIGHT / 2) {
-        cell.set_smoke(WIND_SMOKE + smoke_noise);
+        cell.set_smoke(WIND_SMOKE);
         cell.set_velocity_x(WIND_SPEED);
       }
       auto vel_y = cell.get_velocity().get_y();
@@ -852,7 +850,11 @@ inline void Fluid<H, W>::decay_smoke(float d_t) {
     for (int j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
       float smoke = cell.get_smoke();
+#if SMOKE_DECAY == 0
+      cell.set_smoke(smoke);
+#else
       cell.set_smoke(std::max({smoke - SMOKE_DECAY_RATE * d_t, 0.0}));
+#endif
     }
   }
 }
