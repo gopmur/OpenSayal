@@ -420,7 +420,12 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
 #endif
   for (int _ = 0; _ < n; _++) {
     for (int i = 1; i < W - 1; i++) {
-      for (int j = 1; j < H - 1; j++) {
+      for (int j = i % 2 + 1; j < H - 1; j += 2) {
+        this->step_projection(i, j, d_t);
+      }
+    }
+    for (int i = 1; i < W - 1; i++) {
+      for (int j = (i + 1) % 2 + 1; j < H - 1; j += 2) {
         this->step_projection(i, j, d_t);
       }
     }
