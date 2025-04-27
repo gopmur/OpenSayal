@@ -419,6 +419,7 @@ inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
     }
   }
 
+  SDL_SetRenderDrawColor(this->renderer, TRACE_COLOR);
   for (int i = 0; i < W / TRACE_SPACER; i++) {
     for (int j = 0; j < H / TRACE_SPACER; j++) {
       SDL_RenderDrawLines(renderer, traces[i][j].data(), TRACE_LENGTH);

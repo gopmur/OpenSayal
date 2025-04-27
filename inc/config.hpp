@@ -53,6 +53,7 @@
 #define TRACE_LENGTH 50
 #define TRACE_SPACER 40
 #define ENABLE_TRACES false
+#define TRACE_COLOR 255, 255, 255, 255
 
 #define ENABLE_PRESSURE true
 #define ENABLE_SMOKE true
