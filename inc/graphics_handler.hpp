@@ -41,7 +41,7 @@ class GraphicsHandler {
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
   inline void update_fluid_pixels(const Fluid<H, W>& fluid);
   inline void update_smoke_pixels(const Cell& cell, int x, int y);
-  inline void update_pressure_pixels(const Cell& cell,
+  inline void update_pressure_pixel(const Cell& cell,
                                      int x,
                                      int y,
                                      float min_pressure,
@@ -207,8 +207,13 @@ inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
     float min_pressure,
     float max_pressure) {
   auto pressure = cell.get_pressure();
-  float range = std::max(std::abs(min_pressure), std::abs(max_pressure));
-  float norm_p = std::clamp(pressure / range, -1.0f, 1.0f);
+  float norm_p;
+  if (pressure < 0) {
+    norm_p = -pressure / min_pressure;
+  } else {
+    norm_p = pressure / max_pressure;
+  }
+  norm_p = std::clamp(norm_p, -1.0f, 1.0f);
   float hue = (1.0f - norm_p) * 120.0f;
   auto smoke = cell.get_smoke();
   uint8_t r, g, b;
@@ -216,15 +221,20 @@ inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
   this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_pressure_pixels(
+inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
     const Cell& cell,
     int x,
     int y,
     float min_pressure,
     float max_pressure) {
   auto pressure = cell.get_pressure();
-  float range = std::max(std::abs(min_pressure), std::abs(max_pressure));
-  float norm_p = std::clamp(pressure / range, -1.0f, 1.0f);
+  float norm_p;
+  if (pressure < 0) {
+    norm_p = -pressure / min_pressure;
+  } else {
+    norm_p = pressure / max_pressure;
+  }
+  norm_p = std::clamp(norm_p, -1.0f, 1.0f);
   float hue = (1.0f - norm_p) * 120.0f;
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
@@ -264,7 +274,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 #if ENABLE_PRESSURE and ENABLE_SMOKE
         this->update_smoke_and_pressure(cell, x, y, min_pressure, max_pressure);
 #elif ENABLE_PRESSURE
-        this->update_pressure_pixels(cell, x, y, min_pressure, max_pressure);
+        this->update_pressure_pixel(cell, x, y, min_pressure, max_pressure);
 #elif ENABLE_SMOKE
         this->update_smoke_pixels(cell, x, y);
 #endif
