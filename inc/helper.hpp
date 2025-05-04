@@ -1,12 +1,12 @@
 #pragma once
 
+#include <linux/perf_event.h>
+#include <sys/ioctl.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #include <cmath>
 #include <concepts>
 #include <cstdio>
-#include <linux/perf_event.h>
-#include <sys/syscall.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include "fluid.hpp"
 
 template <typename T>
@@ -93,18 +93,42 @@ inline float get_distance(Vector2d<T> a, Vector2d<T> b) {
                    (a.get_y() - b.get_y()) * (a.get_y() - b.get_y()));
 }
 
-inline void hsv_to_rgb(float h, float s, float v, uint8_t& r, uint8_t& g, uint8_t& b) {
+inline void hsv_to_rgb(float h,
+                       float s,
+                       float v,
+                       uint8_t& r,
+                       uint8_t& g,
+                       uint8_t& b) {
   float c = v * s;
   float x = c * (1 - std::fabs(fmod(h / 60.0f, 2) - 1));
   float m = v - c;
 
   float r_, g_, b_;
-  if (h < 60)      { r_ = c; g_ = x; b_ = 0; }
-  else if (h < 120){ r_ = x; g_ = c; b_ = 0; }
-  else if (h < 180){ r_ = 0; g_ = c; b_ = x; }
-  else if (h < 240){ r_ = 0; g_ = x; b_ = c; }
-  else if (h < 300){ r_ = x; g_ = 0; b_ = c; }
-  else             { r_ = c; g_ = 0; b_ = x; }
+  if (h < 60) {
+    r_ = c;
+    g_ = x;
+    b_ = 0;
+  } else if (h < 120) {
+    r_ = x;
+    g_ = c;
+    b_ = 0;
+  } else if (h < 180) {
+    r_ = 0;
+    g_ = c;
+    b_ = x;
+  } else if (h < 240) {
+    r_ = 0;
+    g_ = x;
+    b_ = c;
+  } else if (h < 300) {
+    r_ = x;
+    g_ = 0;
+    b_ = c;
+  } else {
+    r_ = c;
+    g_ = 0;
+    b_ = x;
+  }
 
   r = static_cast<uint8_t>((r_ + m) * 255);
   g = static_cast<uint8_t>((g_ + m) * 255);
