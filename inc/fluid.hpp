@@ -40,6 +40,7 @@ class Fluid {
   inline void apply_smoke_advection_at(int i, int j, float d_t);
   inline void update_smoke_advection_at(int i, int j, float d_t);
   inline void apply_velocity_advection_at(int i, int j, float d_t);
+  inline void update_velocity_advection_at(int i, int j, float d_t);
   inline void extrapolate_at(int i, int j);
   inline void decay_smoke_at(int i, int j, float d_t);
 
@@ -585,32 +586,42 @@ inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
 }
 
 template <int H, int W>
+inline void Fluid<H, W>::apply_velocity_advection_at(int i, int j, float d_t) {
+  Vector2d<float> current_pos = this->get_u_position(i, j);
+  Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
+  auto prev_pos = current_pos - current_velocity * d_t;
+  float new_velocity =
+      this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
+  this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
+
+  current_pos = this->get_v_position(i, j);
+  current_velocity = this->get_horizontal_edge_velocity(i, j);
+  prev_pos = current_pos - current_velocity * d_t;
+  new_velocity =
+      this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
+  this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::update_velocity_advection_at(int i, int j, float d_t) {
+  Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
+  this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
+                                        new_velocity.get_y());
+}
+
+template <int H, int W>
 inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> current_pos = this->get_u_position(i, j);
-      Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
-      auto prev_pos = current_pos - current_velocity * d_t;
-      float new_velocity =
-          this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
-      this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
-
-      current_pos = this->get_v_position(i, j);
-      current_velocity = this->get_horizontal_edge_velocity(i, j);
-      prev_pos = current_pos - current_velocity * d_t;
-      new_velocity =
-          this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
-      this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
+      apply_velocity_advection_at(i, j, d_t);
     }
   }
 
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
-      this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
-                                            new_velocity.get_y());
+      update_velocity_advection_at(i, j, d_t);
     }
   }
 }
