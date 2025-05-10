@@ -709,33 +709,34 @@ inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 }
 
 template <int H, int W>
-inline void Fluid<H, W>::extrapolate() {
-#pragma omp parallel for schedule(static)
-  for (int i = 0; i < W; i++) {
-    {
-      Cell& bottom_cell = this->get_mut_cell(i, 0);
-      Cell& top_cell = this->get_mut_cell(i, 1);
-      bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
-      top_cell.set_velocity_y(0);
-    }
-
-    {
-      Cell& bottom_cell = this->get_mut_cell(i, H - 2);
-      Cell& top_cell = this->get_mut_cell(i, H - 1);
-      top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
-    }
+inline void Fluid<H, W>::extrapolate_at(int i, int j) {
+  if (j == 0) {
+    Cell& bottom_cell = this->get_mut_cell(i, j);
+    Cell& top_cell = this->get_mut_cell(i, j + 1);
+    bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
+    top_cell.set_velocity_y(0);
+  } else if (j == H - 1) {
+    Cell& bottom_cell = this->get_mut_cell(i, j - 1);
+    Cell& top_cell = this->get_mut_cell(i, j);
+    top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
   }
-#pragma omp parallel for schedule(static)
-  for (int j = 0; j < H; j++) {
-    {
-      Cell& right_cell = this->get_mut_cell(W - 1, j);
-      Cell& left_cell = this->get_mut_cell(W - 2, j);
-      right_cell.set_velocity_y(left_cell.get_velocity().get_y());
-    }
-    {
-      Cell& right_cell = this->get_mut_cell(1, j);
-      Cell& left_cell = this->get_mut_cell(0, j);
-      left_cell.set_velocity_y(right_cell.get_velocity().get_y());
+  if (i == 0) {
+    Cell& right_cell = this->get_mut_cell(i + 1, j);
+    Cell& left_cell = this->get_mut_cell(i, j);
+    left_cell.set_velocity_y(right_cell.get_velocity().get_y());
+  } else if (i == W - 1) {
+    Cell& right_cell = this->get_mut_cell(i, j);
+    Cell& left_cell = this->get_mut_cell(i - 1, j);
+    right_cell.set_velocity_y(left_cell.get_velocity().get_y());
+  }
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::extrapolate() {
+#pragma omp parallel for schedule(static) collapse(2)
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
+      extrapolate_at(i, j);
     }
   }
 }
