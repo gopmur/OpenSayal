@@ -35,8 +35,9 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
-  int (*fluid_pixels)[W];
+  int* fluid_pixels;
 
+  inline int indx(int i, int j);
   inline void draw_arrow(const ArrowData& arrow_data);
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
   inline void update_fluid_pixels(const Fluid<H, W>& fluid);
@@ -68,13 +69,18 @@ class GraphicsHandler {
 };
 
 template <int H, int W, int S>
+int GraphicsHandler<H, W, S>::indx(int i, int j) {
+  return i * W + j;
+}
+
+template <int H, int W, int S>
 GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
                                           float arrow_head_angle,
                                           float arrow_disable_thresh_hold)
     : arrow_head_angle(arrow_head_angle),
       arrow_head_length(arrow_head_length),
       arrow_disable_thresh_hold(arrow_disable_thresh_hold) {
-  this->fluid_pixels = new int[H][W];
+  this->fluid_pixels = new int[H * W];
   this->window = nullptr;
   this->renderer = nullptr;
   this->fluid_texture = nullptr;
@@ -198,7 +204,7 @@ inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell& cell,
                                                           int y) {
   auto smoke = cell.get_smoke();
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
+  this->fluid_pixels[indx(y, x)] = SDL_MapRGBA(this->format, 255, color, color, 255);
 }
 
 template <int H, int W, int S>
@@ -220,7 +226,7 @@ inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
   auto smoke = cell.get_smoke();
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, smoke, r, g, b);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[indx(y, x)] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
@@ -240,7 +246,7 @@ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
   float hue = (1.0f - norm_p) * 120.0f;
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[indx(y, x)] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 
 template <int H, int W, int S>
@@ -279,7 +285,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
       int y = H - j - 1;
 
       if (cell.is_solid()) {
-        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
+        this->fluid_pixels[indx(y, x)] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
 #if ENABLE_PRESSURE and ENABLE_SMOKE
         this->update_smoke_and_pressure(cell, x, y, min_pressure, max_pressure);
