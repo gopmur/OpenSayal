@@ -12,6 +12,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -fopenmp")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -fopenmp")
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fopenmp")
+
 # store source files
 file(GLOB_RECURSE PROJECT_SOURCE_FILES
   "${PROJECT_SOURCE_DIR}/src/*.cpp"
