@@ -35,7 +35,7 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
-  std::array<std::array<int, W>, H> fluid_pixels;
+  int (*fluid_pixels)[W];
 
   inline void draw_arrow(const ArrowData& arrow_data);
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
@@ -74,6 +74,7 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
     : arrow_head_angle(arrow_head_angle),
       arrow_head_length(arrow_head_length),
       arrow_disable_thresh_hold(arrow_disable_thresh_hold) {
+  this->fluid_pixels = new int[H][W];
   this->window = nullptr;
   this->renderer = nullptr;
   this->fluid_texture = nullptr;
@@ -137,6 +138,7 @@ GraphicsHandler<H, W, S>::~GraphicsHandler() {
 
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::cleanup() {
+  delete[] this->fluid_pixels;
   Logger::static_debug("cleaning up graphics");
   if (this->window != nullptr) {
     SDL_DestroyWindow(this->window);
@@ -453,7 +455,7 @@ inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid, float d_t) {
   this->update_fluid_pixels(fluid);
-  SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels.data(),
+  SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels,
                     W * sizeof(int));
 
   // Render the texture
