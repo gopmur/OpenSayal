@@ -35,8 +35,11 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
-  int (*fluid_pixels)[W];
+  int* fluid_pixels;
+  ArrowData* arrow_data;
 
+  inline int fluid_pixels_index(int i, int j);
+  inline int arrow_data_index(int i, int j);
   inline void draw_arrow(const ArrowData& arrow_data);
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
   inline void update_fluid_pixels(const Fluid<H, W>& fluid);
@@ -68,13 +71,24 @@ class GraphicsHandler {
 };
 
 template <int H, int W, int S>
+int GraphicsHandler<H, W, S>::arrow_data_index(int i, int j) {
+  return i * (H / ARROW_SPACER) + j;
+}
+
+template <int H, int W, int S>
+int GraphicsHandler<H, W, S>::fluid_pixels_index(int i, int j) {
+  return i * W + j;
+}
+
+template <int H, int W, int S>
 GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
                                           float arrow_head_angle,
                                           float arrow_disable_thresh_hold)
     : arrow_head_angle(arrow_head_angle),
       arrow_head_length(arrow_head_length),
       arrow_disable_thresh_hold(arrow_disable_thresh_hold) {
-  this->fluid_pixels = new int[H][W];
+  this->arrow_data = new ArrowData[(W / ARROW_SPACER) * (H / ARROW_SPACER)];
+  this->fluid_pixels = new int[H * W];
   this->window = nullptr;
   this->renderer = nullptr;
   this->fluid_texture = nullptr;
@@ -198,7 +212,8 @@ inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell& cell,
                                                           int y) {
   auto smoke = cell.get_smoke();
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
+  this->fluid_pixels[fluid_pixels_index(y, x)] =
+      SDL_MapRGBA(this->format, 255, color, color, 255);
 }
 
 template <int H, int W, int S>
@@ -220,7 +235,8 @@ inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
   auto smoke = cell.get_smoke();
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, smoke, r, g, b);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[fluid_pixels_index(y, x)] =
+      SDL_MapRGBA(this->format, r, g, b, 255);
 }
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
@@ -240,7 +256,8 @@ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
   float hue = (1.0f - norm_p) * 120.0f;
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[fluid_pixels_index(y, x)] =
+      SDL_MapRGBA(this->format, r, g, b, 255);
 }
 
 template <int H, int W, int S>
@@ -279,7 +296,8 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
       int y = H - j - 1;
 
       if (cell.is_solid()) {
-        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
+        this->fluid_pixels[fluid_pixels_index(y, x)] =
+            SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
 #if ENABLE_PRESSURE and ENABLE_SMOKE
         this->update_smoke_and_pressure(cell, x, y, min_pressure, max_pressure);
@@ -296,7 +314,6 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
     const Fluid<H, W>& fluid) {
-  ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
@@ -311,13 +328,13 @@ inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
       auto vel_y = velocity.get_y();
       auto angle = std::atan2(vel_y, vel_x);
       auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
-      arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
+      arrow_data[arrow_data_index(i / ARROW_SPACER, j / ARROW_SPACER)] =
           this->make_arrow_data(x, y, length, angle);
     }
   }
   for (int i = 0; i < W / ARROW_SPACER; i++) {
     for (int j = 0; j < H / ARROW_SPACER; j++) {
-      this->draw_arrow(arrow_data[i][j]);
+      this->draw_arrow(arrow_data[arrow_data_index(i, j)]);
     }
   }
 }
