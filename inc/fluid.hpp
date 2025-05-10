@@ -289,20 +289,24 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
     }
   }
 }
+template <int H, int W>
+inline void Fluid<H, W>::apply_external_forces_at(int i, int j, float d_t) {
+  Cell& cell = get_mut_cell(i, j);
+  if (i <= SMOKE_LENGTH and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
+      j <= H / 2 + PIPE_HEIGHT / 2) {
+    cell.set_smoke(WIND_SMOKE);
+    cell.set_velocity_x(WIND_SPEED);
+  }
+  auto vel_y = cell.get_velocity().get_y();
+  cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
+}
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_external_forces(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Cell& cell = get_mut_cell(i, j);
-      if (i <= SMOKE_LENGTH and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
-          j <= H / 2 + PIPE_HEIGHT / 2) {
-        cell.set_smoke(WIND_SMOKE);
-        cell.set_velocity_x(WIND_SPEED);
-      }
-      auto vel_y = cell.get_velocity().get_y();
-      cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
+      apply_external_forces_at(i, j, d_t);
     }
   }
 }
