@@ -38,6 +38,7 @@ class Fluid {
   inline void apply_external_forces_at(int i, int j, float d_t);
   inline void apply_projection_at(int i, int j, float d_t);
   inline void apply_smoke_advection_at(int i, int j, float d_t);
+  inline void update_smoke_advection_at(int i, int j, float d_t);
   inline void apply_velocity_advection_at(int i, int j, float d_t);
   inline void extrapolate_at(int i, int j);
   inline void decay_smoke_at(int i, int j, float d_t);
@@ -551,24 +552,34 @@ inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
 }
 
 template <int H, int W>
+inline void Fluid<H, W>::apply_smoke_advection_at(int i, int j, float d_t) {
+  Vector2d<float> current_pos = this->get_center_position(i, j);
+  Vector2d<float> current_velocity =
+      this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
+  auto prev_pos = current_pos - current_velocity * d_t;
+  float new_smoke = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+  this->set_smoke_buffer(i, j, new_smoke);
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::update_smoke_advection_at(int i, int j, float d_t) {
+  float new_smoke = this->get_smoke_buffer(i, j);
+  this->get_mut_cell(i, j).set_smoke(new_smoke);
+}
+
+template <int H, int W>
 inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> current_pos = this->get_center_position(i, j);
-      Vector2d<float> current_velocity =
-          this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
-      auto prev_pos = current_pos - current_velocity * d_t;
-      float new_smoke = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
-      this->set_smoke_buffer(i, j, new_smoke);
+      apply_smoke_advection_at(i, j, d_t);
     }
   }
 
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float new_smoke = this->get_smoke_buffer(i, j);
-      this->get_mut_cell(i, j).set_smoke(new_smoke);
+      update_smoke_advection_at(i, j, d_t);
     }
   }
 }
