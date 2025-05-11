@@ -1,24 +1,22 @@
-cmake_minimum_required(VERSION 3.31)
-project(fluid-simulator)
+cmake_minimum_required(VERSION 4.0)
+project(fluid-simulator CXX CUDA)
 
-# set c/c++ version
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+# set c++ version
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -fopenmp")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -fopenmp")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -march=native -fopenmp")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fopenmp")
+set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
 
 # store source files
 file(GLOB_RECURSE PROJECT_SOURCE_FILES
   "${PROJECT_SOURCE_DIR}/src/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/*.c"
+  "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
 
 # store include directories

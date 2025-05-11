@@ -1,6 +1,14 @@
 {
   "cSpell.words": [
     "ccls",
-    "OPENMP"
+    "chrono",
+    "cmath",
+    "cstdlib",
+    "cstring",
+    "CUDA",
+    "fopenmp",
+    "nullopt",
+    "OPENMP",
+    "strcmp"
   ]
 }
