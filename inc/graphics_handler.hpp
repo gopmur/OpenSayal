@@ -138,7 +138,6 @@ GraphicsHandler<H, W, S>::~GraphicsHandler() {
 
 template <int H, int W, int S>
 void GraphicsHandler<H, W, S>::cleanup() {
-  delete[] this->fluid_pixels;
   Logger::static_debug("cleaning up graphics");
   if (this->window != nullptr) {
     SDL_DestroyWindow(this->window);
