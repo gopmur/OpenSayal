@@ -9,156 +9,7 @@
 #include "SDL_rect.h"
 
 #include "config.hpp"
-#include "helper.hpp"
-
-class FluidCell {
- private:
-  bool is_solid;
-  Vector2d<float> velocity;
-  float pressure;
-
- public:
-  inline FluidCell();
-  inline FluidCell(bool is_solid);
-
-  // getters
-  inline bool get_is_solid() const;
-  inline uint8_t get_s() const;
-  inline Vector2d<float> get_velocity() const;
-  inline float get_pressure() const;
-
-  // setters
-  inline void set_velocity_x(float x);
-  inline void set_velocity_y(float y);
-  inline void set_velocity(float x, float y);
-  inline void set_pressure(float pressure);
-};
-
-inline void FluidCell::set_pressure(float pressure) {
-  this->pressure = pressure;
-}
-
-inline FluidCell::FluidCell() : velocity(0, 0), is_solid(0), pressure(0) {}
-
-inline FluidCell::FluidCell(bool is_solid)
-    : velocity(0, 0), is_solid(is_solid), pressure(0) {}
-
-inline bool FluidCell::get_is_solid() const {
-  return is_solid;
-}
-
-inline Vector2d<float> FluidCell::get_velocity() const {
-  return velocity;
-}
-
-inline float FluidCell::get_pressure() const {
-  return pressure;
-}
-
-inline uint8_t FluidCell::get_s() const {
-  return !is_solid;
-}
-
-inline void FluidCell::set_velocity_x(float x) {
-  this->velocity.set_x(x);
-}
-
-inline void FluidCell::set_velocity_y(float y) {
-  this->velocity.set_y(y);
-}
-
-inline void FluidCell::set_velocity(float x, float y) {
-  this->set_velocity_x(x);
-  this->set_velocity_y(y);
-}
-
-class SmokeCell {
- private:
-  // This value should be between 0 and 1
-  float smoke;
-
- public:
-  inline SmokeCell();
-  inline float get_smoke() const;
-  inline void set_smoke(float smoke);
-};
-
-inline SmokeCell::SmokeCell() : smoke(0) {}
-
-inline float SmokeCell::get_smoke() const {
-  return this->smoke;
-}
-
-inline void SmokeCell::set_smoke(float smoke) {
-  this->smoke = smoke;
-}
-
-class Cell {
-  FluidCell fluid;
-  SmokeCell smoke;
-
- public:
-  inline Cell();
-  inline Cell(bool is_solid);
-
-  // getters
-  inline const Vector2d<float> get_velocity() const;
-  inline const float get_smoke() const;
-  inline const bool is_solid() const;
-  inline const uint8_t get_s() const;
-  inline float get_pressure() const;
-
-  // setters
-  inline void set_velocity_x(float x);
-  inline void set_velocity_y(float y);
-  inline void set_velocity(float x, float y);
-  inline void set_smoke(float smoke);
-  inline void set_pressure(float pressure);
-};
-
-inline float Cell::get_pressure() const {
-  return this->fluid.get_pressure();
-}
-
-inline void Cell::set_pressure(float pressure) {
-  this->fluid.set_pressure(pressure);
-}
-
-inline Cell::Cell(bool is_solid) : smoke(), fluid(is_solid) {}
-inline Cell::Cell() : smoke(), fluid() {}
-
-inline void Cell::set_smoke(float smoke) {
-  this->smoke.set_smoke(smoke);
-}
-
-inline const Vector2d<float> Cell::get_velocity() const {
-  return this->fluid.get_velocity();
-}
-
-inline const float Cell::get_smoke() const {
-  return this->smoke.get_smoke();
-}
-
-inline const bool Cell::is_solid() const {
-  return this->fluid.get_is_solid();
-}
-
-inline const uint8_t Cell::get_s() const {
-  return this->fluid.get_s();
-}
-
-inline void Cell::set_velocity_x(float x) {
-  this->fluid.set_velocity_x(x);
-}
-
-inline void Cell::set_velocity_y(float y) {
-  this->fluid.set_velocity_y(y);
-}
-
-inline void Cell::set_velocity(float x, float y) {
-  this->set_velocity_x(x);
-  this->set_velocity_y(y);
-}
+#include "fluid.helper.hpp"
 
 template <int H, int W>
 class Fluid {
@@ -172,7 +23,6 @@ class Fluid {
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
   inline void set_smoke_buffer(int i, int j, float smoke);
   inline float get_smoke_buffer(int i, int j);
-  inline void step_projection(int i, int j, float d_t);
   inline float interpolate_smoke(float x, float y) const;
   inline float get_general_velocity_y(float x, float y) const;
   inline float get_general_velocity_x(float x, float y) const;
@@ -184,7 +34,16 @@ class Fluid {
   inline void set_pressure(int i, int j, float pressure);
 
   inline void zero_pressure();
-  inline void update_pressure(int i, int j, float velocity_diff, float d_t);
+  inline void update_pressure_at(int i, int j, float velocity_diff, float d_t);
+  inline void apply_external_forces_at(int i, int j, float d_t);
+  inline void apply_projection_at(int i, int j, float d_t);
+  inline void apply_smoke_advection_at(int i, int j, float d_t);
+  inline void update_smoke_advection_at(int i, int j, float d_t);
+  inline void apply_velocity_advection_at(int i, int j, float d_t);
+  inline void update_velocity_advection_at(int i, int j, float d_t);
+  inline void extrapolate_at(int i, int j);
+  inline void decay_smoke_at(int i, int j, float d_t);
+
   inline void apply_external_forces(float d_t);
   inline void apply_projection(float d_t);
   inline void apply_smoke_advection(float d_t);
@@ -346,17 +205,17 @@ inline void Fluid<H, W>::zero_pressure() {
   }
 }
 template <int H, int W>
-inline void Fluid<H, W>::update_pressure(int i,
-                                         int j,
-                                         float velocity_diff,
-                                         float d_t) {
+inline void Fluid<H, W>::update_pressure_at(int i,
+                                            int j,
+                                            float velocity_diff,
+                                            float d_t) {
   float pressure = this->get_pressure(i, j);
   pressure += velocity_diff * FLUID_DENSITY * CELL_SIZE / d_t;
   this->set_pressure(i, j, pressure);
 }
 
 template <int H, int W>
-inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
+inline void Fluid<H, W>::apply_projection_at(int i, int j, float d_t) {
   Cell& cell = get_mut_cell(i, j);
   if (cell.is_solid()) {
     return;
@@ -379,7 +238,7 @@ inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
 #if ENABLE_PRESSURE
   if (i >= SMOKE_LENGTH + 1 or j >= H / 2 + PIPE_HEIGHT / 2 or
       j <= H / 2 - PIPE_HEIGHT / 2)
-    this->update_pressure(i, j, velocity_diff, d_t);
+    this->update_pressure_at(i, j, velocity_diff, d_t);
 #endif
 
   if (left_cell.get_s()) {
@@ -405,24 +264,25 @@ inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_projection(float d_t) {
-#if ENABLE_PRESSURE
-  this->zero_pressure();
-#endif
-
   for (int _ = 0; _ < n; _++) {
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) collapse(2)
     for (int i = 1; i < W - 1; i++) {
-      for (int j = i % 2 + 1; j < H - 1; j += 2) {
-        this->step_projection(i, j, d_t);
-      }
-    }
-#pragma omp parallel for schedule(static)
-    for (int i = 1; i < W - 1; i++) {
-      for (int j = (i + 1) % 2 + 1; j < H - 1; j += 2) {
-        this->step_projection(i, j, d_t);
+      for (int j = 1; j < H - 1; j ++) {
+        this->apply_projection_at(i, j, d_t);
       }
     }
   }
+}
+template <int H, int W>
+inline void Fluid<H, W>::apply_external_forces_at(int i, int j, float d_t) {
+  Cell& cell = get_mut_cell(i, j);
+  if (i <= SMOKE_LENGTH and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
+      j <= H / 2 + PIPE_HEIGHT / 2) {
+    cell.set_smoke(WIND_SMOKE);
+    cell.set_velocity_x(WIND_SPEED);
+  }
+  auto vel_y = cell.get_velocity().get_y();
+  cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
 }
 
 template <int H, int W>
@@ -430,14 +290,7 @@ inline void Fluid<H, W>::apply_external_forces(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Cell& cell = get_mut_cell(i, j);
-      if (i <= SMOKE_LENGTH and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
-          j <= H / 2 + PIPE_HEIGHT / 2) {
-        cell.set_smoke(WIND_SMOKE);
-        cell.set_velocity_x(WIND_SPEED);
-      }
-      auto vel_y = cell.get_velocity().get_y();
-      cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
+      apply_external_forces_at(i, j, d_t);
     }
   }
 }
@@ -682,26 +535,60 @@ inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
 }
 
 template <int H, int W>
+inline void Fluid<H, W>::apply_smoke_advection_at(int i, int j, float d_t) {
+  Vector2d<float> current_pos = this->get_center_position(i, j);
+  Vector2d<float> current_velocity =
+      this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
+  auto prev_pos = current_pos - current_velocity * d_t;
+  float new_smoke = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
+  this->set_smoke_buffer(i, j, new_smoke);
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::update_smoke_advection_at(int i, int j, float d_t) {
+  float new_smoke = this->get_smoke_buffer(i, j);
+  this->get_mut_cell(i, j).set_smoke(new_smoke);
+}
+
+template <int H, int W>
 inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> current_pos = this->get_center_position(i, j);
-      Vector2d<float> current_velocity =
-          this->get_general_velocity(current_pos.get_x(), current_pos.get_y());
-      auto prev_pos = current_pos - current_velocity * d_t;
-      float new_smoke = interpolate_smoke(prev_pos.get_x(), prev_pos.get_y());
-      this->set_smoke_buffer(i, j, new_smoke);
+      apply_smoke_advection_at(i, j, d_t);
     }
   }
 
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float new_smoke = this->get_smoke_buffer(i, j);
-      this->get_mut_cell(i, j).set_smoke(new_smoke);
+      update_smoke_advection_at(i, j, d_t);
     }
   }
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::apply_velocity_advection_at(int i, int j, float d_t) {
+  Vector2d<float> current_pos = this->get_u_position(i, j);
+  Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
+  auto prev_pos = current_pos - current_velocity * d_t;
+  float new_velocity =
+      this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
+  this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
+
+  current_pos = this->get_v_position(i, j);
+  current_velocity = this->get_horizontal_edge_velocity(i, j);
+  prev_pos = current_pos - current_velocity * d_t;
+  new_velocity =
+      this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
+  this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::update_velocity_advection_at(int i, int j, float d_t) {
+  Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
+  this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
+                                        new_velocity.get_y());
 }
 
 template <int H, int W>
@@ -709,28 +596,14 @@ inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> current_pos = this->get_u_position(i, j);
-      Vector2d<float> current_velocity = this->get_vertical_edge_velocity(i, j);
-      auto prev_pos = current_pos - current_velocity * d_t;
-      float new_velocity =
-          this->get_general_velocity_x(prev_pos.get_x(), prev_pos.get_y());
-      this->get_mut_velocity_buffer(i, j).set_x(new_velocity);
-
-      current_pos = this->get_v_position(i, j);
-      current_velocity = this->get_horizontal_edge_velocity(i, j);
-      prev_pos = current_pos - current_velocity * d_t;
-      new_velocity =
-          this->get_general_velocity_y(prev_pos.get_x(), prev_pos.get_y());
-      this->get_mut_velocity_buffer(i, j).set_y(new_velocity);
+      apply_velocity_advection_at(i, j, d_t);
     }
   }
 
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
-      this->get_mut_cell(i, j).set_velocity(new_velocity.get_x(),
-                                            new_velocity.get_y());
+      update_velocity_advection_at(i, j, d_t);
     }
   }
 }
@@ -818,33 +691,34 @@ inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 }
 
 template <int H, int W>
-inline void Fluid<H, W>::extrapolate() {
-#pragma omp parallel for schedule(static)
-  for (int i = 0; i < W; i++) {
-    {
-      Cell& bottom_cell = this->get_mut_cell(i, 0);
-      Cell& top_cell = this->get_mut_cell(i, 1);
-      bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
-      top_cell.set_velocity_y(0);
-    }
-
-    {
-      Cell& bottom_cell = this->get_mut_cell(i, H - 2);
-      Cell& top_cell = this->get_mut_cell(i, H - 1);
-      top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
-    }
+inline void Fluid<H, W>::extrapolate_at(int i, int j) {
+  if (j == 0) {
+    Cell& bottom_cell = this->get_mut_cell(i, j);
+    Cell& top_cell = this->get_mut_cell(i, j + 1);
+    bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
+    top_cell.set_velocity_y(0);
+  } else if (j == H - 1) {
+    Cell& bottom_cell = this->get_mut_cell(i, j - 1);
+    Cell& top_cell = this->get_mut_cell(i, j);
+    top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
   }
-#pragma omp parallel for schedule(static)
-  for (int j = 0; j < H; j++) {
-    {
-      Cell& right_cell = this->get_mut_cell(W - 1, j);
-      Cell& left_cell = this->get_mut_cell(W - 2, j);
-      right_cell.set_velocity_y(left_cell.get_velocity().get_y());
-    }
-    {
-      Cell& right_cell = this->get_mut_cell(1, j);
-      Cell& left_cell = this->get_mut_cell(0, j);
-      left_cell.set_velocity_y(right_cell.get_velocity().get_y());
+  if (i == 0) {
+    Cell& right_cell = this->get_mut_cell(i + 1, j);
+    Cell& left_cell = this->get_mut_cell(i, j);
+    left_cell.set_velocity_y(right_cell.get_velocity().get_y());
+  } else if (i == W - 1) {
+    Cell& right_cell = this->get_mut_cell(i, j);
+    Cell& left_cell = this->get_mut_cell(i - 1, j);
+    right_cell.set_velocity_y(left_cell.get_velocity().get_y());
+  }
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::extrapolate() {
+#pragma omp parallel for schedule(static) collapse(2)
+  for (int i = 0; i < W; i++) {
+    for (int j = 0; j < H; j++) {
+      extrapolate_at(i, j);
     }
   }
 }
@@ -868,6 +742,9 @@ inline void Fluid<H, W>::decay_smoke(float d_t) {
 template <int H, int W>
 inline void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
+#if ENABLE_PRESSURE
+  this->zero_pressure();
+#endif
   this->apply_projection(d_t);
   this->extrapolate();
   this->apply_velocity_advection(d_t);
