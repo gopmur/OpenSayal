@@ -163,10 +163,10 @@ inline void Cell::set_velocity(float x, float y) {
 template <int H, int W>
 class Fluid {
  private:
-  Cell (*grid)[H];
-  Vector2d<float> (*velocity_buffer)[H];
-  float (*smoke_buffer)[H];
-  uint8_t (*total_s)[H];
+  Cell grid[W][H];
+  Vector2d<float> velocity_buffer[W][H];
+  float smoke_buffer[W][H];
+  uint8_t total_s[W][H];
 
   inline Cell& get_mut_cell(int i, int j);
   inline Vector2d<float>& get_mut_velocity_buffer(int i, int j);
@@ -199,13 +199,12 @@ class Fluid {
   const int n;
 
   Fluid(float o, int n, int cell_size);
-  ~Fluid();
 
   // getters
   inline const Cell& get_cell(int i, int j) const;
   float get_divergence(int i, int j) const;
   inline float get_pressure(int i, int j) const;
-  uint8_t get_s(int i, int j) const;
+  uint8_t get_s(int i, int j);
 
   inline bool is_edge(int i, int j) const;
 
@@ -253,21 +252,10 @@ template <int H, int W>
 inline bool Fluid<H, W>::is_edge(int i, int j) const {
   return i == 0 || j == 0 || i == W - 1 || j == H - 1;
 }
-template <int H, int W>
-Fluid<H, W>::~Fluid() {
-  delete[] this->grid;
-  delete[] this->smoke_buffer;
-  delete[] this->velocity_buffer;
-  delete[] this->total_s;
-}
 
 template <int H, int W>
 Fluid<H, W>::Fluid(float o, int n, int cell_size)
     : o(o), n(n), cell_size(cell_size) {
-  this->grid = new Cell[W][H];
-  this->smoke_buffer = new float[W][H];
-  this->velocity_buffer = new Vector2d<float>[W][H];
-  this->total_s = new uint8_t[W][H];
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
       Cell& cell = this->get_mut_cell(i, j);
@@ -328,7 +316,7 @@ float Fluid<H, W>::get_divergence(int i, int j) const {
 }
 
 template <int H, int W>
-uint8_t Fluid<H, W>::get_s(int i, int j) const {
+uint8_t Fluid<H, W>::get_s(int i, int j) {
   if (total_s[i][j] != UINT8_MAX) {
     return total_s[i][j];
   }
