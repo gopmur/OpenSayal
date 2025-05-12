@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -fopenmp")
 set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -march=native -fopenmp")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
-set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
+set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
 
 # store source files
 file(GLOB_RECURSE PROJECT_SOURCE_FILES

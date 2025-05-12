@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#define THREAD_COUNT 1
+#define THREAD_COUNT 8
 
 #define FLUID_HEIGHT 600
 #define FLUID_WIDTH 1000
