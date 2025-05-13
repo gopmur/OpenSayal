@@ -35,6 +35,8 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
+  std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
+                                            [H / TRACE_SPACER];
   int fluid_pixels[H][W];
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 
@@ -197,8 +199,7 @@ inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell& cell,
                                                           int y) {
   auto smoke = cell.get_smoke();
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
-  this->fluid_pixels[y][x] =
-      SDL_MapRGBA(this->format, 255, color, color, 255);
+  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
 }
 
 template <int H, int W, int S>
@@ -220,8 +221,7 @@ inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
   auto smoke = cell.get_smoke();
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, smoke, r, g, b);
-  this->fluid_pixels[y][x] =
-      SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
@@ -241,8 +241,7 @@ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
   float hue = (1.0f - norm_p) * 120.0f;
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
-  this->fluid_pixels[y][x] =
-      SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 
 template <int H, int W, int S>
@@ -281,8 +280,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
       int y = H - j - 1;
 
       if (cell.is_solid()) {
-        this->fluid_pixels[y][x] =
-            SDL_MapRGBA(this->format, 80, 80, 80, 255);
+        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
 #if ENABLE_PRESSURE and ENABLE_SMOKE
         this->update_smoke_and_pressure(cell, x, y, min_pressure, max_pressure);
@@ -436,11 +434,12 @@ inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
                                                     float d_t) {
-  std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
-                                            [H / TRACE_SPACER];
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += TRACE_SPACER) {
     for (int j = 1; j < H - 1; j += TRACE_SPACER) {
+      if (fluid.get_cell(i, j).is_solid()) {
+        continue;
+      }
       std::array<SDL_Point, TRACE_LENGTH> points = fluid.trace(i, j, d_t);
       traces[i / TRACE_SPACER][j / TRACE_SPACER] = points;
     }
