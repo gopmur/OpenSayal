@@ -4,15 +4,17 @@
 
 #include "SDL_events.h"
 
+#include "fluid.hpp"
 #include "helper.hpp"
 
 class Mouse {
 private:
   bool is_down;
   Vector2d<int> position;
+  int button;
 
 public:
   Mouse();
   void update(SDL_Event event);
-  std::optional<Vector2d<int>> get_pressed_position();
+  Source make_source(int fluid_height);
 };

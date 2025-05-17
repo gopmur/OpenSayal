@@ -79,8 +79,7 @@ int main(int argc, char* argv[]) {
         Logger::log_fps(d_t, work);
       }
 
-      auto force_position = mouse.get_pressed_position();
-      force_position->set_y(FLUID_HEIGHT - force_position->get_y());
+      auto source = mouse.make_source(FLUID_HEIGHT);
 
 #if USE_REAL_TIME
       d_t *= REAL_TIME_MULTIPLIER;
@@ -88,7 +87,7 @@ int main(int argc, char* argv[]) {
       d_t = D_T;
 #endif
       prev_clock = std::clock();
-      fluid->update(force_position, d_t);
+      fluid->update(source, d_t);
       graphics->update(*fluid, d_t);
       work = std::clock() - prev_clock;
       prev_time = now;

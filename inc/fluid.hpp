@@ -12,6 +12,13 @@
 #include "config.hpp"
 #include "helper.hpp"
 
+struct Source {
+  bool active;
+  double smoke;
+  double velocity;
+  Vector2d<int> position;
+};
+
 class FluidCell {
 private:
   bool is_solid;
@@ -155,8 +162,7 @@ private:
 
   inline void zero_pressure();
   inline void update_pressure(int i, int j, float velocity_diff, float d_t);
-  inline void apply_external_forces(std::optional<Vector2d<int>> force_position,
-                                    float d_t);
+  inline void apply_external_forces(Source source, float d_t);
   inline void apply_projection(float d_t);
   inline void apply_smoke_advection(float d_t);
   inline void apply_velocity_advection(float d_t);
@@ -185,7 +191,7 @@ public:
   inline std::array<SDL_Point, TRACE_LENGTH> trace(int i, int j,
                                                    float d_t) const;
 
-  inline void update(std::optional<Vector2d<int>> force_position, float d_t);
+  inline void update(Source source, float d_t);
 };
 
 template <int H, int W>
@@ -383,22 +389,19 @@ template <int H, int W> inline void Fluid<H, W>::apply_projection(float d_t) {
 }
 
 template <int H, int W>
-inline void
-Fluid<H, W>::apply_external_forces(std::optional<Vector2d<int>> force_position,
-                                   float d_t) {
+inline void Fluid<H, W>::apply_external_forces(Source source, float d_t) {
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Cell &cell = get_mut_cell(i, j);
-      if (force_position.has_value() &&
-          square(i - force_position.value().get_x()) +
-                  square(j - force_position.value().get_y()) <
-              square(SOURCE_RADIUS)) {
-        cell.set_smoke(SOURCE_SMOKE);
-        double x_speed_modifier = i - force_position.value().get_x();
-        double y_speed_modifier = j - force_position.value().get_y();
-        cell.set_velocity_x(x_speed_modifier * SOURCE_SPEED);
-        cell.set_velocity_y(y_speed_modifier * SOURCE_SPEED);
+      if (source.active && square(i - source.position.get_x()) +
+                                   square(j - source.position.get_y()) <
+                               square(SOURCE_RADIUS)) {
+        cell.set_smoke(source.smoke);
+        double x_speed_modifier = i - source.position.get_x();
+        double y_speed_modifier = j - source.position.get_y();
+        cell.set_velocity_x(x_speed_modifier * source.velocity);
+        cell.set_velocity_y(y_speed_modifier * source.velocity);
       }
       auto vel_y = cell.get_velocity().get_y();
       cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
@@ -828,9 +831,8 @@ template <int H, int W> inline void Fluid<H, W>::decay_smoke(float d_t) {
 }
 
 template <int H, int W>
-inline void Fluid<H, W>::update(std::optional<Vector2d<int>> force_position,
-                                float d_t) {
-  this->apply_external_forces(force_position, d_t);
+inline void Fluid<H, W>::update(Source source, float d_t) {
+  this->apply_external_forces(source, d_t);
   this->apply_projection(d_t);
   this->extrapolate();
   this->apply_velocity_advection(d_t);
