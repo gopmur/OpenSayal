@@ -7,7 +7,12 @@
 #include <cmath>
 #include <concepts>
 #include <cstdio>
-#include "fluid.hpp"
+#include <cstdint>
+
+template <typename T>
+inline T square(T a) {
+  return a * a;
+}
 
 template <typename T>
 concept arithmetic_concept = std::integral<T> or std::floating_point<T>;

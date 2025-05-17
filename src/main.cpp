@@ -12,6 +12,7 @@
 #include "graphics_handler.hpp"
 #include "logger.hpp"
 #include "platform_setup.hpp"
+#include "mouse.hpp"
 
 void setup(int argc, char* argv[]) {
   if (argc > 2 or
@@ -47,6 +48,7 @@ int main(int argc, char* argv[]) {
       new Fluid<FLUID_HEIGHT, FLUID_WIDTH>(PROJECTION_O, PROJECTION_N,
                                            CELL_SIZE);
   SDL_Event event;
+  Mouse mouse;
 
   {
     using namespace std::chrono;
@@ -58,7 +60,9 @@ int main(int argc, char* argv[]) {
       while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
           is_running = false;
+          break;
         }
+        mouse.update(event);
       }
       auto now = high_resolution_clock::now();
       if (not prev_time.has_value()) {
@@ -75,13 +79,16 @@ int main(int argc, char* argv[]) {
         Logger::log_fps(d_t, work);
       }
 
+      auto force_position = mouse.get_pressed_position();
+      force_position->set_y(FLUID_HEIGHT - force_position->get_y());
+
 #if USE_REAL_TIME
       d_t *= REAL_TIME_MULTIPLIER;
 #else
       d_t = D_T;
 #endif
       prev_clock = std::clock();
-      fluid->update(d_t);
+      fluid->update(force_position, d_t);
       graphics->update(*fluid, d_t);
       work = std::clock() - prev_clock;
       prev_time = now;

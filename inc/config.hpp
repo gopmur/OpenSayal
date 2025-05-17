@@ -13,9 +13,9 @@
 
 #define FPS_AVG_SIZE 200
 
-#define PHYSICS_G 0
+#define PHYSICS_G -10
 
-#define PIPE_HEIGHT FLUID_HEIGHT / 4
+#define PIPE_HEIGHT 20
 #define PIPE_LENGTH 0
 #define SMOKE_LENGTH 10
 #define WIND_SPEED 200
@@ -46,15 +46,15 @@
 #define USE_REAL_TIME false
 #define REAL_TIME_MULTIPLIER 1
 
-#define SMOKE_DECAY_RATE 0.05
+#define SMOKE_DECAY_RATE 0
 
 #define REPORT_FILE_NAME "report.log"
 #define ALLOW_LOG_ON_RELEASE true
 #define FPS_LOG_SPACER 1
 
 #define TRACE_LENGTH 20
-#define TRACE_SPACER 10
-#define ENABLE_TRACES false
+#define TRACE_SPACER 40
+#define ENABLE_TRACES true
 #define TRACE_COLOR 255, 255, 255, 255
 
 #define ENABLE_PRESSURE true
