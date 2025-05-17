@@ -232,11 +232,9 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
 #if ENABLE_RIGHT_WALL
           i == W - 1 or
 #endif
-          (ENABLE_CIRCLE and std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
-                                       std::pow((j - CIRCLE_POSITION_Y), 2)) <
-                                 CIRCLE_RADIUS or
-           (i < PIPE_LENGTH && (j == H / 2 - PIPE_HEIGHT / 2 - 1 or
-                                j == H / 2 + PIPE_HEIGHT / 2 + 1))));
+          (ENABLE_CIRCLE and
+           std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
+                     std::pow((j - CIRCLE_POSITION_Y), 2)) < CIRCLE_RADIUS));
       this->total_s[i][j] = UINT8_MAX;
     }
   }
@@ -339,9 +337,7 @@ inline void Fluid<H, W>::step_projection(int i, int j, float d_t) {
   auto velocity_diff = this->o * (divergence / s);
 
 #if ENABLE_PRESSURE
-  if (i >= SMOKE_LENGTH + 1 or j >= H / 2 + PIPE_HEIGHT / 2 or
-      j <= H / 2 - PIPE_HEIGHT / 2)
-    this->update_pressure(i, j, velocity_diff, d_t);
+  this->update_pressure(i, j, velocity_diff, d_t);
 #endif
 
   if (left_cell.get_s()) {
@@ -397,10 +393,12 @@ Fluid<H, W>::apply_external_forces(std::optional<Vector2d<int>> force_position,
       if (force_position.has_value() &&
           square(i - force_position.value().get_x()) +
                   square(j - force_position.value().get_y()) <
-              square(PIPE_HEIGHT)) {
-        cell.set_smoke(WIND_SMOKE);
-        cell.set_velocity_x((i - force_position.value().get_x()) * WIND_SPEED);
-        cell.set_velocity_y((j - force_position.value().get_y()) * WIND_SPEED);
+              square(SOURCE_RADIUS)) {
+        cell.set_smoke(SOURCE_SMOKE);
+        double x_speed_modifier = i - force_position.value().get_x();
+        double y_speed_modifier = j - force_position.value().get_y();
+        cell.set_velocity_x(x_speed_modifier * SOURCE_SPEED);
+        cell.set_velocity_y(y_speed_modifier * SOURCE_SPEED);
       }
       auto vel_y = cell.get_velocity().get_y();
       cell.set_velocity_y(vel_y + PHYSICS_G * d_t);
@@ -837,7 +835,7 @@ inline void Fluid<H, W>::update(std::optional<Vector2d<int>> force_position,
   this->extrapolate();
   this->apply_velocity_advection(d_t);
 #if ENABLE_SMOKE
-  if (WIND_SMOKE != 0) {
+  if (SOURCE_SMOKE != 0) {
     this->apply_smoke_advection(d_t);
     this->decay_smoke(d_t);
   }

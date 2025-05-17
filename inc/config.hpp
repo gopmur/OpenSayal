@@ -13,13 +13,11 @@
 
 #define FPS_AVG_SIZE 200
 
-#define PHYSICS_G -10
+#define PHYSICS_G 0
 
-#define PIPE_HEIGHT 20
-#define PIPE_LENGTH 0
-#define SMOKE_LENGTH 10
-#define WIND_SPEED 200
-#define WIND_SMOKE 1
+#define SOURCE_RADIUS 20
+#define SOURCE_SPEED 200
+#define SOURCE_SMOKE 1
 
 #define ENABLE_RIGHT_WALL true
 
@@ -28,7 +26,7 @@
 #define CIRCLE_POSITION_Y FLUID_HEIGHT / 2
 #define ENABLE_CIRCLE true
 
-#define ARROW_SPACER 10
+#define ARROW_SPACER 5
 #define ARROW_HEAD_ANGLE M_PI / 8
 #define ARROW_HEAD_LENGTH 5
 #define ARROW_DISABLE_THRESH_HOLD -1
@@ -54,7 +52,7 @@
 
 #define TRACE_LENGTH 20
 #define TRACE_SPACER 40
-#define ENABLE_TRACES true
+#define ENABLE_TRACES false
 #define TRACE_COLOR 255, 255, 255, 255
 
 #define ENABLE_PRESSURE true
