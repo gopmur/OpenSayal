@@ -12,6 +12,7 @@ private:
   bool is_down;
   Vector2d<int> position;
   int button;
+  int wheel_value;
 
 public:
   Mouse();
