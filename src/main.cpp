@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
         Logger::log_fps(d_t, work);
       }
 
-      auto source = mouse.make_source(FLUID_HEIGHT);
+      auto source = mouse.make_source(FLUID_HEIGHT, CELL_SIZE);
 
 #if USE_REAL_TIME
       d_t *= REAL_TIME_MULTIPLIER;

@@ -373,13 +373,13 @@ template <int H, int W> inline void Fluid<H, W>::apply_projection(float d_t) {
 #endif
 
   for (int _ = 0; _ < n; _++) {
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(guided)
     for (int i = 1; i < W - 1; i++) {
       for (int j = i % 2 + 1; j < H - 1; j += 2) {
         this->step_projection(i, j, d_t);
       }
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(guided)
     for (int i = 1; i < W - 1; i++) {
       for (int j = (i + 1) % 2 + 1; j < H - 1; j += 2) {
         this->step_projection(i, j, d_t);
@@ -390,14 +390,15 @@ template <int H, int W> inline void Fluid<H, W>::apply_projection(float d_t) {
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_external_forces(Source source, float d_t) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Cell &cell = get_mut_cell(i, j);
       if (source.active && square(i - source.position.get_x()) +
                                    square(j - source.position.get_y()) <
                                square(SOURCE_RADIUS)) {
-        cell.set_smoke(source.smoke);
+        if (source.smoke)
+          cell.set_smoke(source.smoke);
         double x_speed_modifier = i - source.position.get_x();
         double y_speed_modifier = j - source.position.get_y();
         cell.set_velocity_x(x_speed_modifier * source.velocity);
@@ -650,7 +651,7 @@ inline Vector2d<float> Fluid<H, W>::get_v_position(int i, int j) const {
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> current_pos = this->get_center_position(i, j);
@@ -662,7 +663,7 @@ inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
     }
   }
 
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       float new_smoke = this->get_smoke_buffer(i, j);
@@ -673,7 +674,7 @@ inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> current_pos = this->get_u_position(i, j);
@@ -692,7 +693,7 @@ inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
     }
   }
 
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
       Vector2d<float> new_velocity = this->get_mut_velocity_buffer(i, j);
@@ -785,7 +786,7 @@ inline float Fluid<H, W>::interpolate_smoke(float x, float y) const {
 }
 
 template <int H, int W> inline void Fluid<H, W>::extrapolate() {
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(guided)
   for (int i = 0; i < W; i++) {
     {
       Cell &bottom_cell = this->get_mut_cell(i, 0);
@@ -800,7 +801,7 @@ template <int H, int W> inline void Fluid<H, W>::extrapolate() {
       top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
     }
   }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(guided)
   for (int j = 0; j < H; j++) {
     {
       Cell &right_cell = this->get_mut_cell(W - 1, j);
@@ -816,7 +817,7 @@ template <int H, int W> inline void Fluid<H, W>::extrapolate() {
 }
 
 template <int H, int W> inline void Fluid<H, W>::decay_smoke(float d_t) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
       Cell &cell = this->get_mut_cell(i, j);

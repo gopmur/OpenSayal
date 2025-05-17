@@ -31,8 +31,8 @@ void Mouse::update(SDL_Event event) {
   }
 }
 
-Source Mouse::make_source(int fluid_height) {
-  auto position = this->position;
+Source Mouse::make_source(int fluid_height, int cell_size) {
+  auto position = this->position / cell_size;
   position.set_y(fluid_height - position.get_y());
   double smoke = this->button == 1 ? 1 : 0;
   double velocity = this->button == 2 ? -this->wheel_value : this->wheel_value;

@@ -17,5 +17,5 @@ private:
 public:
   Mouse();
   void update(SDL_Event event);
-  Source make_source(int fluid_height);
+  Source make_source(int fluid_height, int cell_size);
 };

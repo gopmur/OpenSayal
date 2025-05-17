@@ -46,6 +46,12 @@ class Vector2d {
   friend Vector2d<T> operator*(const Vector2d<T>& vector, G scalar) {
     return Vector2d<T>(vector.x * scalar, vector.y * scalar);
   }
+
+  template <typename G>
+    requires arithmetic_concept<G>
+  friend Vector2d<T> operator/(const Vector2d<T>& vector, G scalar) {
+    return Vector2d<T>(vector.x / scalar, vector.y / scalar);
+  }
 };
 
 template <typename T>
