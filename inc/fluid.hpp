@@ -397,12 +397,20 @@ inline void Fluid<H, W>::apply_external_forces(Source source, float d_t) {
       if (source.active && square(i - source.position.get_x()) +
                                    square(j - source.position.get_y()) <
                                square(SOURCE_RADIUS)) {
-        if (source.smoke)
-          cell.set_smoke(source.smoke);
+
         double x_speed_modifier = i - source.position.get_x();
         double y_speed_modifier = j - source.position.get_y();
         cell.set_velocity_x(x_speed_modifier * source.velocity);
         cell.set_velocity_y(y_speed_modifier * source.velocity);
+      }
+      if (source.active && square(i - source.position.get_x()) +
+                                   square(j - source.position.get_y()) <=
+                               square(SOURCE_RADIUS) + 40 &&
+          square(i - source.position.get_x()) +
+                  square(j - source.position.get_y()) >=
+              square(SOURCE_RADIUS) - 40) {
+        // if (source.smoke)
+          cell.set_smoke(source.smoke);
       }
       auto vel_y = cell.get_velocity().get_y();
       cell.set_velocity_y(vel_y + PHYSICS_G * d_t);

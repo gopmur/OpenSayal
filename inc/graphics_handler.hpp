@@ -25,57 +25,48 @@ struct ArrowData {
   int left_head_end_y;
 };
 
-template <int H, int W, int S>
-class GraphicsHandler {
- private:
+template <int H, int W, int S> class GraphicsHandler {
+private:
   float arrow_head_length;
   float arrow_head_angle;
   float arrow_disable_thresh_hold;
-  SDL_Renderer* renderer;
-  SDL_Window* window;
-  SDL_Texture* fluid_texture;
-  SDL_PixelFormat* format;
+  SDL_Renderer *renderer;
+  SDL_Window *window;
+  SDL_Texture *fluid_texture;
+  SDL_PixelFormat *format;
   std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
                                             [H / TRACE_SPACER];
   int fluid_pixels[H][W];
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 
-  inline void draw_arrow(const ArrowData& arrow_data);
+  inline void draw_arrow(const ArrowData &arrow_data);
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
-  inline void update_fluid_pixels(const Fluid<H, W>& fluid);
-  inline void update_smoke_pixels(const Cell& cell, int x, int y);
-  inline void update_pressure_pixel(const Cell& cell,
-                                    int x,
-                                    int y,
-                                    float min_pressure,
-                                    float max_pressure);
-  inline void update_smoke_and_pressure(const Cell& cell,
-                                        int x,
-                                        int y,
-                                        float min_pressure,
-                                        float max_pressure);
-  inline void update_velocity_arrows(const Fluid<H, W>& fluid);
-  inline void update_center_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_horizontal_edge_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_vertical_edge_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_corner_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_traces(const Fluid<H, W>& fluid, float d_t);
+  inline void update_fluid_pixels(const Fluid<H, W> &fluid);
+  inline void update_smoke_pixels(const Cell &cell, int x, int y);
+  inline void update_pressure_pixel(const Cell &cell, int x, int y,
+                                    float min_pressure, float max_pressure);
+  inline void update_smoke_and_pressure(const Cell &cell, int x, int y,
+                                        float min_pressure, float max_pressure);
+  inline void update_velocity_arrows(const Fluid<H, W> &fluid);
+  inline void update_center_velocity_arrow(const Fluid<H, W> &fluid);
+  inline void update_horizontal_edge_velocity_arrow(const Fluid<H, W> &fluid);
+  inline void update_vertical_edge_velocity_arrow(const Fluid<H, W> &fluid);
+  inline void update_corner_velocity_arrow(const Fluid<H, W> &fluid);
+  inline void update_traces(const Fluid<H, W> &fluid, float d_t);
   void cleanup();
 
- public:
-  GraphicsHandler(float arrow_head_length,
-                  float arrow_head_angle,
+public:
+  GraphicsHandler(float arrow_head_length, float arrow_head_angle,
                   float arrow_disable_thresh_hold);
   ~GraphicsHandler();
-  void update(const Fluid<H, W>& fluid, float d_t);
+  void update(const Fluid<H, W> &fluid, float d_t);
 };
 
 template <int H, int W, int S>
 GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
                                           float arrow_head_angle,
                                           float arrow_disable_thresh_hold)
-    : arrow_head_angle(arrow_head_angle),
-      arrow_head_length(arrow_head_length),
+    : arrow_head_angle(arrow_head_angle), arrow_head_length(arrow_head_length),
       arrow_disable_thresh_hold(arrow_disable_thresh_hold) {
   this->window = nullptr;
   this->renderer = nullptr;
@@ -133,13 +124,11 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
   Logger::static_debug("graphics initialized successfully");
 }
 
-template <int H, int W, int S>
-GraphicsHandler<H, W, S>::~GraphicsHandler() {
+template <int H, int W, int S> GraphicsHandler<H, W, S>::~GraphicsHandler() {
   this->cleanup();
 }
 
-template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::cleanup() {
+template <int H, int W, int S> void GraphicsHandler<H, W, S>::cleanup() {
   Logger::static_debug("cleaning up graphics");
   if (this->window != nullptr) {
     SDL_DestroyWindow(this->window);
@@ -157,8 +146,7 @@ void GraphicsHandler<H, W, S>::cleanup() {
 }
 
 template <int H, int W, int S>
-inline ArrowData GraphicsHandler<H, W, S>::make_arrow_data(int x,
-                                                           int y,
+inline ArrowData GraphicsHandler<H, W, S>::make_arrow_data(int x, int y,
                                                            float length,
                                                            float angle) {
   ArrowData arrow_data;
@@ -184,7 +172,7 @@ inline ArrowData GraphicsHandler<H, W, S>::make_arrow_data(int x,
 };
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData& arrow_data) {
+inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData &arrow_data) {
   SDL_RenderDrawLine(renderer, arrow_data.start_x, arrow_data.start_y,
                      arrow_data.end_x, arrow_data.end_y);
   SDL_RenderDrawLine(renderer, arrow_data.end_x, arrow_data.end_y,
@@ -194,9 +182,8 @@ inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData& arrow_data) {
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell& cell,
-                                                          int x,
-                                                          int y) {
+inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell &cell,
+                                                          int x, int y) {
   auto smoke = cell.get_smoke();
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
   this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
@@ -204,68 +191,63 @@ inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell& cell,
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
-    const Cell& cell,
-    int x,
-    int y,
-    float min_pressure,
-    float max_pressure) {
-  auto pressure = cell.get_pressure();
-  float norm_p;
-  if (pressure < 0) {
-    norm_p = -pressure / min_pressure;
-  } else {
-    norm_p = pressure / max_pressure;
-  }
-  norm_p = std::clamp(norm_p, -1.0f, 1.0f);
-  float hue = (1.0f - norm_p) * 120.0f;
+    const Cell &cell, int x, int y, float min_vel, float max_vel) {
+  float vel_x = cell.get_velocity().get_x();
+  float vel_y = cell.get_velocity().get_y();
+  float vel = square(vel_x) + square(vel_y);
+  float norm_vel = vel / max_vel;
+  float angle =
+      std::atan2(cell.get_velocity().get_y(), cell.get_velocity().get_x());
+  norm_vel = std::clamp(norm_vel, 0.0f, 1.0f);
+  float hue = (angle + M_PI) / M_PI * 180;
   auto smoke = cell.get_smoke();
   uint8_t r, g, b;
-  hsv_to_rgb(hue, 1.0f, smoke, r, g, b);
+  hsv_to_rgb(hue, norm_vel, smoke, r, g, b);
   this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
-    const Cell& cell,
-    int x,
-    int y,
-    float min_pressure,
-    float max_pressure) {
-  auto pressure = cell.get_pressure();
-  float norm_p;
-  if (pressure < 0) {
-    norm_p = -pressure / min_pressure;
-  } else {
-    norm_p = pressure / max_pressure;
-  }
-  norm_p = std::clamp(norm_p, -1.0f, 1.0f);
-  float hue = (1.0f - norm_p) * 120.0f;
+inline void
+GraphicsHandler<H, W, S>::update_pressure_pixel(const Cell &cell, int x, int y,
+                                                float min_vel, float max_vel) {
+  float vel_x = cell.get_velocity().get_x();
+  float vel_y = cell.get_velocity().get_y();
+  float vel = square(vel_x) + square(vel_y);
+  float norm_vel = vel / max_vel;
+  float angle =
+      std::atan2(cell.get_velocity().get_y(), cell.get_velocity().get_x());
+  norm_vel = std::clamp(norm_vel, 0.0f, 1.0f);
+  float hue = (angle + M_PI) / M_PI * 180;
   uint8_t r, g, b;
-  hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
+  hsv_to_rgb(hue, 1.0f, norm_vel, r, g, b);
   this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
-    const Fluid<H, W>& fluid) {
+inline void
+GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid<H, W> &fluid) {
 #if ENABLE_PRESSURE
-  float max_pressure = -INFINITY;
-  float min_pressure = INFINITY;
+  float max_vel = -INFINITY;
+  float min_vel = INFINITY;
 
-#pragma omp parallel for collapse(2) reduction(max : max_pressure)
+#pragma omp parallel for collapse(2) reduction(max : max_vel)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float pressure = fluid.get_pressure(i, j);
-      if (pressure > max_pressure) {
-        max_pressure = pressure;
+      float vel_x = fluid.get_cell(i, j).get_velocity().get_x();
+      float vel_y = fluid.get_cell(i, j).get_velocity().get_y();
+      float vel = square(vel_x) + square(vel_y);
+      if (vel > max_vel) {
+        max_vel = vel;
       }
     }
   }
-#pragma omp parallel for collapse(2) reduction(min : min_pressure)
+#pragma omp parallel for collapse(2) reduction(min : min_vel)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float pressure = fluid.get_pressure(i, j);
-      if (pressure < min_pressure) {
-        min_pressure = pressure;
+      float vel_x = fluid.get_cell(i, j).get_velocity().get_x();
+      float vel_y = fluid.get_cell(i, j).get_velocity().get_y();
+      float vel = square(vel_x) + square(vel_y);
+      if (vel < min_vel) {
+        min_vel = vel;
       }
     }
   }
@@ -274,7 +256,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 #pragma omp parallel for collapse(2) schedule(guided)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
-      const Cell& cell = fluid.get_cell(i, j);
+      const Cell &cell = fluid.get_cell(i, j);
 
       int x = i;
       int y = H - j - 1;
@@ -283,9 +265,9 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
         this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
 #if ENABLE_PRESSURE and ENABLE_SMOKE
-        this->update_smoke_and_pressure(cell, x, y, min_pressure, max_pressure);
+        this->update_smoke_and_pressure(cell, x, y, min_vel, max_vel);
 #elif ENABLE_PRESSURE
-        this->update_pressure_pixel(cell, x, y, min_pressure, max_pressure);
+        this->update_pressure_pixel(cell, x, y, min_vel, max_vel);
 #elif ENABLE_SMOKE
         this->update_smoke_pixels(cell, x, y);
 #endif
@@ -296,11 +278,11 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
-    const Fluid<H, W>& fluid) {
+    const Fluid<H, W> &fluid) {
 #pragma omp parallel for schedule(guided)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
+      const Cell &cell = fluid.get_cell(i, j);
       if (cell.is_solid()) {
         continue;
       }
@@ -324,12 +306,12 @@ inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
-    const Fluid<H, W>& fluid) {
+    const Fluid<H, W> &fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 #pragma omp parallel for schedule(guided)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
+      const Cell &cell = fluid.get_cell(i, j);
       if (cell.is_solid()) {
         continue;
       }
@@ -353,13 +335,13 @@ inline void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
-    const Fluid<H, W>& fluid) {
+    const Fluid<H, W> &fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 #pragma omp parallel for schedule(guided)
 
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
+      const Cell &cell = fluid.get_cell(i, j);
       if (cell.is_solid()) {
         continue;
       }
@@ -383,12 +365,12 @@ inline void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
-    const Fluid<H, W>& fluid) {
+    const Fluid<H, W> &fluid) {
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 #pragma omp parallel for schedule(guided)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
+      const Cell &cell = fluid.get_cell(i, j);
       if (cell.is_solid()) {
         continue;
       }
@@ -411,8 +393,8 @@ inline void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
-    const Fluid<H, W>& fluid) {
+inline void
+GraphicsHandler<H, W, S>::update_velocity_arrows(const Fluid<H, W> &fluid) {
 #if DRAW_CORNER_ARROW
   SDL_SetRenderDrawColor(renderer, CORNER_ARROW_COLOR);
   this->update_corner_velocity_arrow(fluid);
@@ -432,7 +414,7 @@ inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
+inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W> &fluid,
                                                     float d_t) {
 #pragma omp parallel for schedule(guided)
   for (int i = 1; i < W - 1; i += TRACE_SPACER) {
@@ -454,7 +436,7 @@ inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid, float d_t) {
+void GraphicsHandler<H, W, S>::update(const Fluid<H, W> &fluid, float d_t) {
   this->update_fluid_pixels(fluid);
   SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels,
                     W * sizeof(int));
