@@ -40,7 +40,7 @@ class Fluid {
   __device__ __host__ inline Vector2d<float> get_v_position(int, int j) const;
   __device__ __host__ inline void set_pressure(int i, int j, float pressure);
 
-  __device__ __host__ inline void zero_pressure();
+  inline void zero_pressure();
 
   inline void apply_external_forces(float d_t);
   inline void apply_projection(float d_t);
@@ -100,6 +100,7 @@ class Fluid {
                                                                float d_t);
   __device__ __host__ inline void extrapolate_at(int i, int j);
   __device__ __host__ inline void decay_smoke_at(int i, int j, float d_t);
+  __device__ __host__ inline void zero_pressure_at(int i, int j);
   inline void update(float d_t);
 };
 
@@ -246,13 +247,26 @@ __device__ __host__ inline uint8_t Fluid<H, W>::get_s(int i, int j) {
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::zero_pressure() {
-  for (int i = 0; i < W; i++) {
-    for (int j = 0; j < H; j++) {
-      this->get_mut_cell(i, j).set_pressure(0);
-    }
+__global__ void zero_pressure_kernel(Fluid<H, W>* device_fluid) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
   }
+  device_fluid->zero_pressure_at(i, j);
 }
+
+template <int H, int W>
+__device__ __host__ inline void Fluid<H, W>::zero_pressure_at(int i, int j) {
+  this->get_mut_cell(i, j).set_pressure(0);
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::zero_pressure() {
+  zero_pressure_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
+      this->device_fluid);
+}
+
 template <int H, int W>
 __device__ __host__ inline void
 Fluid<H, W>::update_pressure_at(int i, int j, float velocity_diff, float d_t) {
@@ -315,6 +329,9 @@ template <int H, int W>
 __global__ void apply_projection_even_kernel(Fluid<H, W>* fluid, float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   if ((i + j) % 2 == 0) {
     fluid->apply_projection_at(i, j, d_t);
   }
@@ -324,6 +341,9 @@ template <int H, int W>
 __global__ void apply_projection_odd_kernel(Fluid<H, W>* fluid, float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   if ((i + j) % 2 == 1) {
     fluid->apply_projection_at(i, j, d_t);
   }
@@ -636,32 +656,37 @@ Fluid<H, W>::update_smoke_advection_at(int i, int j, float d_t) {
 
 template <int H, int W>
 __global__ void apply_smoke_advection_kernel(Fluid<H, W>* device_fluid,
-                                                float d_t) {
+                                             float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   device_fluid->apply_smoke_advection_at(i, j, d_t);
 }
 
 template <int H, int W>
 __global__ void update_smoke_advection_kernel(Fluid<H, W>* device_fluid,
-                                                 float d_t) {
+                                              float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   device_fluid->update_smoke_advection_at(i, j, d_t);
 }
 
 template <int H, int W>
 inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
   apply_smoke_advection_kernel<<<this->kernel_grid_dim,
-                                    this->kernel_block_dim>>>(
-      this->device_fluid, d_t);
+                                 this->kernel_block_dim>>>(this->device_fluid,
+                                                           d_t);
   cudaDeviceSynchronize();
   update_smoke_advection_kernel<<<this->kernel_grid_dim,
-                                     this->kernel_block_dim>>>(
-      this->device_fluid, d_t);
+                                  this->kernel_block_dim>>>(this->device_fluid,
+                                                            d_t);
   cudaDeviceSynchronize();
 }
-
 
 template <int H, int W>
 __device__ __host__ inline void
@@ -694,6 +719,9 @@ __global__ void apply_velocity_advection_kernel(Fluid<H, W>* device_fluid,
                                                 float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   device_fluid->apply_velocity_advection_at(i, j, d_t);
 }
 
@@ -702,6 +730,9 @@ __global__ void update_velocity_advection_kernel(Fluid<H, W>* device_fluid,
                                                  float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   device_fluid->update_velocity_advection_at(i, j, d_t);
 }
 
@@ -853,15 +884,18 @@ template <int H, int W>
 __global__ void apply_external_forces_kernel(Fluid<H, W>* fluid, float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
   fluid->apply_external_forces_at(i, j, d_t);
 }
 
 template <int H, int W>
 inline void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
-  // #if ENABLE_PRESSURE
-  //   this->zero_pressure();
-  // #endif
+#if ENABLE_PRESSURE
+  this->zero_pressure();
+#endif
   this->apply_projection(d_t);
   //   this->extrapolate();
   this->apply_velocity_advection(d_t);
