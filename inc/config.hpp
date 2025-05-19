@@ -4,8 +4,8 @@
 
 #define THREAD_COUNT 8
 
-#define FLUID_HEIGHT 640 * 2
-#define FLUID_WIDTH 1024 * 2
+#define FLUID_HEIGHT 640
+#define FLUID_WIDTH 1024
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
@@ -46,6 +46,7 @@
 #define USE_REAL_TIME false
 #define REAL_TIME_MULTIPLIER 1
 
+#define ENABLE_SMOKE_DECAY true
 #define SMOKE_DECAY_RATE 0.05
 
 #define REPORT_FILE_NAME "report.log"

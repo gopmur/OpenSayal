@@ -46,8 +46,8 @@ class Fluid {
   inline void apply_projection(float d_t);
   inline void apply_smoke_advection(float d_t);
   inline void apply_velocity_advection(float d_t);
-  __device__ __host__ inline void extrapolate();
-  __device__ __host__ inline void decay_smoke(float d_t);
+  inline void apply_extrapolation();
+  inline void decay_smoke(float d_t);
 
  public:
   const float g = PHYSICS_G;
@@ -98,7 +98,7 @@ class Fluid {
   __device__ __host__ inline void update_velocity_advection_at(int i,
                                                                int j,
                                                                float d_t);
-  __device__ __host__ inline void extrapolate_at(int i, int j);
+  __device__ __host__ inline void apply_extrapolation_at(int i, int j);
   __device__ __host__ inline void decay_smoke_at(int i, int j, float d_t);
   __device__ __host__ inline void zero_pressure_at(int i, int j);
   inline void update(float d_t);
@@ -832,7 +832,8 @@ __device__ __host__ inline float Fluid<H, W>::interpolate_smoke(float x,
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::extrapolate_at(int i, int j) {
+__device__ __host__ inline void Fluid<H, W>::apply_extrapolation_at(int i,
+                                                                    int j) {
   if (j == 0) {
     Cell& bottom_cell = this->get_mut_cell(i, j);
     Cell& top_cell = this->get_mut_cell(i, j + 1);
@@ -855,29 +856,51 @@ __device__ __host__ inline void Fluid<H, W>::extrapolate_at(int i, int j) {
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::extrapolate() {
-#pragma omp parallel for schedule(static) collapse(2)
-  for (int i = 0; i < W; i++) {
-    for (int j = 0; j < H; j++) {
-      extrapolate_at(i, j);
-    }
+__global__ inline void apply_extrapolation_kernel(Fluid<H, W>* device_fluid) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
   }
+  device_fluid->apply_extrapolation_at(i, j);
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::decay_smoke(float d_t) {
-#pragma omp parallel for collapse(2) schedule(static)
-  for (int i = 0; i < W; i++) {
-    for (int j = 0; j < H; j++) {
-      Cell& cell = this->get_mut_cell(i, j);
-      float smoke = cell.get_smoke();
-#if SMOKE_DECAY == 0
-      cell.set_smoke(smoke);
-#else
-      cell.set_smoke(std::max({smoke - SMOKE_DECAY_RATE * d_t, 0.0}));
-#endif
-    }
+inline void Fluid<H, W>::apply_extrapolation() {
+  apply_extrapolation_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
+      this->device_fluid);
+  cudaDeviceSynchronize();
+}
+
+template <int H, int W>
+__global__ inline void decay_smoke_kernel(Fluid<H, W>* device_fluid,
+                                          float d_t) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
   }
+  device_fluid->decay_smoke_at(i, j, d_t);
+}
+
+template <int H, int W>
+__device__ __host__ inline void Fluid<H, W>::decay_smoke_at(int i,
+                                                            int j,
+                                                            float d_t) {
+  Cell& cell = this->get_mut_cell(i, j);
+  float smoke = cell.get_smoke();
+#if not ENABLE_SMOKE_DECAY
+  cell.set_smoke(smoke);
+#else
+  cell.set_smoke(max(smoke - SMOKE_DECAY_RATE * d_t, 0.0));
+#endif
+}
+
+template <int H, int W>
+inline void Fluid<H, W>::decay_smoke(float d_t) {
+  decay_smoke_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
+      this->device_fluid, d_t);
+  cudaDeviceSynchronize();
 }
 
 template <int H, int W>
@@ -897,13 +920,13 @@ inline void Fluid<H, W>::update(float d_t) {
   this->zero_pressure();
 #endif
   this->apply_projection(d_t);
-  //   this->extrapolate();
+  this->apply_extrapolation();
   this->apply_velocity_advection(d_t);
-  // #if ENABLE_SMOKE
-  //   if (WIND_SMOKE != 0) {
-  this->apply_smoke_advection(d_t);
-  //     this->decay_smoke(d_t);
-  //   }
-  // #endif
+#if ENABLE_SMOKE
+  if (WIND_SMOKE != 0) {
+    this->apply_smoke_advection(d_t);
+    this->decay_smoke(d_t);
+  }
+#endif
   cudaMemcpy(this, device_fluid, sizeof(Fluid<H, W>), cudaMemcpyDeviceToHost);
 }
