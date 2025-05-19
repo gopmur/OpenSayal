@@ -1,5 +1,4 @@
 #include <chrono>
-#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -8,7 +7,7 @@
 #include "SDL_events.h"
 
 #include "config.hpp"
-#include "fluid.hpp"
+#include "fluid.cu"
 #include "graphics_handler.hpp"
 #include "logger.hpp"
 #include "platform_setup.hpp"

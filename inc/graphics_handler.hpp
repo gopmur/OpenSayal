@@ -10,8 +10,8 @@
 #include "SDL_render.h"
 
 #include "config.hpp"
-#include "fluid.hpp"
-#include "helper.hpp"
+#include "fluid.cu"
+#include "helper.cu"
 #include "logger.hpp"
 
 struct ArrowData {
