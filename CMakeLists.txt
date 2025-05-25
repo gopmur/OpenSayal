@@ -8,10 +8,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -fopenmp")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 --use_fast_math --ptxas-options=-O3")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xcompiler -fopenmp --use_fast_math --ptxas-options=-O3")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
-set(CMAKE_CUDA_FLAGS_DEBUG "-O0 --generate-line-info")
+set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -Xcompiler -fopenmp --generate-line-info")
 
 # store source files
 file(GLOB_RECURSE PROJECT_SOURCE_FILES

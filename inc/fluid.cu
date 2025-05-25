@@ -1,29 +1,28 @@
 #pragma once
 
-#include <omp.h>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <omp.h>
 
 #include "SDL_rect.h"
 
 #include "config.hpp"
 #include "fluid.helper.cu"
 
-template <int H, int W>
-class Fluid {
- private:
+template <int H, int W> class Fluid {
+private:
   Cell grid[W][H];
   Vector2d<float> velocity_buffer[W][H];
   float smoke_buffer[W][H];
   uint8_t total_s[W][H];
-  Fluid<H, W>* device_fluid;
+  Fluid<H, W> *device_fluid;
   dim3 kernel_grid_dim;
   dim3 kernel_block_dim;
 
-  __device__ __host__ inline Cell& get_mut_cell(int i, int j);
-  __device__ __host__ inline Vector2d<float>& get_mut_velocity_buffer(int i,
+  __device__ __host__ inline Cell &get_mut_cell(int i, int j);
+  __device__ __host__ inline Vector2d<float> &get_mut_velocity_buffer(int i,
                                                                       int j);
   __device__ __host__ inline void set_smoke_buffer(int i, int j, float smoke);
   __device__ __host__ inline float get_smoke_buffer(int i, int j);
@@ -49,7 +48,7 @@ class Fluid {
   inline void apply_extrapolation();
   inline void decay_smoke(float d_t);
 
- public:
+public:
   const float g = PHYSICS_G;
   const float o;
   const int cell_size;
@@ -59,44 +58,34 @@ class Fluid {
   ~Fluid();
 
   // getters
-  __device__ __host__ inline const Cell& get_cell(int i, int j) const;
+  __device__ __host__ inline const Cell &get_cell(int i, int j) const;
   __device__ __host__ inline float get_divergence(int i, int j) const;
   __device__ __host__ inline float get_pressure(int i, int j) const;
   __device__ __host__ uint8_t inline get_s(int i, int j);
 
   __device__ __host__ inline bool is_edge(int i, int j) const;
 
-  __device__ __host__ inline Vector2d<float> get_general_velocity(
-      float x,
-      float y) const;
-  __device__ __host__ inline Vector2d<float> get_vertical_edge_velocity(
-      int i,
-      int j) const;
-  __device__ __host__ inline Vector2d<float> get_horizontal_edge_velocity(
-      int i,
-      int j) const;
+  __device__ __host__ inline Vector2d<float>
+  get_general_velocity(float x, float y) const;
+  __device__ __host__ inline Vector2d<float>
+  get_vertical_edge_velocity(int i, int j) const;
+  __device__ __host__ inline Vector2d<float>
+  get_horizontal_edge_velocity(int i, int j) const;
   __device__ __host__ inline std::array<SDL_Point, TRACE_LENGTH>
   trace(int i, int j, float d_t) const;
 
-  __device__ __host__ inline void apply_external_forces_at(int i,
-                                                           int j,
+  __device__ __host__ inline void apply_external_forces_at(int i, int j,
                                                            float d_t);
   __device__ __host__ inline void apply_projection_at(int i, int j, float d_t);
-  __device__ __host__ inline void apply_velocity_advection_at(int i,
-                                                              int j,
+  __device__ __host__ inline void apply_velocity_advection_at(int i, int j,
                                                               float d_t);
-  __device__ __host__ inline void update_pressure_at(int i,
-                                                     int j,
-                                                     float velocity_diff,
-                                                     float d_t);
-  __device__ __host__ inline void apply_smoke_advection_at(int i,
-                                                           int j,
+  __device__ __host__ inline void
+  update_pressure_at(int i, int j, float velocity_diff, float d_t);
+  __device__ __host__ inline void apply_smoke_advection_at(int i, int j,
                                                            float d_t);
-  __device__ __host__ inline void update_smoke_advection_at(int i,
-                                                            int j,
+  __device__ __host__ inline void update_smoke_advection_at(int i, int j,
                                                             float d_t);
-  __device__ __host__ inline void update_velocity_advection_at(int i,
-                                                               int j,
+  __device__ __host__ inline void update_velocity_advection_at(int i, int j,
                                                                float d_t);
   __device__ __host__ inline void apply_extrapolation_at(int i, int j);
   __device__ __host__ inline void decay_smoke_at(int i, int j, float d_t);
@@ -105,7 +94,7 @@ class Fluid {
 };
 
 template <int H, int W>
-__global__ void apply_external_forces_kernel(Fluid<H, W>* fluid, float d_t);
+__global__ void apply_external_forces_kernel(Fluid<H, W> *fluid, float d_t);
 
 template <int H, int W>
 __device__ __host__ inline float Fluid<H, W>::get_pressure(int i, int j) const {
@@ -113,10 +102,9 @@ __device__ __host__ inline float Fluid<H, W>::get_pressure(int i, int j) const {
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::set_pressure(int i,
-                                                          int j,
+__device__ __host__ inline void Fluid<H, W>::set_pressure(int i, int j,
                                                           float pressure) {
-  Cell& cell = this->get_mut_cell(i, j);
+  Cell &cell = this->get_mut_cell(i, j);
   cell.set_pressure(pressure);
 }
 
@@ -155,7 +143,7 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
   cudaMalloc(&this->device_fluid, sizeof(Fluid<H, W>));
   for (auto i = 0; i < W; i++) {
     for (auto j = 0; j < H; j++) {
-      Cell& cell = this->get_mut_cell(i, j);
+      Cell &cell = this->get_mut_cell(i, j);
       cell = Cell(
           i == 0 or j == 0 or j == H - 1 or
 #if ENABLE_RIGHT_WALL
@@ -173,20 +161,18 @@ Fluid<H, W>::Fluid(float o, int n, int cell_size)
              cudaMemcpyHostToDevice);
 }
 
-template <int H, int W>
-Fluid<H, W>::~Fluid<H, W>() {
+template <int H, int W> Fluid<H, W>::~Fluid<H, W>() {
   cudaFree(this->device_fluid);
 }
 
 template <int H, int W>
-__device__ __host__ inline const Cell& Fluid<H, W>::get_cell(int i,
+__device__ __host__ inline const Cell &Fluid<H, W>::get_cell(int i,
                                                              int j) const {
   return grid[i][j];
 };
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::set_smoke_buffer(int i,
-                                                              int j,
+__device__ __host__ inline void Fluid<H, W>::set_smoke_buffer(int i, int j,
                                                               float smoke) {
   smoke_buffer[i][j] = smoke;
 }
@@ -197,22 +183,22 @@ __device__ __host__ inline float Fluid<H, W>::get_smoke_buffer(int i, int j) {
 }
 
 template <int H, int W>
-__device__ __host__ inline Vector2d<float>&
+__device__ __host__ inline Vector2d<float> &
 Fluid<H, W>::get_mut_velocity_buffer(int i, int j) {
   return this->velocity_buffer[i][j];
 }
 
 template <int H, int W>
-__device__ __host__ inline Cell& Fluid<H, W>::get_mut_cell(int i, int j) {
+__device__ __host__ inline Cell &Fluid<H, W>::get_mut_cell(int i, int j) {
   return grid[i][j];
 };
 
 template <int H, int W>
 __device__ __host__ inline float Fluid<H, W>::get_divergence(int i,
                                                              int j) const {
-  const Cell& cell = get_cell(i, j);
-  const Cell& top_cell = get_cell(i, j + 1);
-  const Cell& right_cell = get_cell(i + 1, j);
+  const Cell &cell = get_cell(i, j);
+  const Cell &top_cell = get_cell(i, j + 1);
+  const Cell &right_cell = get_cell(i + 1, j);
 
   auto u = cell.get_velocity().get_x();
   auto v = cell.get_velocity().get_y();
@@ -230,10 +216,10 @@ __device__ __host__ inline uint8_t Fluid<H, W>::get_s(int i, int j) {
     return total_s[i][j];
   }
 
-  const Cell& top_cell = get_cell(i, j + 1);
-  const Cell& bottom_cell = get_cell(i, j - 1);
-  const Cell& right_cell = get_cell(i + 1, j);
-  const Cell& left_cell = get_cell(i - 1, j);
+  const Cell &top_cell = get_cell(i, j + 1);
+  const Cell &bottom_cell = get_cell(i, j - 1);
+  const Cell &right_cell = get_cell(i + 1, j);
+  const Cell &left_cell = get_cell(i - 1, j);
 
   auto top_s = top_cell.get_s();
   auto bottom_s = bottom_cell.get_s();
@@ -247,7 +233,7 @@ __device__ __host__ inline uint8_t Fluid<H, W>::get_s(int i, int j) {
 }
 
 template <int H, int W>
-__global__ void zero_pressure_kernel(Fluid<H, W>* device_fluid) {
+__global__ void zero_pressure_kernel(Fluid<H, W> *device_fluid) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= W or j >= H) {
@@ -261,8 +247,7 @@ __device__ __host__ inline void Fluid<H, W>::zero_pressure_at(int i, int j) {
   this->get_mut_cell(i, j).set_pressure(0);
 }
 
-template <int H, int W>
-inline void Fluid<H, W>::zero_pressure() {
+template <int H, int W> inline void Fluid<H, W>::zero_pressure() {
   zero_pressure_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
       this->device_fluid);
 }
@@ -276,18 +261,17 @@ Fluid<H, W>::update_pressure_at(int i, int j, float velocity_diff, float d_t) {
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::apply_projection_at(int i,
-                                                                 int j,
+__device__ __host__ inline void Fluid<H, W>::apply_projection_at(int i, int j,
                                                                  float d_t) {
-  Cell& cell = get_mut_cell(i, j);
+  Cell &cell = get_mut_cell(i, j);
   if (cell.is_solid()) {
     return;
   }
 
-  Cell& left_cell = get_mut_cell(i - 1, j);
-  Cell& right_cell = get_mut_cell(i + 1, j);
-  Cell& bottom_cell = get_mut_cell(i, j - 1);
-  Cell& top_cell = get_mut_cell(i, j + 1);
+  Cell &left_cell = get_mut_cell(i - 1, j);
+  Cell &right_cell = get_mut_cell(i + 1, j);
+  Cell &bottom_cell = get_mut_cell(i, j - 1);
+  Cell &top_cell = get_mut_cell(i, j + 1);
 
   auto u = cell.get_velocity().get_x();
   auto v = cell.get_velocity().get_y();
@@ -326,37 +310,36 @@ __device__ __host__ inline void Fluid<H, W>::apply_projection_at(int i,
 }
 
 template <int H, int W>
-__global__ void apply_projection_even_kernel(Fluid<H, W>* fluid, float d_t) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void apply_projection_even_kernel(Fluid<H, W> *fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + (j % 2);
   if (i >= W or j >= H) {
     return;
   }
-  if ((i + j) % 2 == 0) {
-    fluid->apply_projection_at(i, j, d_t);
-  }
+  fluid->apply_projection_at(i, j, d_t);
 }
 
 template <int H, int W>
-__global__ void apply_projection_odd_kernel(Fluid<H, W>* fluid, float d_t) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void apply_projection_odd_kernel(Fluid<H, W> *fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
+  int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + ((j + 1) % 2);
   if (i >= W or j >= H) {
     return;
   }
-  if ((i + j) % 2 == 1) {
-    fluid->apply_projection_at(i, j, d_t);
-  }
+  fluid->apply_projection_at(i, j, d_t);
 }
 
-template <int H, int W>
-inline void Fluid<H, W>::apply_projection(float d_t) {
+template <int H, int W> inline void Fluid<H, W>::apply_projection(float d_t) {
+  int block_x = 8;
+  int block_y = 8;
+  int grid_x = std::ceil(static_cast<float>(W) / block_x / 2);
+  int grid_y = std::ceil(static_cast<float>(H) / block_y);
+  auto grid_dim = dim3(grid_x, grid_y);
   for (int _ = 0; _ < this->n; _++) {
-    apply_projection_even_kernel<<<this->kernel_grid_dim,
+    apply_projection_even_kernel<<<grid_dim,
                                    this->kernel_block_dim>>>(this->device_fluid,
                                                              d_t);
-    cudaDeviceSynchronize();
-    apply_projection_odd_kernel<<<this->kernel_grid_dim,
+    apply_projection_odd_kernel<<<grid_dim,
                                   this->kernel_block_dim>>>(this->device_fluid,
                                                             d_t);
     cudaDeviceSynchronize();
@@ -366,7 +349,7 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
 template <int H, int W>
 __device__ __host__ inline void
 Fluid<H, W>::apply_external_forces_at(int i, int j, float d_t) {
-  Cell& cell = get_mut_cell(i, j);
+  Cell &cell = get_mut_cell(i, j);
   if (i <= SMOKE_LENGTH and i != 0 && j >= H / 2 - PIPE_HEIGHT / 2 &&
       j <= H / 2 + PIPE_HEIGHT / 2) {
     cell.set_smoke(WIND_SMOKE);
@@ -399,26 +382,26 @@ __device__ __host__ inline bool Fluid<H, W>::is_valid_fluid(int i,
 template <int H, int W>
 __device__ __host__ inline Vector2d<float>
 Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
-  const Cell& cell = this->get_cell(i, j);
+  const Cell &cell = this->get_cell(i, j);
   auto u = cell.get_velocity().get_x();
 
   auto avg_v = cell.get_velocity().get_y();
   int count = 1;
 
   if (is_valid_fluid(i - 1, j + 1)) {
-    const Cell& top_left_cell = this->get_cell(i - 1, j + 1);
+    const Cell &top_left_cell = this->get_cell(i - 1, j + 1);
     avg_v += top_left_cell.get_velocity().get_y();
     count++;
   }
 
   if (is_valid_fluid(i, j + 1)) {
-    const Cell& top_right_cell = this->get_cell(i, j + 1);
+    const Cell &top_right_cell = this->get_cell(i, j + 1);
     avg_v += top_right_cell.get_velocity().get_y();
     count++;
   }
 
   if (is_valid_fluid(i - 1, j)) {
-    const Cell& bottom_left_cell = this->get_cell(i - 1, j);
+    const Cell &bottom_left_cell = this->get_cell(i - 1, j);
     avg_v += bottom_left_cell.get_velocity().get_y();
     count++;
   }
@@ -431,26 +414,26 @@ Fluid<H, W>::get_vertical_edge_velocity(int i, int j) const {
 template <int H, int W>
 __device__ __host__ inline Vector2d<float>
 Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
-  const Cell& cell = this->get_cell(i, j);
+  const Cell &cell = this->get_cell(i, j);
   auto v = cell.get_velocity().get_y();
 
   float avg_u = cell.get_velocity().get_x();
   int count = 1;
 
   if (is_valid_fluid(i + 1, j)) {
-    const Cell& top_right_cell = this->get_cell(i + 1, j);
+    const Cell &top_right_cell = this->get_cell(i + 1, j);
     avg_u += top_right_cell.get_velocity().get_x();
     count++;
   }
 
   if (is_valid_fluid(i, j - 1)) {
-    const Cell& bottom_left_cell = this->get_cell(i, j - 1);
+    const Cell &bottom_left_cell = this->get_cell(i, j - 1);
     avg_u += bottom_left_cell.get_velocity().get_x();
     count++;
   }
 
   if (is_valid_fluid(i + 1, j - 1)) {
-    const Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
+    const Cell &bottom_right_cell = this->get_cell(i + 1, j - 1);
     avg_u += bottom_right_cell.get_velocity().get_x();
     count++;
   }
@@ -461,9 +444,8 @@ Fluid<H, W>::get_horizontal_edge_velocity(int i, int j) const {
 }
 
 template <int H, int W>
-__device__ __host__ inline float Fluid<H, W>::get_general_velocity_y(
-    float x,
-    float y) const {
+__device__ __host__ inline float
+Fluid<H, W>::get_general_velocity_y(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -483,22 +465,22 @@ __device__ __host__ inline float Fluid<H, W>::get_general_velocity_y(
     float w_y = 1 - in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      const Cell& bottom_right_cell = this->get_cell(i, j);
+      const Cell &bottom_right_cell = this->get_cell(i, j);
       avg_v += w_y * w_x * bottom_right_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i - 1, j)) {
-      const Cell& bottom_left_cell = this->get_cell(i - 1, j);
+      const Cell &bottom_left_cell = this->get_cell(i - 1, j);
       avg_v += w_y * (1 - w_x) * bottom_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i - 1, j + 1)) {
-      const Cell& top_left_cell = this->get_cell(i - 1, j + 1);
+      const Cell &top_left_cell = this->get_cell(i - 1, j + 1);
       avg_v += (1 - w_y) * (1 - w_x) * top_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
-      const Cell& top_right_cell = this->get_cell(i, j + 1);
+      const Cell &top_right_cell = this->get_cell(i, j + 1);
       avg_v += (1 - w_y) * w_x * top_right_cell.get_velocity().get_y();
     }
   }
@@ -509,22 +491,22 @@ __device__ __host__ inline float Fluid<H, W>::get_general_velocity_y(
     float w_y = 1 - in_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      const Cell& bottom_left_cell = this->get_cell(i, j);
+      const Cell &bottom_left_cell = this->get_cell(i, j);
       avg_v += w_y * w_x * bottom_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
-      const Cell& top_left_cell = this->get_cell(i, j + 1);
+      const Cell &top_left_cell = this->get_cell(i, j + 1);
       avg_v += (1 - w_y) * w_x * top_left_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i + 1, j + 1)) {
-      const Cell& top_right_cell = this->get_cell(i + 1, j + 1);
+      const Cell &top_right_cell = this->get_cell(i + 1, j + 1);
       avg_v += (1 - w_y) * (1 - w_x) * top_right_cell.get_velocity().get_y();
     }
 
     if (this->is_valid_fluid(i + 1, j)) {
-      const Cell& bottom_right_cell = this->get_cell(i + 1, j);
+      const Cell &bottom_right_cell = this->get_cell(i + 1, j);
       avg_v += w_y * (1 - w_x) * bottom_right_cell.get_velocity().get_y();
     }
   }
@@ -533,9 +515,8 @@ __device__ __host__ inline float Fluid<H, W>::get_general_velocity_y(
 }
 
 template <int H, int W>
-__device__ __host__ inline float Fluid<H, W>::get_general_velocity_x(
-    float x,
-    float y) const {
+__device__ __host__ inline float
+Fluid<H, W>::get_general_velocity_x(float x, float y) const {
   int i = x / this->cell_size;
   int j = y / this->cell_size;
 
@@ -555,22 +536,22 @@ __device__ __host__ inline float Fluid<H, W>::get_general_velocity_x(
     float w_y = 1 - d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      const Cell& top_left_cell = this->get_cell(i, j);
+      const Cell &top_left_cell = this->get_cell(i, j);
       avg_u += w_y * w_x * top_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j)) {
-      const Cell& top_right_cell = this->get_cell(i + 1, j);
+      const Cell &top_right_cell = this->get_cell(i + 1, j);
       avg_u += w_y * (1 - w_x) * top_right_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i, j - 1)) {
-      const Cell& bottom_left_cell = this->get_cell(i, j - 1);
+      const Cell &bottom_left_cell = this->get_cell(i, j - 1);
       avg_u += (1 - w_y) * w_x * bottom_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j - 1)) {
-      const Cell& bottom_right_cell = this->get_cell(i + 1, j - 1);
+      const Cell &bottom_right_cell = this->get_cell(i + 1, j - 1);
       avg_u += (1 - w_y) * (1 - w_x) * bottom_right_cell.get_velocity().get_x();
     }
   }
@@ -582,22 +563,22 @@ __device__ __host__ inline float Fluid<H, W>::get_general_velocity_x(
     float w_y = 1 - d_y / this->cell_size;
 
     if (this->is_valid_fluid(i, j)) {
-      const Cell& bottom_left_cell = this->get_cell(i, j);
+      const Cell &bottom_left_cell = this->get_cell(i, j);
       avg_u += w_y * w_x * bottom_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i, j + 1)) {
-      const Cell& top_left_cell = this->get_cell(i, j + 1);
+      const Cell &top_left_cell = this->get_cell(i, j + 1);
       avg_u += (1 - w_y) * w_x * top_left_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j)) {
-      const Cell& bottom_right_cell = this->get_cell(i + 1, j);
+      const Cell &bottom_right_cell = this->get_cell(i + 1, j);
       avg_u += w_y * (1 - w_x) * bottom_right_cell.get_velocity().get_x();
     }
 
     if (this->is_valid_fluid(i + 1, j + 1)) {
-      const Cell& top_right_cell = this->get_cell(i + 1, j + 1);
+      const Cell &top_right_cell = this->get_cell(i + 1, j + 1);
       avg_u += (1 - w_y) * (1 - w_x) * top_right_cell.get_velocity().get_x();
     }
   }
@@ -606,33 +587,29 @@ __device__ __host__ inline float Fluid<H, W>::get_general_velocity_x(
 }
 
 template <int H, int W>
-__device__ __host__ inline Vector2d<float> Fluid<H, W>::get_general_velocity(
-    float x,
-    float y) const {
+__device__ __host__ inline Vector2d<float>
+Fluid<H, W>::get_general_velocity(float x, float y) const {
   float u = this->get_general_velocity_x(x, y);
   float v = this->get_general_velocity_y(x, y);
   return Vector2d<float>(u, v);
 }
 
 template <int H, int W>
-__device__ __host__ inline Vector2d<float> Fluid<H, W>::get_center_position(
-    int i,
-    int j) const {
+__device__ __host__ inline Vector2d<float>
+Fluid<H, W>::get_center_position(int i, int j) const {
   return Vector2d<float>((i + 0.5) * this->cell_size,
                          (j + 0.5) * this->cell_size);
 }
 
 template <int H, int W>
-__device__ __host__ inline Vector2d<float> Fluid<H, W>::get_u_position(
-    int i,
-    int j) const {
+__device__ __host__ inline Vector2d<float>
+Fluid<H, W>::get_u_position(int i, int j) const {
   return Vector2d<float>(i * this->cell_size, (j + 0.5) * this->cell_size);
 }
 
 template <int H, int W>
-__device__ __host__ inline Vector2d<float> Fluid<H, W>::get_v_position(
-    int i,
-    int j) const {
+__device__ __host__ inline Vector2d<float>
+Fluid<H, W>::get_v_position(int i, int j) const {
   return Vector2d<float>((i + 0.5) * this->cell_size, j * this->cell_size);
 }
 
@@ -655,7 +632,7 @@ Fluid<H, W>::update_smoke_advection_at(int i, int j, float d_t) {
 }
 
 template <int H, int W>
-__global__ void apply_smoke_advection_kernel(Fluid<H, W>* device_fluid,
+__global__ void apply_smoke_advection_kernel(Fluid<H, W> *device_fluid,
                                              float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -666,7 +643,7 @@ __global__ void apply_smoke_advection_kernel(Fluid<H, W>* device_fluid,
 }
 
 template <int H, int W>
-__global__ void update_smoke_advection_kernel(Fluid<H, W>* device_fluid,
+__global__ void update_smoke_advection_kernel(Fluid<H, W> *device_fluid,
                                               float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -715,7 +692,7 @@ Fluid<H, W>::update_velocity_advection_at(int i, int j, float d_t) {
 }
 
 template <int H, int W>
-__global__ void apply_velocity_advection_kernel(Fluid<H, W>* device_fluid,
+__global__ void apply_velocity_advection_kernel(Fluid<H, W> *device_fluid,
                                                 float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -726,7 +703,7 @@ __global__ void apply_velocity_advection_kernel(Fluid<H, W>* device_fluid,
 }
 
 template <int H, int W>
-__global__ void update_velocity_advection_kernel(Fluid<H, W>* device_fluid,
+__global__ void update_velocity_advection_kernel(Fluid<H, W> *device_fluid,
                                                  float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -812,19 +789,19 @@ __device__ __host__ inline float Fluid<H, W>::interpolate_smoke(float x,
   float w4 = inv4 / sum_inv;
 
   if (is_valid_fluid(indices_1.get_x(), indices_1.get_y())) {
-    const Cell& cell = this->get_cell(indices_1.get_x(), indices_1.get_y());
+    const Cell &cell = this->get_cell(indices_1.get_x(), indices_1.get_y());
     avg_smoke += w1 * cell.get_smoke();
   }
   if (is_valid_fluid(indices_2.get_x(), indices_2.get_y())) {
-    const Cell& cell = this->get_cell(indices_2.get_x(), indices_2.get_y());
+    const Cell &cell = this->get_cell(indices_2.get_x(), indices_2.get_y());
     avg_smoke += w2 * cell.get_smoke();
   }
   if (is_valid_fluid(indices_3.get_x(), indices_3.get_y())) {
-    const Cell& cell = this->get_cell(indices_3.get_x(), indices_3.get_y());
+    const Cell &cell = this->get_cell(indices_3.get_x(), indices_3.get_y());
     avg_smoke += w3 * cell.get_smoke();
   }
   if (is_valid_fluid(indices_4.get_x(), indices_4.get_y())) {
-    const Cell& cell = this->get_cell(indices_4.get_x(), indices_4.get_y());
+    const Cell &cell = this->get_cell(indices_4.get_x(), indices_4.get_y());
     avg_smoke += w4 * cell.get_smoke();
   }
 
@@ -835,28 +812,28 @@ template <int H, int W>
 __device__ __host__ inline void Fluid<H, W>::apply_extrapolation_at(int i,
                                                                     int j) {
   if (j == 0) {
-    Cell& bottom_cell = this->get_mut_cell(i, j);
-    Cell& top_cell = this->get_mut_cell(i, j + 1);
+    Cell &bottom_cell = this->get_mut_cell(i, j);
+    Cell &top_cell = this->get_mut_cell(i, j + 1);
     bottom_cell.set_velocity_x(top_cell.get_velocity().get_x());
     top_cell.set_velocity_y(0);
   } else if (j == H - 1) {
-    Cell& bottom_cell = this->get_mut_cell(i, j - 1);
-    Cell& top_cell = this->get_mut_cell(i, j);
+    Cell &bottom_cell = this->get_mut_cell(i, j - 1);
+    Cell &top_cell = this->get_mut_cell(i, j);
     top_cell.set_velocity_x(bottom_cell.get_velocity().get_x());
   }
   if (i == 0) {
-    Cell& right_cell = this->get_mut_cell(i + 1, j);
-    Cell& left_cell = this->get_mut_cell(i, j);
+    Cell &right_cell = this->get_mut_cell(i + 1, j);
+    Cell &left_cell = this->get_mut_cell(i, j);
     left_cell.set_velocity_y(right_cell.get_velocity().get_y());
   } else if (i == W - 1) {
-    Cell& right_cell = this->get_mut_cell(i, j);
-    Cell& left_cell = this->get_mut_cell(i - 1, j);
+    Cell &right_cell = this->get_mut_cell(i, j);
+    Cell &left_cell = this->get_mut_cell(i - 1, j);
     right_cell.set_velocity_y(left_cell.get_velocity().get_y());
   }
 }
 
 template <int H, int W>
-__global__ inline void apply_extrapolation_kernel(Fluid<H, W>* device_fluid) {
+__global__ inline void apply_extrapolation_kernel(Fluid<H, W> *device_fluid) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= W or j >= H) {
@@ -865,15 +842,14 @@ __global__ inline void apply_extrapolation_kernel(Fluid<H, W>* device_fluid) {
   device_fluid->apply_extrapolation_at(i, j);
 }
 
-template <int H, int W>
-inline void Fluid<H, W>::apply_extrapolation() {
+template <int H, int W> inline void Fluid<H, W>::apply_extrapolation() {
   apply_extrapolation_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
       this->device_fluid);
   cudaDeviceSynchronize();
 }
 
 template <int H, int W>
-__global__ inline void decay_smoke_kernel(Fluid<H, W>* device_fluid,
+__global__ inline void decay_smoke_kernel(Fluid<H, W> *device_fluid,
                                           float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -884,10 +860,9 @@ __global__ inline void decay_smoke_kernel(Fluid<H, W>* device_fluid,
 }
 
 template <int H, int W>
-__device__ __host__ inline void Fluid<H, W>::decay_smoke_at(int i,
-                                                            int j,
+__device__ __host__ inline void Fluid<H, W>::decay_smoke_at(int i, int j,
                                                             float d_t) {
-  Cell& cell = this->get_mut_cell(i, j);
+  Cell &cell = this->get_mut_cell(i, j);
   float smoke = cell.get_smoke();
 #if not ENABLE_SMOKE_DECAY
   cell.set_smoke(smoke);
@@ -896,15 +871,14 @@ __device__ __host__ inline void Fluid<H, W>::decay_smoke_at(int i,
 #endif
 }
 
-template <int H, int W>
-inline void Fluid<H, W>::decay_smoke(float d_t) {
+template <int H, int W> inline void Fluid<H, W>::decay_smoke(float d_t) {
   decay_smoke_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
       this->device_fluid, d_t);
   cudaDeviceSynchronize();
 }
 
 template <int H, int W>
-__global__ void apply_external_forces_kernel(Fluid<H, W>* fluid, float d_t) {
+__global__ void apply_external_forces_kernel(Fluid<H, W> *fluid, float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= W or j >= H) {
@@ -913,14 +887,13 @@ __global__ void apply_external_forces_kernel(Fluid<H, W>* fluid, float d_t) {
   fluid->apply_external_forces_at(i, j, d_t);
 }
 
-template <int H, int W>
-inline void Fluid<H, W>::update(float d_t) {
+template <int H, int W> inline void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);
 #if ENABLE_PRESSURE
   this->zero_pressure();
 #endif
   this->apply_projection(d_t);
-  this->apply_extrapolation();
+  // this->apply_extrapolation();
   this->apply_velocity_advection(d_t);
 #if ENABLE_SMOKE
   if (WIND_SMOKE != 0) {

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <format>
+#include <omp.h>
 
 #include "SDL.h"
 #include "SDL_rect.h"
