@@ -134,8 +134,8 @@ __device__ __host__ inline bool Fluid<H, W>::is_edge(int i, int j) const {
 template <int H, int W>
 Fluid<H, W>::Fluid(float o, int n, int cell_size)
     : o(o), n(n), cell_size(cell_size) {
-  int block_x = 8;
-  int block_y = 8;
+  int block_x = 1;
+  int block_y = 64;
   int grid_x = std::ceil(static_cast<float>(W) / block_x);
   int grid_y = std::ceil(static_cast<float>(H) / block_y);
   this->kernel_grid_dim = dim3(grid_x, grid_y, 1);
@@ -330,18 +330,17 @@ __global__ void apply_projection_odd_kernel(Fluid<H, W> *fluid, float d_t) {
 }
 
 template <int H, int W> inline void Fluid<H, W>::apply_projection(float d_t) {
-  int block_x = 8;
-  int block_y = 8;
+  int block_x = 1;
+  int block_y = 64;
   int grid_x = std::ceil(static_cast<float>(W) / block_x / 2);
   int grid_y = std::ceil(static_cast<float>(H) / block_y);
   auto grid_dim = dim3(grid_x, grid_y);
+  auto block_dim = dim3(block_x, block_y, 1);
   for (int _ = 0; _ < this->n; _++) {
-    apply_projection_even_kernel<<<grid_dim,
-                                   this->kernel_block_dim>>>(this->device_fluid,
-                                                             d_t);
-    apply_projection_odd_kernel<<<grid_dim,
-                                  this->kernel_block_dim>>>(this->device_fluid,
-                                                            d_t);
+    apply_projection_even_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
+                                                          d_t);
+    apply_projection_odd_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
+                                                         d_t);
     cudaDeviceSynchronize();
   }
 }

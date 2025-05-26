@@ -3,10 +3,13 @@
     "ccls",
     "chrono",
     "cmath",
+    "cstdint",
     "cstdlib",
     "cstring",
     "CUDA",
     "fopenmp",
+    "Malloc",
+    "Memcpy",
     "nullopt",
     "OPENMP",
     "strcmp"
