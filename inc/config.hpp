@@ -4,6 +4,9 @@
 
 #define THREAD_COUNT 8
 
+#define BLOCK_SIZE_X 1
+#define BLOCK_SIZE_Y 1024
+
 #define FLUID_HEIGHT 640 * 2
 #define FLUID_WIDTH 1024 * 2
 #define CELL_SIZE 1
