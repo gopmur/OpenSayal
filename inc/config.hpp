@@ -58,9 +58,9 @@
 
 #define TRACE_LENGTH 20
 #define TRACE_SPACER 10
-#define ENABLE_TRACES false
+#define ENABLE_TRACES true
 #define TRACE_COLOR 255, 255, 255, 255
 
-#define ENABLE_PRESSURE true
-#define ENABLE_SMOKE true
+#define ENABLE_PRESSURE false
+#define ENABLE_SMOKE false
 #define FLUID_DENSITY 16

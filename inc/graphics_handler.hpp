@@ -430,7 +430,7 @@ inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += TRACE_SPACER) {
     for (int j = 1; j < H - 1; j += TRACE_SPACER) {
-      if (fluid.get_cell(i, j).is_solid()) {
+      if (fluid.is_solid[i][j]) {
         continue;
       }
       std::array<SDL_Point, TRACE_LENGTH> points = fluid.trace(i, j, d_t);
