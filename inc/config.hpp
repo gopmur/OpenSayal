@@ -9,7 +9,7 @@
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
-#define PROJECTION_N 1
+#define PROJECTION_N 50
 
 #define FPS_AVG_SIZE 200
 
@@ -46,7 +46,7 @@
 #define USE_REAL_TIME false
 #define REAL_TIME_MULTIPLIER 1
 
-#define ENABLE_SMOKE_DECAY true
+#define ENABLE_SMOKE_DECAY false
 #define SMOKE_DECAY_RATE 0.05
 
 #define REPORT_FILE_NAME "report.log"

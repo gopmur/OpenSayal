@@ -81,7 +81,6 @@ __device__ __host__ inline void SmokeCell::set_smoke(float smoke) {
 class Cell {
   FluidCell fluid;
   SmokeCell smoke;
-
 public:
   __device__ __host__ inline Cell();
   __device__ __host__ inline Cell(bool is_solid);
