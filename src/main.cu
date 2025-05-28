@@ -45,12 +45,10 @@ int main(int argc, char* argv[]) {
   Fluid<FLUID_HEIGHT, FLUID_WIDTH>* fluid =
       new Fluid<FLUID_HEIGHT, FLUID_WIDTH>(PROJECTION_O, PROJECTION_N,
                                            CELL_SIZE);
-
   SDL_Event event;
 
   {
     using namespace std::chrono;
-
     bool is_running = true;
     std::optional<time_point<high_resolution_clock>> prev_time = std::nullopt;
     clock_t prev_clock = 0;

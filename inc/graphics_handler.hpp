@@ -36,6 +36,8 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
+  std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
+                                            [H / TRACE_SPACER];
   int fluid_pixels[H][W];
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
 
@@ -425,11 +427,12 @@ inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
                                                     float d_t) {
-  std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
-                                            [H / TRACE_SPACER];
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += TRACE_SPACER) {
     for (int j = 1; j < H - 1; j += TRACE_SPACER) {
+      if (fluid.get_cell(i, j).is_solid()) {
+        continue;
+      }
       std::array<SDL_Point, TRACE_LENGTH> points = fluid.trace(i, j, d_t);
       traces[i / TRACE_SPACER][j / TRACE_SPACER] = points;
     }
