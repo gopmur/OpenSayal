@@ -1,10 +1,10 @@
 #pragma once
 
+#include <omp.h>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <format>
-#include <omp.h>
 
 #include "SDL.h"
 #include "SDL_rect.h"
@@ -42,13 +42,14 @@ class GraphicsHandler {
   inline void draw_arrow(const ArrowData& arrow_data);
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
   inline void update_fluid_pixels(const Fluid<H, W>& fluid);
-  inline void update_smoke_pixels(const Cell& cell, int x, int y);
-  inline void update_pressure_pixel(const Cell& cell,
+  inline void update_smoke_pixels(float smoke, int x, int y);
+  inline void update_pressure_pixel(float pressure,
                                     int x,
                                     int y,
                                     float min_pressure,
                                     float max_pressure);
-  inline void update_smoke_and_pressure(const Cell& cell,
+  inline void update_smoke_and_pressure(float smoke,
+                                        float pressure,
                                         int x,
                                         int y,
                                         float min_pressure,
@@ -193,23 +194,22 @@ inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData& arrow_data) {
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_smoke_pixels(const Cell& cell,
-                                                          int x,
-                                                          int y) {
-  auto smoke = cell.get_smoke();
+inline void GraphicsHandler<H, W, S>::update_smoke_pixels(
+    float smoke,
+    int x,
+    int y) {
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
-  this->fluid_pixels[y][x] =
-      SDL_MapRGBA(this->format, 255, color, color, 255);
+  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
 }
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
-    const Cell& cell,
+    float smoke,
+    float pressure,
     int x,
     int y,
     float min_pressure,
     float max_pressure) {
-  auto pressure = cell.get_pressure();
   float norm_p;
   if (pressure < 0) {
     norm_p = -pressure / min_pressure;
@@ -218,20 +218,17 @@ inline void GraphicsHandler<H, W, S>::update_smoke_and_pressure(
   }
   norm_p = std::clamp(norm_p, -1.0f, 1.0f);
   float hue = (1.0f - norm_p) * 120.0f;
-  auto smoke = cell.get_smoke();
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, smoke, r, g, b);
-  this->fluid_pixels[y][x] =
-      SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
-    const Cell& cell,
+    float pressure,
     int x,
     int y,
     float min_pressure,
     float max_pressure) {
-  auto pressure = cell.get_pressure();
   float norm_p;
   if (pressure < 0) {
     norm_p = -pressure / min_pressure;
@@ -242,8 +239,7 @@ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
   float hue = (1.0f - norm_p) * 120.0f;
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
-  this->fluid_pixels[y][x] =
-      SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
 }
 
 template <int H, int W, int S>
@@ -256,7 +252,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 #pragma omp parallel for collapse(2) reduction(max : max_pressure)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float pressure = fluid.get_pressure(i, j);
+      float pressure = fluid.pressure[i][j];
       if (pressure > max_pressure) {
         max_pressure = pressure;
       }
@@ -265,7 +261,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 #pragma omp parallel for collapse(2) reduction(min : min_pressure)
   for (int i = 1; i < W - 1; i++) {
     for (int j = 1; j < H - 1; j++) {
-      float pressure = fluid.get_pressure(i, j);
+      float pressure = fluid.pressure[i][j];
       if (pressure < min_pressure) {
         min_pressure = pressure;
       }
@@ -276,21 +272,18 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 #pragma omp parallel for collapse(2) schedule(static)
   for (int i = 0; i < W; i++) {
     for (int j = 0; j < H; j++) {
-      const Cell& cell = fluid.get_cell(i, j);
-
       int x = i;
       int y = H - j - 1;
 
-      if (cell.is_solid()) {
-        this->fluid_pixels[y][x] =
-            SDL_MapRGBA(this->format, 80, 80, 80, 255);
+      if (fluid.is_solid[i][j]) {
+        this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
 #if ENABLE_PRESSURE and ENABLE_SMOKE
-        this->update_smoke_and_pressure(cell, x, y, min_pressure, max_pressure);
+        this->update_smoke_and_pressure(fluid.smoke[i][j], fluid.pressure[i][j], x, y, min_pressure, max_pressure);
 #elif ENABLE_PRESSURE
-        this->update_pressure_pixel(cell, x, y, min_pressure, max_pressure);
+        this->update_pressure_pixel(fluid.pressure[i][j], x, y, min_pressure, max_pressure);
 #elif ENABLE_SMOKE
-        this->update_smoke_pixels(cell, x, y);
+        this->update_smoke_pixels(fluid.smoke[i][j], x, y);
 #endif
       }
     }
@@ -303,8 +296,7 @@ inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
-      if (cell.is_solid()) {
+      if (fluid.is_solid[i][j]) {
         continue;
       }
       float x = (i + 0.5) * S;
@@ -332,8 +324,7 @@ inline void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
-      if (cell.is_solid()) {
+      if (fluid.is_solid[i][j]) {
         continue;
       }
       float x = (i + 0.5) * S;
@@ -362,8 +353,7 @@ inline void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
 
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
-      if (cell.is_solid()) {
+      if (fluid.is_solid[i][j]) {
         continue;
       }
       float x = (i)*S;
@@ -391,15 +381,13 @@ inline void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
 #pragma omp parallel for schedule(static)
   for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
     for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      const Cell& cell = fluid.get_cell(i, j);
-      if (cell.is_solid()) {
+      if (fluid.is_solid[i][j]) {
         continue;
       }
       int x = i * S;
       int y = (H - j - 1) * S;
-      auto velocity = cell.get_velocity();
-      auto vel_x = velocity.get_x();
-      auto vel_y = velocity.get_y();
+      auto vel_x = fluid.vel_x[i][j];
+      auto vel_y = fluid.vel_y[i][j];
       auto angle = std::atan2(vel_y, vel_x);
       auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
       arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
