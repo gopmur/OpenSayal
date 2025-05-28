@@ -729,7 +729,7 @@ __device__ __host__ inline void Fluid<H, W>::apply_extrapolation_at(int i,
 }
 
 template <int H, int W>
-__global__ inline void apply_extrapolation_kernel(Fluid<H, W> *device_fluid) {
+__global__ void apply_extrapolation_kernel(Fluid<H, W> *device_fluid) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= W or j >= H) {
@@ -745,7 +745,7 @@ template <int H, int W> inline void Fluid<H, W>::apply_extrapolation() {
 }
 
 template <int H, int W>
-__global__ inline void decay_smoke_kernel(Fluid<H, W> *device_fluid,
+__global__ void decay_smoke_kernel(Fluid<H, W> *device_fluid,
                                           float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -775,7 +775,7 @@ template <int H, int W> inline void Fluid<H, W>::update(float d_t) {
   this->zero_pressure();
 #endif
   this->apply_projection(d_t);
-  // this->apply_extrapolation();
+  this->apply_extrapolation();
   this->apply_velocity_advection(d_t);
 #if ENABLE_SMOKE
   if (WIND_SMOKE != 0) {

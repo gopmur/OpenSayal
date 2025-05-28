@@ -7,8 +7,8 @@
 #define BLOCK_SIZE_X 1
 #define BLOCK_SIZE_Y 1024
 
-#define FLUID_HEIGHT 640 * 2
-#define FLUID_WIDTH 1024 * 2
+#define FLUID_HEIGHT 640
+#define FLUID_WIDTH 1024
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
@@ -16,7 +16,7 @@
 
 #define FPS_AVG_SIZE 200
 
-#define PHYSICS_G 0
+#define PHYSICS_G -10
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 4
 #define PIPE_LENGTH 0
