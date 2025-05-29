@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
-project(fluid-simulator CXX CUDA)
+project(OpenSayal CXX CUDA)
 
 # set c++ version
 set(CMAKE_CXX_STANDARD 20)

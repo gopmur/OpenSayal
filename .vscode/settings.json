@@ -12,6 +12,7 @@
     "Memcpy",
     "nullopt",
     "OPENMP",
+    "Sayal",
     "strcmp",
     "syncthreads"
   ]
