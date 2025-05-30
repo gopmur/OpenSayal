@@ -3,3 +3,5 @@ build
 .ccls-cache
 *.pdf
 *.zip
+CMakeFiles
+CMakeCache.txt
