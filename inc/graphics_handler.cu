@@ -196,10 +196,9 @@ inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData& arrow_data) {
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_smoke_pixels(
-    float smoke,
-    int x,
-    int y) {
+inline void GraphicsHandler<H, W, S>::update_smoke_pixels(float smoke,
+                                                          int x,
+                                                          int y) {
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
   this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
 }
@@ -245,6 +244,17 @@ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
 }
 
 template <int H, int W, int S>
+__global__ void update_fluid_pixels_kernel(
+    GraphicsHandler<H, W, S>* graphics_handler,
+    Fluid<H, W>* fluid) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
+}
+
+template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
     const Fluid<H, W>& fluid) {
 #if ENABLE_PRESSURE
@@ -281,9 +291,11 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
         this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 80, 80, 80, 255);
       } else {
 #if ENABLE_PRESSURE and ENABLE_SMOKE
-        this->update_smoke_and_pressure(fluid.smoke[i][j], fluid.pressure[i][j], x, y, min_pressure, max_pressure);
+        this->update_smoke_and_pressure(fluid.smoke[i][j], fluid.pressure[i][j],
+                                        x, y, min_pressure, max_pressure);
 #elif ENABLE_PRESSURE
-        this->update_pressure_pixel(fluid.pressure[i][j], x, y, min_pressure, max_pressure);
+        this->update_pressure_pixel(fluid.pressure[i][j], x, y, min_pressure,
+                                    max_pressure);
 #elif ENABLE_SMOKE
         this->update_smoke_pixels(fluid.smoke[i][j], x, y);
 #endif
