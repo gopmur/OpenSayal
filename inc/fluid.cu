@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
 
 #include "SDL_rect.h"
 
@@ -254,7 +255,7 @@ template <int H, int W>
 __global__ void apply_projection_even_kernel(Fluid<H, W>* fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + (j % 2);
-  if (i >= W or j >= H) {
+  if (i >= W - 1 or j >= H - 1) {
     return;
   }
   fluid->apply_projection_at(i, j, d_t);
@@ -264,7 +265,7 @@ template <int H, int W>
 __global__ void apply_projection_odd_kernel(Fluid<H, W>* fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + ((j + 1) % 2);
-  if (i >= W or j >= H) {
+  if (i >= W - 1 or j >= H - 1) {
     return;
   }
   fluid->apply_projection_at(i, j, d_t);
@@ -281,7 +282,6 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
                                                           d_t);
     apply_projection_odd_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
                                                          d_t);
-    cudaDeviceSynchronize();
   }
 }
 
@@ -311,7 +311,6 @@ inline void Fluid<H, W>::apply_external_forces(float d_t) {
   apply_external_forces_kernel<<<this->kernel_grid_dim,
                                  this->kernel_block_dim>>>(this->device_fluid,
                                                            d_t);
-  cudaDeviceSynchronize();
 }
 
 template <int H, int W>
@@ -586,11 +585,9 @@ inline void Fluid<H, W>::apply_smoke_advection(float d_t) {
   apply_smoke_advection_kernel<<<this->kernel_grid_dim,
                                  this->kernel_block_dim>>>(this->device_fluid,
                                                            d_t);
-  cudaDeviceSynchronize();
   update_smoke_advection_kernel<<<this->kernel_grid_dim,
                                   this->kernel_block_dim>>>(this->device_fluid,
                                                             d_t);
-  cudaDeviceSynchronize();
 }
 
 template <int H, int W>
@@ -645,11 +642,9 @@ inline void Fluid<H, W>::apply_velocity_advection(float d_t) {
   apply_velocity_advection_kernel<<<this->kernel_grid_dim,
                                     this->kernel_block_dim>>>(
       this->device_fluid, d_t);
-  cudaDeviceSynchronize();
   update_velocity_advection_kernel<<<this->kernel_grid_dim,
                                      this->kernel_block_dim>>>(
       this->device_fluid, d_t);
-  cudaDeviceSynchronize();
 }
 
 template <int H, int W>
@@ -763,7 +758,6 @@ template <int H, int W>
 inline void Fluid<H, W>::apply_extrapolation() {
   apply_extrapolation_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
       this->device_fluid);
-  cudaDeviceSynchronize();
 }
 
 template <int H, int W>
@@ -789,7 +783,6 @@ template <int H, int W>
 inline void Fluid<H, W>::decay_smoke(float d_t) {
   decay_smoke_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
       this->device_fluid, d_t);
-  cudaDeviceSynchronize();
 }
 
 template <int H, int W>

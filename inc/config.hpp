@@ -7,8 +7,8 @@
 #define BLOCK_SIZE_X 1
 #define BLOCK_SIZE_Y 1024
 
-#define FLUID_HEIGHT 1080
-#define FLUID_WIDTH 1920
+#define FLUID_HEIGHT 1080 
+#define FLUID_WIDTH 1920 
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
@@ -16,7 +16,7 @@
 
 #define FPS_AVG_SIZE 200
 
-#define PHYSICS_G -10
+#define PHYSICS_G 0
 
 #define PIPE_HEIGHT FLUID_HEIGHT / 4
 #define PIPE_LENGTH 0
@@ -24,7 +24,7 @@
 #define WIND_SPEED 200
 #define WIND_SMOKE 1
 
-#define ENABLE_RIGHT_WALL true
+#define ENABLE_RIGHT_WALL false
 
 #define CIRCLE_RADIUS FLUID_HEIGHT / 30.0
 #define CIRCLE_POSITION_X FLUID_WIDTH / 2 + 40
