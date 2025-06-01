@@ -8,7 +8,7 @@
 
 #include "config.hpp"
 #include "fluid.cu"
-#include "graphics_handler.hpp"
+#include "graphics_handler.cu"
 #include "logger.hpp"
 #include "platform_setup.hpp"
 

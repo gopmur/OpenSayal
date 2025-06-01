@@ -7,8 +7,8 @@
 #define BLOCK_SIZE_X 1
 #define BLOCK_SIZE_Y 1024
 
-#define FLUID_HEIGHT 640
-#define FLUID_WIDTH 1024
+#define FLUID_HEIGHT 1080
+#define FLUID_WIDTH 1920
 #define CELL_SIZE 1
 
 #define PROJECTION_O 1.9
@@ -58,9 +58,9 @@
 
 #define TRACE_LENGTH 20
 #define TRACE_SPACER 10
-#define ENABLE_TRACES true
+#define ENABLE_TRACES false
 #define TRACE_COLOR 255, 255, 255, 255
 
-#define ENABLE_PRESSURE false
-#define ENABLE_SMOKE false
+#define ENABLE_PRESSURE true
+#define ENABLE_SMOKE true
 #define FLUID_DENSITY 16
