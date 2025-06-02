@@ -62,5 +62,5 @@
 #define TRACE_COLOR 255, 255, 255, 255
 
 #define ENABLE_PRESSURE true
-#define ENABLE_SMOKE true
+#define ENABLE_SMOKE false
 #define FLUID_DENSITY 16

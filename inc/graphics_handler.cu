@@ -44,12 +44,6 @@ class GraphicsHandler {
   inline void draw_arrow(const ArrowData& arrow_data);
   inline ArrowData make_arrow_data(int x, int y, float length, float angle);
   inline void update_fluid_pixels(const Fluid<H, W>& fluid);
-  inline void update_smoke_pixels(float smoke, int x, int y);
-  inline void update_pressure_pixel(float pressure,
-                                    int x,
-                                    int y,
-                                    float min_pressure,
-                                    float max_pressure);
 
   inline void update_velocity_arrows(const Fluid<H, W>& fluid);
   inline void update_center_velocity_arrow(const Fluid<H, W>& fluid);
@@ -67,6 +61,14 @@ class GraphicsHandler {
                                                             int y,
                                                             float min_pressure,
                                                             float max_pressure);
+  __host__ __device__ inline void update_smoke_pixels(float smoke,
+                                                      int x,
+                                                      int y);
+  __host__ __device__ inline void update_pressure_pixel(float pressure,
+                                                        int x,
+                                                        int y,
+                                                        float min_pressure,
+                                                        float max_pressure);
   GraphicsHandler(float arrow_head_length,
                   float arrow_head_angle,
                   float arrow_disable_thresh_hold);
@@ -201,11 +203,10 @@ inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData& arrow_data) {
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_smoke_pixels(float smoke,
-                                                          int x,
-                                                          int y) {
+__host__ __device__ inline void
+GraphicsHandler<H, W, S>::update_smoke_pixels(float smoke, int x, int y) {
   uint8_t color = 255 - static_cast<uint8_t>(smoke * 255);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, 255, color, color, 255);
+  this->fluid_pixels[y][x] = map_rgba(255, color, color, 255);
 }
 
 template <int H, int W, int S>
@@ -230,7 +231,7 @@ GraphicsHandler<H, W, S>::update_smoke_and_pressure(float smoke,
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
+__host__ __device__ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
     float pressure,
     int x,
     int y,
@@ -242,11 +243,11 @@ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
   } else {
     norm_p = pressure / max_pressure;
   }
-  norm_p = std::clamp(norm_p, -1.0f, 1.0f);
+  norm_p = clamp(norm_p, -1.0f, 1.0f);
   float hue = (1.0f - norm_p) * 120.0f;
   uint8_t r, g, b;
   hsv_to_rgb(hue, 1.0f, 1.0f, r, g, b);
-  this->fluid_pixels[y][x] = SDL_MapRGBA(this->format, r, g, b, 255);
+  this->fluid_pixels[y][x] = map_rgba(r, g, b, 255);
 }
 
 template <int H, int W, int S>
@@ -261,7 +262,7 @@ __global__ void update_fluid_pixels_kernel(
 }
 
 template <int H, int W, int S>
-__global__ void update_smoke_and_pressure_kernel(
+__global__ void update_smoke_and_pressure_pixel_kernel(
     Fluid<H, W>* fluid,
     GraphicsHandler<H, W, S>* graphics_handler,
     float min_pressure,
@@ -283,6 +284,45 @@ __global__ void update_smoke_and_pressure_kernel(
 }
 
 template <int H, int W, int S>
+__global__ void update_smoke_pixel_kernel(
+    Fluid<H, W>* fluid,
+    GraphicsHandler<H, W, S>* graphics_handler) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
+  int x = i;
+  int y = H - j - 1;
+  if (fluid->is_solid[i][j]) {
+    graphics_handler->fluid_pixels[y][x] = map_rgba(80, 80, 80, 255);
+  } else {
+    graphics_handler->update_smoke_pixels(fluid->smoke[i][j], x, y);
+  }
+}
+
+template <int H, int W, int S>
+__global__ void update_pressure_pixel_kernel(
+    Fluid<H, W>* fluid,
+    GraphicsHandler<H, W, S>* graphics_handler,
+    float min_pressure,
+    float max_pressure) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if (i >= W or j >= H) {
+    return;
+  }
+  int x = i;
+  int y = H - j - 1;
+  if (fluid->is_solid[i][j]) {
+    graphics_handler->fluid_pixels[y][x] = map_rgba(80, 80, 80, 255);
+  } else {
+    graphics_handler->update_pressure_pixel(fluid->pressure[i][j], x, y,
+                                            min_pressure, max_pressure);
+  }
+}
+
+template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
     const Fluid<H, W>& fluid) {
   float min_pressure = fluid.min_pressure;
@@ -293,13 +333,23 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
   int grid_dim_y = std::ceil(static_cast<float>(H) / block_dim_y);
   auto block_dim = dim3(block_dim_x, block_dim_y, 1);
   auto grid_dim = dim3(grid_dim_x, grid_dim_y, 1);
-
+#if ENABLE_PRESSURE and ENABLE_SMOKE
   update_smoke_and_pressure_kernel<<<grid_dim, block_dim>>>(
       fluid.device_fluid, this->device_graphics_handler, min_pressure,
       max_pressure);
+#elif ENABLE_PRESSURE
+  update_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
+      fluid.device_fluid, this->device_graphics_handler, min_pressure,
+      max_pressure);
+#elif ENABLE_SMOKE
+  update_smoke_pixel_kernel<<<grid_dim, block_dim>>>(
+      fluid.device_fluid, this->device_graphics_handler);
+#endif
+
+  cudaMemcpyAsync(this->fluid_pixels,
+                  this->device_graphics_handler->fluid_pixels,
+                  sizeof(int) * H * W, cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
-  cudaMemcpy(this->fluid_pixels, this->device_graphics_handler->fluid_pixels,
-             sizeof(int) * H * W, cudaMemcpyDeviceToHost);
 }
 
 template <int H, int W, int S>
