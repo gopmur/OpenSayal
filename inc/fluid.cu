@@ -255,7 +255,7 @@ template <int H, int W>
 __global__ void apply_projection_even_kernel(Fluid<H, W>* fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + (j % 2);
-  if (i >= W - 1 or j >= H - 1) {
+  if (i >= W - 1 or j >= H - 1 or i <= 0 or j <= 0) {
     return;
   }
   fluid->apply_projection_at(i, j, d_t);
@@ -265,7 +265,7 @@ template <int H, int W>
 __global__ void apply_projection_odd_kernel(Fluid<H, W>* fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + ((j + 1) % 2);
-  if (i >= W - 1 or j >= H - 1) {
+  if (i >= W - 1 or j >= H - 1 or i <= 0 or j <= 0) {
     return;
   }
   fluid->apply_projection_at(i, j, d_t);
