@@ -334,7 +334,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
   auto block_dim = dim3(block_dim_x, block_dim_y, 1);
   auto grid_dim = dim3(grid_dim_x, grid_dim_y, 1);
 #if ENABLE_PRESSURE and ENABLE_SMOKE
-  update_smoke_and_pressure_kernel<<<grid_dim, block_dim>>>(
+  update_smoke_and_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
       fluid.device_fluid, this->device_graphics_handler, min_pressure,
       max_pressure);
 #elif ENABLE_PRESSURE
