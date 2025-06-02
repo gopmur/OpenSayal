@@ -224,7 +224,7 @@ __device__ __host__ inline void Fluid<H, W>::apply_projection_at(int i,
   auto top_v = this->vel_y[i][j + 1];
   auto right_u = this->vel_x[i + 1][j];
 
-  auto divergence = get_divergence(i, j);
+  auto divergence = right_u - u + top_v - v;
   auto s = this->total_s[i][j];
   auto velocity_diff = this->o * (divergence / s);
 
@@ -277,11 +277,12 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
   int grid_y = std::ceil(static_cast<float>(H) / BLOCK_SIZE_Y);
   auto grid_dim = dim3(grid_x, grid_y);
   auto block_dim = dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1);
+
   for (int _ = 0; _ < this->n; _++) {
-    apply_projection_even_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
-                                                          d_t);
-    apply_projection_odd_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
-                                                         d_t);
+    apply_projection_even_kernel<<<grid_dim, block_dim>>>(
+        this->device_fluid, d_t);
+    apply_projection_odd_kernel<<<grid_dim, block_dim>>>(
+        this->device_fluid, d_t);
   }
 }
 
@@ -785,6 +786,7 @@ inline void Fluid<H, W>::decay_smoke(float d_t) {
       this->device_fluid, d_t);
 }
 
+// ? put the whole thing into a graph
 template <int H, int W>
 inline void Fluid<H, W>::update(float d_t) {
   this->apply_external_forces(d_t);

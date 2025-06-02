@@ -7,7 +7,6 @@ bool Logger::is_dyn_debug = false;
 int Logger::memo_length = 0;
 int Logger::memo_index = 0;
 bool Logger::first_add = true;
-int Logger::fps_memo[FPS_AVG_SIZE];
 int Logger::d_t_memo[FPS_AVG_SIZE];
 uint64_t Logger::work_memo[FPS_AVG_SIZE];
 bool Logger::file_wrote = false;

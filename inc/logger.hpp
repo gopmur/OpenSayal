@@ -11,7 +11,6 @@
 class Logger {
  private:
   static bool is_dyn_debug;
-  static int fps_memo[FPS_AVG_SIZE];
   static uint64_t work_memo[FPS_AVG_SIZE];
   static int memo_length;
   static int memo_index;
@@ -24,7 +23,6 @@ class Logger {
   static bool stable_d_t_stored;
   static bool compare_performance;
 
-  inline static int avg_fps();
   inline static int avg_d_t();
   inline static uint64_t avg_work();
   inline static void add_values(int fps, int d_t, uint64_t work);
@@ -121,7 +119,6 @@ inline void Logger::add_values(int fps, int d_t, uint64_t work) {
   if (Logger::first_add) {
     return;
   }
-  Logger::fps_memo[Logger::memo_index] = fps;
   Logger::d_t_memo[Logger::memo_index] = d_t;
   Logger::work_memo[Logger::memo_index] = work;
   if (Logger::memo_length < FPS_AVG_SIZE) {
@@ -129,17 +126,6 @@ inline void Logger::add_values(int fps, int d_t, uint64_t work) {
   }
   Logger::memo_index++;
   Logger::memo_index %= FPS_AVG_SIZE;
-}
-
-inline int Logger::avg_fps() {
-  float fps_avg = 0;
-  for (int i = 0; i < Logger::memo_length; i++) {
-    fps_avg += Logger::fps_memo[i];
-  }
-  if (Logger::memo_length != 0) {
-    fps_avg /= Logger::memo_length;
-  }
-  return static_cast<int>(fps_avg);
 }
 
 inline int Logger::avg_d_t() {
@@ -167,8 +153,11 @@ inline uint64_t Logger::avg_work() {
 inline void Logger::log_fps(float d_t, uint64_t work) {
   auto fps = static_cast<int>(1 / d_t);
   Logger::add_values(fps, d_t * 1'000'000, work);
-  auto fps_avg = Logger::avg_fps();
   auto d_t_avg = Logger::avg_d_t();
+  int fps_avg = 0;
+  if (d_t_avg / 1'000'000.0 != 0) {
+    fps_avg = 1 / (d_t_avg / 1'000'000.0);
+  }
   auto work_avg = Logger::avg_work();
   if (Logger::save_report and memo_length == FPS_AVG_SIZE and
       not Logger::file_wrote) {
@@ -184,7 +173,8 @@ inline void Logger::log_fps(float d_t, uint64_t work) {
     return;
   fps_log_number %= FPS_LOG_SPACER;
   if (memo_length == FPS_AVG_SIZE and not Logger::first_add) {
-    Logger::green(std::format("FPS: {}, DT: {}us, Work: {}\n", fps_avg, d_t_avg, work_avg));
+    Logger::green(std::format("FPS: {}, DT: {}us, Work: {}\n", fps_avg, d_t_avg,
+                              work_avg));
   } else if (not Logger::first_add) {
     std::cout << "FPS: " << fps_avg << ", DT: " << d_t_avg
               << "us, Work: " << work_avg << std::endl;
