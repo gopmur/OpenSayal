@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <thrust/device_ptr.h>
+#include <thrust/reduce.h>
+
 #include "SDL_rect.h"
 
 #include "config.hpp"
@@ -42,6 +45,8 @@ class Fluid {
   const int cell_size;
   const int n;
   float pressure[W][H];
+  float min_pressure;
+  float max_pressure;
   float vel_x[W][H];
   float vel_y[W][H];
   float smoke[W][H];
@@ -794,21 +799,18 @@ inline void Fluid<H, W>::update(float d_t) {
   this->zero_pressure();
 #endif
   this->apply_projection(d_t);
-  cudaMemcpyAsync(this->pressure, this->device_fluid->pressure,
-                  sizeof(float) * H * W, cudaMemcpyDeviceToHost);
+#if ENABLE_PRESSURE
+  thrust::device_ptr<float> device_pressure = thrust::device_pointer_cast(&this->device_fluid->pressure[0][0]);
+  this->min_pressure = thrust::reduce(device_pressure, device_pressure + (H * W), std::numeric_limits<float>::infinity(), thrust::minimum<float>());
+  this->max_pressure = thrust::reduce(device_pressure, device_pressure + (H * W), -std::numeric_limits<float>::infinity(), thrust::maximum<float>());
+#endif
   this->apply_extrapolation();
   this->apply_velocity_advection(d_t);
-  cudaMemcpyAsync(this->vel_x, this->device_fluid->vel_x, sizeof(float) * H * W,
-                  cudaMemcpyDeviceToHost);
-  cudaMemcpyAsync(this->vel_y, this->device_fluid->vel_y, sizeof(float) * H * W,
-                  cudaMemcpyDeviceToHost);
 #if ENABLE_SMOKE
   if (WIND_SMOKE != 0) {
     this->apply_smoke_advection(d_t);
     this->decay_smoke(d_t);
   }
 #endif
-  cudaMemcpyAsync(this->smoke, this->device_fluid->smoke, sizeof(float) * H * W,
-                  cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
 }

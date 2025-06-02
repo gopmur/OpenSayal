@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #define CUDA_CHECK(call)                                               \
   {                                                                    \
@@ -99,7 +101,7 @@ __device__ __host__ inline void hsv_to_rgb(float h,
                                            uint8_t& g,
                                            uint8_t& b) {
   float c = v * s;
-  float x = c * (1 - std::fabs(fmod(h / 60.0f, 2) - 1));
+  float x = c * (1 - abs(fmodf(h / 60.0f, 2) - 1));
   float m = v - c;
 
   float r_, g_, b_;
@@ -132,4 +134,12 @@ __device__ __host__ inline void hsv_to_rgb(float h,
   r = static_cast<uint8_t>((r_ + m) * 255);
   g = static_cast<uint8_t>((g_ + m) * 255);
   b = static_cast<uint8_t>((b_ + m) * 255);
+}
+
+__device__ __host__ int map_rgba(int r, int g, int b, int a) {
+  return r << 24 | g << 16 | b << 8 | a;
+}
+
+__host__ __device__ inline float clamp(float x, float lower, float upper) {
+    return (x < lower) ? lower : (x > upper) ? upper : x;
 }
