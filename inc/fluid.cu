@@ -309,6 +309,18 @@ Fluid<H, W>::apply_external_forces_at(int i, int j, float d_t) {
     this->smoke[i][j] = WIND_SMOKE;
     this->vel_x[i][j] = WIND_SPEED;
   }
+  if (this->vel_x[i][j] > 0) {
+    this->vel_x[i][j] -= DRAG_COEFF * d_t;
+  }
+  else {
+    this->vel_x[i][j] += DRAG_COEFF * d_t;
+  }
+  if (this->vel_y[i][j] > 0) {
+    this->vel_y[i][j] -= DRAG_COEFF * d_t;
+  }
+  else {
+    this->vel_y[i][j] += DRAG_COEFF * d_t;
+  }
   this->vel_y[i][j] += PHYSICS_G * d_t;
 }
 
@@ -745,6 +757,7 @@ __device__ __host__ inline void Fluid<H, W>::apply_extrapolation_at(int i,
   }
   if (i == 0) {
     this->vel_y[i][j] = this->vel_y[i + 1][j];
+    this->vel_x[i + 1][j] = 0;
   } else if (i == W - 1) {
     this->vel_y[i][j] = this->vel_y[i - 1][j];
   }

@@ -18,6 +18,8 @@
 
 #define PHYSICS_G 0
 
+#define DRAG_COEFF 4
+
 #define PIPE_HEIGHT FLUID_HEIGHT / 4
 #define PIPE_LENGTH 0
 #define SMOKE_LENGTH 10
