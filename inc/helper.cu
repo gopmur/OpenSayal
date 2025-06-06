@@ -1,9 +1,5 @@
 #pragma once
 
-#include <linux/perf_event.h>
-#include <sys/ioctl.h>
-#include <sys/syscall.h>
-#include <unistd.h>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
