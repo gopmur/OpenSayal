@@ -15,13 +15,13 @@ if(MSVC)
   set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xcompiler=/openmp --use_fast_math --ptxas-options=-O3")
 
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /openmp /Od /Zi")
-  set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -Xcompiler=/openmp --generate-line-info")
+  set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -Xcompiler=/openmp -G")
 else()
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -fopenmp")
   set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xcompiler=-fopenmp --use_fast_math --ptxas-options=-O3")
 
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
-  set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -Xcompiler=-fopenmp --generate-line-info")
+  set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -Xcompiler=-fopenmp -G")
 endif()
 
 # store source files

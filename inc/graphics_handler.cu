@@ -24,6 +24,7 @@ struct ArrowData {
   int right_head_end_y;
   int left_head_end_x;
   int left_head_end_y;
+  bool valid;
 };
 
 template <int H, int W, int S>
@@ -42,7 +43,10 @@ class GraphicsHandler {
   GraphicsHandler<H, W, S>* device_graphics_handler;
 
   inline void draw_arrow(const ArrowData& arrow_data);
-  inline ArrowData make_arrow_data(int x, int y, float length, float angle);
+  __device__ __host__ inline ArrowData make_arrow_data(int x,
+                                                       int y,
+                                                       float length,
+                                                       float angle);
   inline void update_fluid_pixels(const Fluid<H, W>& fluid);
 
   inline void update_velocity_arrows(const Fluid<H, W>& fluid);
@@ -55,6 +59,8 @@ class GraphicsHandler {
 
  public:
   int fluid_pixels[H][W];
+  __device__ inline void
+  update_center_velocity_arrow_at(const Fluid<H, W>* fluid, int i, int j);
   __host__ __device__ inline void update_smoke_and_pressure(float smoke,
                                                             float pressure,
                                                             int x,
@@ -138,6 +144,8 @@ GraphicsHandler<H, W, S>::GraphicsHandler(float arrow_head_length,
     exit(EXIT_FAILURE);
   }
 
+  cudaMemcpy(this->device_graphics_handler, this,
+             sizeof(GraphicsHandler<H, W, S>), cudaMemcpyHostToDevice);
   Logger::static_debug("graphics initialized successfully");
 }
 
@@ -166,26 +174,35 @@ void GraphicsHandler<H, W, S>::cleanup() {
 }
 
 template <int H, int W, int S>
-inline ArrowData GraphicsHandler<H, W, S>::make_arrow_data(int x,
-                                                           int y,
-                                                           float length,
-                                                           float angle) {
+__device__ __host__ inline ArrowData GraphicsHandler<H, W, S>::make_arrow_data(
+    int x,
+    int y,
+    float length,
+    float angle) {
   ArrowData arrow_data;
+
+  if (length < ARROW_DISABLE_THRESH_HOLD) {
+    arrow_data.valid = false;
+    return arrow_data;
+  }
+
+  arrow_data.valid = true;
+
   arrow_data.start_x = x;
   arrow_data.start_y = y;
   length *= ARROW_LENGTH_MULTIPLIER;
-  int x_offset = length * std::cos(angle);
-  int y_offset = -length * std::sin(angle);
+  int x_offset = length * cos(angle);
+  int y_offset = -length * sin(angle);
   arrow_data.end_x = x + x_offset;
   arrow_data.end_y = y + y_offset;
 
-  int arrow_x_offset = -arrow_head_length * std::cos(angle + arrow_head_angle);
-  int arrow_y_offset = arrow_head_length * std::sin(angle + arrow_head_angle);
+  int arrow_x_offset = -arrow_head_length * cos(angle + arrow_head_angle);
+  int arrow_y_offset = arrow_head_length * sin(angle + arrow_head_angle);
   arrow_data.left_head_end_x = arrow_data.end_x + arrow_x_offset;
   arrow_data.left_head_end_y = arrow_data.end_y + arrow_y_offset;
 
-  arrow_x_offset = -arrow_head_length * std::cos(arrow_head_angle - angle);
-  arrow_y_offset = -arrow_head_length * std::sin(arrow_head_angle - angle);
+  arrow_x_offset = -arrow_head_length * cos(arrow_head_angle - angle);
+  arrow_y_offset = -arrow_head_length * sin(arrow_head_angle - angle);
   arrow_data.right_head_end_x = arrow_data.end_x + arrow_x_offset;
   arrow_data.right_head_end_y = arrow_data.end_y + arrow_y_offset;
 
@@ -194,6 +211,9 @@ inline ArrowData GraphicsHandler<H, W, S>::make_arrow_data(int x,
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::draw_arrow(const ArrowData& arrow_data) {
+  if (not arrow_data.valid) {
+    return;
+  }
   SDL_RenderDrawLine(renderer, arrow_data.start_x, arrow_data.start_y,
                      arrow_data.end_x, arrow_data.end_y);
   SDL_RenderDrawLine(renderer, arrow_data.end_x, arrow_data.end_y,
@@ -353,25 +373,55 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 }
 
 template <int H, int W, int S>
+__global__ void update_center_velocity_arrow_kernel(
+    GraphicsHandler<H, W, S>* graphics_handler,
+    Fluid<H, W>* fluid) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  i *= ARROW_SPACER;
+  j *= ARROW_SPACER;
+  if (i >= W or j >= H) {
+    return;
+  }
+  graphics_handler->update_center_velocity_arrow_at(fluid, i, j);
+}
+
+template <int H, int W, int S>
+__device__ void GraphicsHandler<H, W, S>::update_center_velocity_arrow_at(
+    const Fluid<H, W>* fluid,
+    int i,
+    int j) {
+  if (fluid->is_solid[i][j]) {
+    return;
+  }
+  float x = (i + 0.5) * S;
+  float y = (H - j - 1 + 0.5) * S;
+  Vector2d<float> velocity = fluid->get_general_velocity(x, H * S - y);
+  auto vel_x = velocity.get_x();
+  auto vel_y = velocity.get_y();
+  auto angle = atan2(vel_y, vel_x);
+  auto length = sqrt(vel_x * vel_x + vel_y * vel_y);
+  arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
+      this->make_arrow_data(x, y, length, angle);
+}
+
+template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
     const Fluid<H, W>& fluid) {
-#pragma omp parallel for schedule(static)
-  for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
-    for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      if (fluid.is_solid[i][j]) {
-        continue;
-      }
-      float x = (i + 0.5) * S;
-      float y = (H - j - 1 + 0.5) * S;
-      Vector2d<float> velocity = fluid.get_general_velocity(x, H * S - y);
-      auto vel_x = velocity.get_x();
-      auto vel_y = velocity.get_y();
-      auto angle = std::atan2(vel_y, vel_x);
-      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
-      arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
-          this->make_arrow_data(x, y, length, angle);
-    }
-  }
+  int arrow_x = W / ARROW_SPACER;
+  int arrow_y = H / ARROW_SPACER;
+  int block_x = BLOCK_SIZE_X;
+  int block_y = BLOCK_SIZE_Y;
+  int grid_x = std::ceil(arrow_x / static_cast<float>(BLOCK_SIZE_X));
+  int grid_y = std::ceil(arrow_y / static_cast<float>(BLOCK_SIZE_Y));
+  auto block_dim = dim3(block_x, block_y, 1);
+  auto gird_dim = dim3(grid_x, grid_y, 1);
+  update_center_velocity_arrow_kernel<<<gird_dim, block_dim>>>(
+      this->device_graphics_handler, fluid.device_fluid);
+  cudaMemcpyAsync(this->arrow_data, this->device_graphics_handler->arrow_data,
+                  sizeof(ArrowData) * arrow_x * arrow_y,
+                  cudaMemcpyDeviceToHost);
+  cudaDeviceSynchronize();
   for (int i = 0; i < W / ARROW_SPACER; i++) {
     for (int j = 0; j < H / ARROW_SPACER; j++) {
       this->draw_arrow(arrow_data[i][j]);
