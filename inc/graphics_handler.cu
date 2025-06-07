@@ -51,9 +51,6 @@ class GraphicsHandler {
 
   inline void update_velocity_arrows(const Fluid<H, W>& fluid);
   inline void update_center_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_horizontal_edge_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_vertical_edge_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_corner_velocity_arrow(const Fluid<H, W>& fluid);
   inline void update_traces(const Fluid<H, W>& fluid, float d_t);
   void cleanup();
 
@@ -430,107 +427,11 @@ inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_horizontal_edge_velocity_arrow(
-    const Fluid<H, W>& fluid) {
-  ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
-#pragma omp parallel for schedule(static)
-  for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
-    for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      if (fluid.is_solid[i][j]) {
-        continue;
-      }
-      float x = (i + 0.5) * S;
-      float y = (H - j - 1) * S;
-      Vector2d<float> velocity = fluid.get_horizontal_edge_velocity(i, j);
-      auto vel_x = velocity.get_x();
-      auto vel_y = velocity.get_y();
-      auto angle = std::atan2(vel_y, vel_x);
-      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
-      arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
-          this->make_arrow_data(x, y, length, angle);
-    }
-  }
-  for (int i = 0; i < W / ARROW_SPACER; i++) {
-    for (int j = 0; j < H / ARROW_SPACER; j++) {
-      this->draw_arrow(arrow_data[i][j]);
-    }
-  }
-}
-
-template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_vertical_edge_velocity_arrow(
-    const Fluid<H, W>& fluid) {
-  ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
-#pragma omp parallel for schedule(static)
-
-  for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
-    for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      if (fluid.is_solid[i][j]) {
-        continue;
-      }
-      float x = (i)*S;
-      float y = (H - j - 1 + 0.5) * S;
-      Vector2d<float> velocity = fluid.get_vertical_edge_velocity(i, j);
-      auto vel_x = velocity.get_x();
-      auto vel_y = velocity.get_y();
-      auto angle = std::atan2(vel_y, vel_x);
-      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
-      arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
-          this->make_arrow_data(x, y, length, angle);
-    }
-  }
-  for (int i = 0; i < W / ARROW_SPACER; i++) {
-    for (int j = 0; j < H / ARROW_SPACER; j++) {
-      this->draw_arrow(arrow_data[i][j]);
-    }
-  }
-}
-
-template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_corner_velocity_arrow(
-    const Fluid<H, W>& fluid) {
-  ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
-#pragma omp parallel for schedule(static)
-  for (int i = 1; i < W - 1; i += ARROW_SPACER + 1) {
-    for (int j = 1; j < H - 1; j += ARROW_SPACER + 1) {
-      if (fluid.is_solid[i][j]) {
-        continue;
-      }
-      int x = i * S;
-      int y = (H - j - 1) * S;
-      auto vel_x = fluid.vel_x[i][j];
-      auto vel_y = fluid.vel_y[i][j];
-      auto angle = std::atan2(vel_y, vel_x);
-      auto length = std::sqrt(vel_x * vel_x + vel_y * vel_y);
-      arrow_data[i / ARROW_SPACER][j / ARROW_SPACER] =
-          this->make_arrow_data(x, y, length, angle);
-    }
-  }
-  for (int i = 0; i < W / ARROW_SPACER; i++) {
-    for (int j = 0; j < H / ARROW_SPACER; j++) {
-      this->draw_arrow(arrow_data[i][j]);
-    }
-  }
-}
-
-template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
     const Fluid<H, W>& fluid) {
-#if DRAW_CORNER_ARROW
-  SDL_SetRenderDrawColor(renderer, CORNER_ARROW_COLOR);
-  this->update_corner_velocity_arrow(fluid);
-#endif
 #if DRAW_CENTER_ARROW
   SDL_SetRenderDrawColor(renderer, CENTER_ARROW_COLOR);
   this->update_center_velocity_arrow(fluid);
-#endif
-#if DRAW_HORIZONTAL_EDGE_ARROW
-  SDL_SetRenderDrawColor(renderer, HORIZONTAL_EDGE_ARROW_COLOR);
-  this->update_horizontal_edge_velocity_arrow(fluid);
-#endif
-#if DRAW_VERTICAL_EDGE_ARROW
-  SDL_SetRenderDrawColor(renderer, VERTICAL_EDGE_ARROW_COLOR);
-  this->update_vertical_edge_velocity_arrow(fluid);
 #endif
 }
 
