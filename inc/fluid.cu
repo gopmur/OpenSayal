@@ -284,10 +284,10 @@ inline void Fluid<H, W>::apply_projection(float d_t) {
   auto block_dim = dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1);
 
   for (int _ = 0; _ < this->n; _++) {
-    apply_projection_even_kernel<<<grid_dim, block_dim>>>(
-        this->device_fluid, d_t);
-    apply_projection_odd_kernel<<<grid_dim, block_dim>>>(
-        this->device_fluid, d_t);
+    apply_projection_even_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
+                                                          d_t);
+    apply_projection_odd_kernel<<<grid_dim, block_dim>>>(this->device_fluid,
+                                                         d_t);
   }
 }
 
@@ -311,14 +311,12 @@ Fluid<H, W>::apply_external_forces_at(int i, int j, float d_t) {
   }
   if (this->vel_x[i][j] > 0) {
     this->vel_x[i][j] -= DRAG_COEFF * d_t;
-  }
-  else {
+  } else {
     this->vel_x[i][j] += DRAG_COEFF * d_t;
   }
   if (this->vel_y[i][j] > 0) {
     this->vel_y[i][j] -= DRAG_COEFF * d_t;
-  }
-  else {
+  } else {
     this->vel_y[i][j] += DRAG_COEFF * d_t;
   }
   this->vel_y[i][j] += PHYSICS_G * d_t;
@@ -813,9 +811,14 @@ inline void Fluid<H, W>::update(float d_t) {
 #endif
   this->apply_projection(d_t);
 #if ENABLE_PRESSURE
-  thrust::device_ptr<float> device_pressure = thrust::device_pointer_cast(&this->device_fluid->pressure[0][0]);
-  this->min_pressure = thrust::reduce(device_pressure, device_pressure + (H * W), std::numeric_limits<float>::infinity(), thrust::minimum<float>());
-  this->max_pressure = thrust::reduce(device_pressure, device_pressure + (H * W), -std::numeric_limits<float>::infinity(), thrust::maximum<float>());
+  thrust::device_ptr<float> device_pressure =
+      thrust::device_pointer_cast(&this->device_fluid->pressure[0][0]);
+  this->min_pressure = thrust::reduce(
+      device_pressure, device_pressure + (H * W),
+      std::numeric_limits<float>::infinity(), thrust::minimum<float>());
+  this->max_pressure = thrust::reduce(
+      device_pressure, device_pressure + (H * W),
+      -std::numeric_limits<float>::infinity(), thrust::maximum<float>());
 #endif
   this->apply_extrapolation();
   this->apply_velocity_advection(d_t);
