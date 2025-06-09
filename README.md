@@ -27,7 +27,7 @@ git submodule update --init --recursive
 
 Build dependencies
 
-- `cmake`
+- `cmake >= 4.0`
 - `ninja` or `make`
 - `gcc` or `clang`
 - `cuda`
