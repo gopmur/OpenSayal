@@ -1,7 +1,6 @@
 #pragma once
 
 #include <omp.h>
-#include <array>
 #include <cmath>
 #include <cstdint>
 #include <format>
@@ -37,8 +36,7 @@ class GraphicsHandler {
   SDL_Window* window;
   SDL_Texture* fluid_texture;
   SDL_PixelFormat* format;
-  std::array<SDL_Point, TRACE_LENGTH> traces[W / TRACE_SPACER]
-                                            [H / TRACE_SPACER];
+  SDL_Point traces[W / TRACE_SPACER][H / TRACE_SPACER][TRACE_LENGTH];
   ArrowData arrow_data[W / ARROW_SPACER][H / ARROW_SPACER];
   GraphicsHandler<H, W, S>* device_graphics_handler;
 
@@ -52,10 +50,15 @@ class GraphicsHandler {
   inline void update_velocity_arrows(const Fluid<H, W>& fluid);
   inline void update_center_velocity_arrow(const Fluid<H, W>& fluid);
   inline void update_traces(const Fluid<H, W>& fluid, float d_t);
+
   void cleanup();
 
  public:
   int fluid_pixels[H][W];
+  __device__ inline void update_trace_at(const Fluid<H, W>* fluid,
+                                         float d_t,
+                                         int i,
+                                         int j);
   __device__ inline void
   update_center_velocity_arrow_at(const Fluid<H, W>* fluid, int i, int j);
   __host__ __device__ inline void update_smoke_and_pressure(float smoke,
@@ -436,23 +439,60 @@ inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
 }
 
 template <int H, int W, int S>
+__device__ inline void GraphicsHandler<H, W, S>::update_trace_at(
+    const Fluid<H, W>* fluid,
+    float d_t,
+    int i,
+    int j) {
+  const int trace_i = i / TRACE_SPACER;
+  const int trace_j = j / TRACE_SPACER;
+
+  if (fluid->is_solid[i][j]) {
+    this->traces[trace_i][trace_j][0] = {-1, -1};
+  } else {
+    fluid->trace(i, j, d_t, &this->traces[trace_i][trace_j][0]);
+  }
+}
+
+// Kernel
+template <int H, int W, int S>
+__global__ void update_traces_kernel(GraphicsHandler<H, W, S>* graphics_handler,
+                                     Fluid<H, W>* fluid,
+                                     float d_t) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  i *= TRACE_SPACER;
+  j *= TRACE_SPACER;
+
+  if (i >= W || j >= H)
+    return;
+
+  graphics_handler->update_trace_at(fluid, d_t, i, j);
+}
+
+template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
                                                     float d_t) {
-#pragma omp parallel for schedule(static)
-  for (int i = 1; i < W - 1; i += TRACE_SPACER) {
-    for (int j = 1; j < H - 1; j += TRACE_SPACER) {
-      if (fluid.is_solid[i][j]) {
-        continue;
-      }
-      std::array<SDL_Point, TRACE_LENGTH> points = fluid.trace(i, j, d_t);
-      traces[i / TRACE_SPACER][j / TRACE_SPACER] = points;
-    }
-  }
+  const int trace_cols = W / TRACE_SPACER;
+  const int trace_rows = H / TRACE_SPACER;
+
+  dim3 block_dim(BLOCK_SIZE_X, BLOCK_SIZE_Y);
+  dim3 grid_dim((trace_cols + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X,
+                (trace_rows + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y);
+
+  update_traces_kernel<<<grid_dim, block_dim>>>(this->device_graphics_handler,
+                                                fluid.device_fluid, d_t);
+  cudaMemcpyAsync(this->traces, this->device_graphics_handler->traces,
+                  trace_cols * trace_rows * TRACE_LENGTH * sizeof(SDL_Point),
+                  cudaMemcpyDeviceToHost);
+  cudaDeviceSynchronize();
 
   SDL_SetRenderDrawColor(this->renderer, TRACE_COLOR);
-  for (int i = 0; i < W / TRACE_SPACER; i++) {
-    for (int j = 0; j < H / TRACE_SPACER; j++) {
-      SDL_RenderDrawLines(renderer, traces[i][j].data(), TRACE_LENGTH);
+  for (int i = 0; i < trace_cols; i++) {
+    for (int j = 0; j < trace_rows; j++) {
+      if (traces[i][j][0].x < 0)
+        continue;
+      SDL_RenderDrawLines(renderer, traces[i][j], TRACE_LENGTH);
     }
   }
 }

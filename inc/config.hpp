@@ -16,7 +16,7 @@
 
 #define FPS_AVG_SIZE 10
 
-#define PHYSICS_G 0
+#define PHYSICS_G -10
 
 #define DRAG_COEFF 4
 
@@ -39,7 +39,7 @@
 #define ARROW_DISABLE_THRESH_HOLD 0.5
 #define ARROW_LENGTH_MULTIPLIER 0.1
 #define CENTER_ARROW_COLOR 255, 255, 255, 255
-#define DRAW_CENTER_ARROW true
+#define DRAW_CENTER_ARROW false
 
 #define D_T 0.05
 #define USE_REAL_TIME false
@@ -53,10 +53,10 @@
 #define FPS_LOG_SPACER 1
 
 #define TRACE_LENGTH 20
-#define TRACE_SPACER 10
-#define ENABLE_TRACES false
+#define TRACE_SPACER 20
+#define ENABLE_TRACES true
 #define TRACE_COLOR 255, 255, 255, 255
 
-#define ENABLE_PRESSURE true
-#define ENABLE_SMOKE true
+#define ENABLE_PRESSURE false
+#define ENABLE_SMOKE false
 #define FLUID_DENSITY 16

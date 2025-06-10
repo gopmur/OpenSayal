@@ -1,7 +1,6 @@
 #pragma once
 
 #include <omp.h>
-#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -76,8 +75,10 @@ class Fluid {
   __device__ __host__ inline Vector2d<float> get_horizontal_edge_velocity(
       int i,
       int j) const;
-  __device__ __host__ inline std::array<SDL_Point, TRACE_LENGTH>
-  trace(int i, int j, float d_t) const;
+  __device__ __host__ inline void trace(int i,
+                                        int j,
+                                        float d_t,
+                                        SDL_Point* trace_line) const;
 
   __device__ __host__ inline void apply_external_forces_at(int i,
                                                            int j,
@@ -106,21 +107,19 @@ class Fluid {
 };
 
 template <int H, int W>
-__device__ __host__ inline std::array<SDL_Point, TRACE_LENGTH>
-Fluid<H, W>::trace(int i, int j, float d_t) const {
+__device__ __host__ inline void
+Fluid<H, W>::trace(int i, int j, float d_t, SDL_Point* trace_line) const {
   Vector2d<float> position = this->get_center_position(i, j);
-  std::array<SDL_Point, TRACE_LENGTH> trace_points;
-  trace_points[0] = {static_cast<int>(position.get_x()),
-                     H - 1 - static_cast<int>(position.get_y())};
+  trace_line[0] = {static_cast<int>(round(position.get_x())),
+                   H - 1 - static_cast<int>(round(position.get_y()))};
   for (int k = 1; k < TRACE_LENGTH; k++) {
     auto x = position.get_x();
     auto y = position.get_y();
     Vector2d<float> velocity = this->get_general_velocity(x, y);
     position = position + velocity * d_t;
-    trace_points[k] = {static_cast<int>(position.get_x()),
-                       H - 1 - static_cast<int>(position.get_y())};
+    trace_line[k] = {static_cast<int>(round(position.get_x())),
+                     H - 1 - static_cast<int>(round(position.get_y()))};
   }
-  return trace_points;
 }
 
 template <int H, int W>
