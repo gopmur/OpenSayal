@@ -42,9 +42,8 @@ int main(int argc, char* argv[]) {
   GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE>* graphics =
       new GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE>(
           ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE, ARROW_DISABLE_THRESH_HOLD);
-  Fluid<FLUID_HEIGHT, FLUID_WIDTH>* fluid =
-      new Fluid<FLUID_HEIGHT, FLUID_WIDTH>(PROJECTION_O, PROJECTION_N,
-                                           CELL_SIZE);
+  Fluid* fluid = new Fluid(FLUID_WIDTH, FLUID_HEIGHT, PROJECTION_O,
+                           PROJECTION_N, CELL_SIZE);
   SDL_Event event;
 
   {

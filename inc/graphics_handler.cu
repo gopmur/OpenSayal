@@ -45,22 +45,23 @@ class GraphicsHandler {
                                                        int y,
                                                        float length,
                                                        float angle);
-  inline void update_fluid_pixels(const Fluid<H, W>& fluid);
+  inline void update_fluid_pixels(const Fluid& fluid);
 
-  inline void update_velocity_arrows(const Fluid<H, W>& fluid);
-  inline void update_center_velocity_arrow(const Fluid<H, W>& fluid);
-  inline void update_traces(const Fluid<H, W>& fluid, float d_t);
+  inline void update_velocity_arrows(const Fluid& fluid);
+  inline void update_center_velocity_arrow(const Fluid& fluid);
+  inline void update_traces(const Fluid& fluid, float d_t);
 
   void cleanup();
 
  public:
   int fluid_pixels[H][W];
-  __device__ inline void update_trace_at(const Fluid<H, W>* fluid,
+  __device__ inline void update_trace_at(const Fluid* fluid,
                                          float d_t,
                                          int i,
                                          int j);
-  __device__ inline void
-  update_center_velocity_arrow_at(const Fluid<H, W>* fluid, int i, int j);
+  __device__ inline void update_center_velocity_arrow_at(const Fluid* fluid,
+                                                         int i,
+                                                         int j);
   __host__ __device__ inline void update_smoke_and_pressure(float smoke,
                                                             float pressure,
                                                             int x,
@@ -79,7 +80,7 @@ class GraphicsHandler {
                   float arrow_head_angle,
                   float arrow_disable_thresh_hold);
   ~GraphicsHandler();
-  void update(const Fluid<H, W>& fluid, float d_t);
+  void update(const Fluid& fluid, float d_t);
 };
 
 template <int H, int W, int S>
@@ -273,7 +274,7 @@ __host__ __device__ inline void GraphicsHandler<H, W, S>::update_pressure_pixel(
 template <int H, int W, int S>
 __global__ void update_fluid_pixels_kernel(
     GraphicsHandler<H, W, S>* graphics_handler,
-    Fluid<H, W>* fluid) {
+    Fluid* fluid) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= W or j >= H) {
@@ -283,7 +284,7 @@ __global__ void update_fluid_pixels_kernel(
 
 template <int H, int W, int S>
 __global__ void update_smoke_and_pressure_pixel_kernel(
-    Fluid<H, W>* fluid,
+    Fluid* fluid,
     GraphicsHandler<H, W, S>* graphics_handler,
     float min_pressure,
     float max_pressure) {
@@ -294,18 +295,18 @@ __global__ void update_smoke_and_pressure_pixel_kernel(
   }
   int x = i;
   int y = H - j - 1;
-  if (fluid->is_solid[i][j]) {
+  if (fluid->d_is_solid[fluid->indx(i, j)]) {
     graphics_handler->fluid_pixels[y][x] = map_rgba(80, 80, 80, 255);
   } else {
-    graphics_handler->update_smoke_and_pressure(fluid->smoke[i][j],
-                                                fluid->pressure[i][j], x, y,
-                                                min_pressure, max_pressure);
+    graphics_handler->update_smoke_and_pressure(
+        fluid->d_smoke[fluid->indx(i, j)], fluid->d_pressure[fluid->indx(i, j)],
+        x, y, min_pressure, max_pressure);
   }
 }
 
 template <int H, int W, int S>
 __global__ void update_smoke_pixel_kernel(
-    Fluid<H, W>* fluid,
+    Fluid* fluid,
     GraphicsHandler<H, W, S>* graphics_handler) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -314,16 +315,17 @@ __global__ void update_smoke_pixel_kernel(
   }
   int x = i;
   int y = H - j - 1;
-  if (fluid->is_solid[i][j]) {
+  if (fluid->d_is_solid[fluid->indx(i, j)]) {
     graphics_handler->fluid_pixels[y][x] = map_rgba(80, 80, 80, 255);
   } else {
-    graphics_handler->update_smoke_pixels(fluid->smoke[i][j], x, y);
+    graphics_handler->update_smoke_pixels(fluid->d_smoke[fluid->indx(i, j)], x,
+                                          y);
   }
 }
 
 template <int H, int W, int S>
 __global__ void update_pressure_pixel_kernel(
-    Fluid<H, W>* fluid,
+    Fluid* fluid,
     GraphicsHandler<H, W, S>* graphics_handler,
     float min_pressure,
     float max_pressure) {
@@ -334,17 +336,16 @@ __global__ void update_pressure_pixel_kernel(
   }
   int x = i;
   int y = H - j - 1;
-  if (fluid->is_solid[i][j]) {
+  if (fluid->d_is_solid[fluid->indx(i, j)]) {
     graphics_handler->fluid_pixels[y][x] = map_rgba(80, 80, 80, 255);
   } else {
-    graphics_handler->update_pressure_pixel(fluid->pressure[i][j], x, y,
-                                            min_pressure, max_pressure);
+    graphics_handler->update_pressure_pixel(
+        fluid->d_pressure[fluid->indx(i, j)], x, y, min_pressure, max_pressure);
   }
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
-    const Fluid<H, W>& fluid) {
+inline void GraphicsHandler<H, W, S>::update_fluid_pixels(const Fluid& fluid) {
   float min_pressure = fluid.min_pressure;
   float max_pressure = fluid.max_pressure;
   int block_dim_x = BLOCK_SIZE_X;
@@ -355,8 +356,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
   auto grid_dim = dim3(grid_dim_x, grid_dim_y, 1);
 #if ENABLE_PRESSURE and ENABLE_SMOKE
   update_smoke_and_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
-      fluid.device_fluid, this->device_graphics_handler, min_pressure,
-      max_pressure);
+      fluid.d_this, this->device_graphics_handler, min_pressure, max_pressure);
 #elif ENABLE_PRESSURE
   update_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
       fluid.device_fluid, this->device_graphics_handler, min_pressure,
@@ -375,7 +375,7 @@ inline void GraphicsHandler<H, W, S>::update_fluid_pixels(
 template <int H, int W, int S>
 __global__ void update_center_velocity_arrow_kernel(
     GraphicsHandler<H, W, S>* graphics_handler,
-    Fluid<H, W>* fluid) {
+    Fluid* fluid) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   i *= ARROW_SPACER;
@@ -388,10 +388,10 @@ __global__ void update_center_velocity_arrow_kernel(
 
 template <int H, int W, int S>
 __device__ void GraphicsHandler<H, W, S>::update_center_velocity_arrow_at(
-    const Fluid<H, W>* fluid,
+    const Fluid* fluid,
     int i,
     int j) {
-  if (fluid->is_solid[i][j]) {
+  if (fluid->d_is_solid[fluid->indx(i, j)]) {
     return;
   }
   float x = (i + 0.5) * S;
@@ -407,7 +407,7 @@ __device__ void GraphicsHandler<H, W, S>::update_center_velocity_arrow_at(
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
-    const Fluid<H, W>& fluid) {
+    const Fluid& fluid) {
   int arrow_x = W / ARROW_SPACER;
   int arrow_y = H / ARROW_SPACER;
   int block_x = BLOCK_SIZE_X;
@@ -417,7 +417,7 @@ inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
   auto block_dim = dim3(block_x, block_y, 1);
   auto gird_dim = dim3(grid_x, grid_y, 1);
   update_center_velocity_arrow_kernel<<<gird_dim, block_dim>>>(
-      this->device_graphics_handler, fluid.device_fluid);
+      this->device_graphics_handler, fluid.d_this);
   cudaMemcpyAsync(this->arrow_data, this->device_graphics_handler->arrow_data,
                   sizeof(ArrowData) * arrow_x * arrow_y,
                   cudaMemcpyDeviceToHost);
@@ -431,7 +431,7 @@ inline void GraphicsHandler<H, W, S>::update_center_velocity_arrow(
 
 template <int H, int W, int S>
 inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
-    const Fluid<H, W>& fluid) {
+    const Fluid& fluid) {
 #if DRAW_CENTER_ARROW
   SDL_SetRenderDrawColor(renderer, CENTER_ARROW_COLOR);
   this->update_center_velocity_arrow(fluid);
@@ -440,14 +440,14 @@ inline void GraphicsHandler<H, W, S>::update_velocity_arrows(
 
 template <int H, int W, int S>
 __device__ inline void GraphicsHandler<H, W, S>::update_trace_at(
-    const Fluid<H, W>* fluid,
+    const Fluid* fluid,
     float d_t,
     int i,
     int j) {
   const int trace_i = i / TRACE_SPACER;
   const int trace_j = j / TRACE_SPACER;
 
-  if (fluid->is_solid[i][j]) {
+  if (fluid->d_is_solid[fluid->indx(i, j)]) {
     this->traces[trace_i][trace_j][0] = {-1, -1};
   } else {
     fluid->trace(i, j, d_t, &this->traces[trace_i][trace_j][0]);
@@ -457,7 +457,7 @@ __device__ inline void GraphicsHandler<H, W, S>::update_trace_at(
 // Kernel
 template <int H, int W, int S>
 __global__ void update_traces_kernel(GraphicsHandler<H, W, S>* graphics_handler,
-                                     Fluid<H, W>* fluid,
+                                     Fluid* fluid,
                                      float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -471,7 +471,7 @@ __global__ void update_traces_kernel(GraphicsHandler<H, W, S>* graphics_handler,
 }
 
 template <int H, int W, int S>
-inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
+inline void GraphicsHandler<H, W, S>::update_traces(const Fluid& fluid,
                                                     float d_t) {
   const int trace_cols = W / TRACE_SPACER;
   const int trace_rows = H / TRACE_SPACER;
@@ -481,7 +481,7 @@ inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
                 (trace_rows + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y);
 
   update_traces_kernel<<<grid_dim, block_dim>>>(this->device_graphics_handler,
-                                                fluid.device_fluid, d_t);
+                                                fluid.d_this, d_t);
   cudaMemcpyAsync(this->traces, this->device_graphics_handler->traces,
                   trace_cols * trace_rows * TRACE_LENGTH * sizeof(SDL_Point),
                   cudaMemcpyDeviceToHost);
@@ -498,7 +498,7 @@ inline void GraphicsHandler<H, W, S>::update_traces(const Fluid<H, W>& fluid,
 }
 
 template <int H, int W, int S>
-void GraphicsHandler<H, W, S>::update(const Fluid<H, W>& fluid, float d_t) {
+void GraphicsHandler<H, W, S>::update(const Fluid& fluid, float d_t) {
   this->update_fluid_pixels(fluid);
   SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels,
                     W * sizeof(int));

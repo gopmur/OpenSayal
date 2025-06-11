@@ -4,8 +4,8 @@
 
 #define THREAD_COUNT 8
 
-#define BLOCK_SIZE_X 2
-#define BLOCK_SIZE_Y 512
+#define BLOCK_SIZE_X 512
+#define BLOCK_SIZE_Y 2
 
 #define FLUID_HEIGHT 1080 
 #define FLUID_WIDTH 1920 
@@ -57,6 +57,6 @@
 #define ENABLE_TRACES true
 #define TRACE_COLOR 255, 255, 255, 255
 
-#define ENABLE_PRESSURE false
-#define ENABLE_SMOKE false
+#define ENABLE_PRESSURE true
+#define ENABLE_SMOKE true
 #define FLUID_DENSITY 16
