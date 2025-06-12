@@ -120,11 +120,11 @@ __device__ __host__ inline int GraphicsHandler::indx(int x, int y) {
 __device__ __host__ inline int GraphicsHandler::indx_traces(int i,
                                                             int j,
                                                             int k) {
-  return (this->height / TRACE_SPACER - j - 1) * this->width * TRACE_LENGTH +
+  return (this->traces_height - j - 1) * this->traces_width * TRACE_LENGTH +
          i * TRACE_LENGTH + k;
 }
 __device__ __host__ inline int GraphicsHandler::indx_arrow_data(int i, int j) {
-  return (this->height / ARROW_SPACER - j - 1) * this->width + i;
+  return (this->arrow_data_height - j - 1) * this->arrow_data_width + i;
 }
 
 inline void GraphicsHandler::alloc_device_memory() {
@@ -132,8 +132,8 @@ inline void GraphicsHandler::alloc_device_memory() {
   cudaMalloc(
       &this->d_arrow_data,
       this->arrow_data_height * this->arrow_data_width * sizeof(ArrowData));
-  cudaMalloc(&this->d_traces,
-             this->traces_width * this->traces_height * sizeof(SDL_Point));
+  cudaMalloc(&this->d_traces, this->traces_width * this->traces_height *
+                                  TRACE_LENGTH * sizeof(SDL_Point));
   cudaMalloc(&this->d_fluid_pixels, this->width * this->height * sizeof(int));
 }
 
@@ -146,8 +146,9 @@ inline void GraphicsHandler::alloc_host_memory() {
       static_cast<int*>(std::malloc(this->height * this->width * sizeof(int)));
   this->arrow_data = static_cast<ArrowData*>(std::malloc(
       this->arrow_data_height * this->arrow_data_width * sizeof(ArrowData)));
-  this->traces = static_cast<SDL_Point*>(std::malloc(
-      this->traces_height * this->traces_width * sizeof(SDL_Point)));
+  this->traces = static_cast<SDL_Point*>(
+      std::malloc(this->traces_height * this->traces_width * TRACE_LENGTH *
+                  sizeof(SDL_Point)));
 }
 
 inline void GraphicsHandler::init_sdl() {
@@ -472,7 +473,8 @@ __device__ void GraphicsHandler::update_center_velocity_arrow_at(
   auto vel_y = velocity.get_y();
   auto angle = atan2(vel_y, vel_x);
   auto length = sqrt(vel_x * vel_x + vel_y * vel_y);
-  arrow_data[this->indx_arrow_data(i / ARROW_SPACER, j / ARROW_SPACER)] =
+  this->d_arrow_data[this->indx_arrow_data(i / ARROW_SPACER,
+                                           j / ARROW_SPACER)] =
       this->make_arrow_data(x, y, length, angle);
 }
 
@@ -493,7 +495,7 @@ inline void GraphicsHandler::update_center_velocity_arrow(const Fluid& fluid) {
   cudaDeviceSynchronize();
   for (int j = 0; j < this->height / ARROW_SPACER; j++) {
     for (int i = 0; i < this->width / ARROW_SPACER; i++) {
-      this->draw_arrow(arrow_data[indx_arrow_data(i, j)]);
+      this->draw_arrow(this->arrow_data[indx_arrow_data(i, j)]);
     }
   }
 }
@@ -513,9 +515,10 @@ __device__ inline void GraphicsHandler::update_trace_at(const Fluid* fluid,
   const int trace_j = j / TRACE_SPACER;
 
   if (fluid->d_is_solid[fluid->indx(i, j)]) {
-    this->traces[indx_traces(trace_i, trace_j, 0)] = {-1, -1};
+    this->d_traces[indx_traces(trace_i, trace_j, 0)].x = -1;
+    this->d_traces[indx_traces(trace_i, trace_j, 0)].y = -1;
   } else {
-    fluid->trace(i, j, d_t, &this->traces[indx_traces(trace_i, trace_j, 0)]);
+    fluid->trace(i, j, d_t, &this->d_traces[indx_traces(trace_i, trace_j, 0)]);
   }
 }
 
@@ -542,6 +545,7 @@ inline void GraphicsHandler::update_traces(const Fluid& fluid, float d_t) {
                 (trace_rows + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y);
 
   update_traces_kernel<<<grid_dim, block_dim>>>(d_this, fluid.d_this, d_t);
+  CUDA_CHECK(cudaGetLastError());
   cudaMemcpyAsync(this->traces, this->d_traces,
                   trace_cols * trace_rows * TRACE_LENGTH * sizeof(SDL_Point),
                   cudaMemcpyDeviceToHost);
@@ -563,7 +567,6 @@ void GraphicsHandler::update(const Fluid& fluid, float d_t) {
   SDL_UpdateTexture(this->fluid_texture, NULL, this->fluid_pixels,
                     this->width * sizeof(int));
 
-  // Render the texture
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, this->fluid_texture, NULL, NULL);
 #if ENABLE_TRACES

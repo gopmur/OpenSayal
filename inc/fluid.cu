@@ -103,17 +103,18 @@ __device__ inline void Fluid::trace(int i,
                                     float d_t,
                                     SDL_Point* trace_line) const {
   Vector2d<float> position = this->get_center_position(i, j);
-  trace_line[0] = {
-      static_cast<int>(round(position.get_x())),
-      this->height - 1 - static_cast<int>(round(position.get_y()))};
+  trace_line[0].x = static_cast<int>(round(position.get_x()));
+  trace_line[0].y =
+      this->height - 1 - static_cast<int>(round(position.get_y()));
+
   for (int k = 1; k < TRACE_LENGTH; k++) {
     auto x = position.get_x();
     auto y = position.get_y();
     Vector2d<float> velocity = this->get_general_velocity(x, y);
     position = position + velocity * d_t;
-    trace_line[k] = {
-        static_cast<int>(round(position.get_x())),
-        this->height - 1 - static_cast<int>(round(position.get_y()))};
+    trace_line[k].x = static_cast<int>(round(position.get_x()));
+    trace_line[k].y =
+        this->height - 1 - static_cast<int>(round(position.get_y()));
   }
 }
 
