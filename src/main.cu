@@ -12,7 +12,7 @@
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
-void setup(int argc, char* argv[]) {
+void setup(int argc, char* argv[], Config config) {
   if (argc > 2 or
       (argc == 2 and (std::strcmp(argv[1], "--save-report") != 0 and
                       std::strcmp(argv[1], "--compare-performance") != 0))) {
@@ -22,9 +22,9 @@ void setup(int argc, char* argv[]) {
   }
 
   omp_set_dynamic(0);
-  omp_set_num_threads(THREAD_COUNT);
-  Logger::static_debug(
-      std::format("requested {} threads from OpenMP", THREAD_COUNT));
+  omp_set_num_threads(config.thread.openMP.thread_count);
+  Logger::static_debug(std::format("requested {} threads from OpenMP",
+                                   config.thread.openMP.thread_count));
 
   if (argc == 2) {
     Logger::init(std::strcmp(argv[1], "--save-report") == 0,
@@ -37,12 +37,102 @@ void setup(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-  setup(argc, argv);
+  Config config;
 
-  GraphicsHandler graphics(FLUID_WIDTH, FLUID_HEIGHT, CELL_SIZE,
-                           ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE,
-                           ARROW_DISABLE_THRESH_HOLD);
-  Fluid fluid(FLUID_WIDTH, FLUID_HEIGHT, PROJECTION_O, PROJECTION_N, CELL_SIZE);
+  config = {
+      .thread =
+          {
+              .openMP = {.thread_count = THREAD_COUNT},
+              .cuda = {.block_size_x = BLOCK_SIZE_X,
+                       .block_size_y = BLOCK_SIZE_Y},
+          },
+      .sim =
+          {
+              .projection =
+                  {
+                      .n = PROJECTION_N,
+                      .o = PROJECTION_O,
+                  },
+              .wind_tunnel =
+                  {
+                      .pipe_height = PIPE_HEIGHT,
+                      .pipe_length = PIPE_LENGTH,
+                      .smoke_length = SMOKE_LENGTH,
+                      .speed = WIND_SPEED,
+                      .smoke = WIND_SMOKE,
+                  },
+              .physics =
+                  {
+                      .g = PHYSICS_G,
+                  },
+              .time =
+                  {
+                      .d_t = D_T,
+                      .enable_read_time = USE_REAL_TIME,
+                      .real_time_multiplier = REAL_TIME_MULTIPLIER,
+                  },
+              .smoke =
+                  {
+                      .enable_decay = ENABLE_SMOKE_DECAY,
+                      .decay_rate = SMOKE_DECAY_RATE,
+                  },
+              .obstacle =
+                  {
+                      .enable = ENABLE_CIRCLE,
+                      .center_x = CIRCLE_POSITION_X,
+                      .center_y = CIRCLE_POSITION_Y,
+                      .radius = CIRCLE_RADIUS,
+                  },
+              .height = FLUID_HEIGHT,
+              .width = FLUID_WIDTH,
+              .cell_pixel_size = CELL_SIZE,
+              .cell_size = CELL_SIZE,
+              .enable_drain = !ENABLE_RIGHT_WALL,
+              .enable_pressure = ENABLE_PRESSURE,
+              .enable_smoke = ENABLE_SMOKE,
+          },
+      .fluid =
+          {
+              .density = FLUID_DENSITY,
+              .drag_coeff = DRAG_COEFF,
+          },
+      .visual =
+          {
+              .arrows =
+                  {
+                      .color =
+                          {
+                              .r = 255,
+                              .g = 255,
+                              .b = 255,
+                              .a = 255,
+                          },
+                      .enable = DRAW_CENTER_ARROW,
+                      .distance = ARROW_SPACER,
+                      .length_multiplier = ARROW_LENGTH_MULTIPLIER,
+                      .disable_threshold = ARROW_DISABLE_THRESH_HOLD,
+                      .head_length = ARROW_HEAD_LENGTH,
+                  },
+              .path_line =
+                  {
+                      .enable = ENABLE_TRACES,
+                      .length = TRACE_LENGTH,
+                      .color =
+                          {
+                              .r = 255,
+                              .g = 255,
+                              .b = 255,
+                              .a = 255,
+                          },
+                      .distance = TRACE_SPACER,
+                  },
+          },
+  };
+
+  setup(argc, argv, config);
+
+  GraphicsHandler graphics(config);
+  Fluid fluid(config);
   SDL_Event event;
 
   {
@@ -72,11 +162,11 @@ int main(int argc, char* argv[]) {
         Logger::log_fps(d_t, work);
       }
 
-#if USE_REAL_TIME
-      d_t *= REAL_TIME_MULTIPLIER;
-#else
-      d_t = D_T;
-#endif
+      if (config.sim.time.enable_read_time) {
+        d_t *= config.sim.time.real_time_multiplier;
+      } else {
+        d_t = config.sim.time.d_t;
+      }
       prev_clock = std::clock();
       fluid.update(d_t);
       graphics.update(fluid, d_t);

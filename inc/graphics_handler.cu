@@ -28,15 +28,6 @@ struct ArrowData {
 
 class GraphicsHandler {
  private:
-  const int arrow_data_height;
-  const int arrow_data_width;
-  const int traces_height;
-  const int traces_width;
-
-  const float arrow_head_length;
-  const float arrow_head_angle;
-  const float arrow_disable_thresh_hold;
-
   SDL_Renderer* renderer;
   SDL_Window* window;
   SDL_Texture* fluid_texture;
@@ -76,6 +67,32 @@ class GraphicsHandler {
   const int height;
   const int cell_size;
 
+  const int block_size_x;
+  const int block_size_y;
+
+  const int arrow_data_height;
+  const int arrow_data_width;
+  const int traces_height;
+  const int traces_width;
+
+  const float arrow_head_length;
+  const float arrow_head_angle;
+  const float arrow_disable_thresh_hold;
+  const float arrow_length_multiplier;
+  const int arrow_distance;
+
+  const int trace_distance;
+  const int trace_length;
+
+  const ColorConfig arrow_color;
+  const ColorConfig trace_color;
+
+  const bool enable_pressure;
+  const bool enable_smoke;
+
+  const bool enable_traces;
+  const bool enable_arrows;
+
   int* d_fluid_pixels;
   int* fluid_pixels;
 
@@ -104,12 +121,7 @@ class GraphicsHandler {
                                                int y,
                                                float min_pressure,
                                                float max_pressure);
-  GraphicsHandler(int width,
-                  int height,
-                  int cell_size,
-                  float arrow_head_length,
-                  float arrow_head_angle,
-                  float arrow_disable_thresh_hold);
+  GraphicsHandler(Config config);
   ~GraphicsHandler();
   void update(const Fluid& fluid, float d_t);
 };
@@ -120,8 +132,9 @@ __device__ __host__ inline int GraphicsHandler::indx(int x, int y) {
 __device__ __host__ inline int GraphicsHandler::indx_traces(int i,
                                                             int j,
                                                             int k) {
-  return (this->traces_height - j - 1) * this->traces_width * TRACE_LENGTH +
-         i * TRACE_LENGTH + k;
+  return (this->traces_height - j - 1) * this->traces_width *
+             this->trace_length +
+         i * this->trace_length + k;
 }
 __device__ __host__ inline int GraphicsHandler::indx_arrow_data(int i, int j) {
   return (this->arrow_data_height - j - 1) * this->arrow_data_width + i;
@@ -133,7 +146,7 @@ inline void GraphicsHandler::alloc_device_memory() {
       &this->d_arrow_data,
       this->arrow_data_height * this->arrow_data_width * sizeof(ArrowData));
   cudaMalloc(&this->d_traces, this->traces_width * this->traces_height *
-                                  TRACE_LENGTH * sizeof(SDL_Point));
+                                  this->trace_length * sizeof(SDL_Point));
   cudaMalloc(&this->d_fluid_pixels, this->width * this->height * sizeof(int));
 }
 
@@ -147,8 +160,8 @@ inline void GraphicsHandler::alloc_host_memory() {
   this->arrow_data = static_cast<ArrowData*>(std::malloc(
       this->arrow_data_height * this->arrow_data_width * sizeof(ArrowData)));
   this->traces = static_cast<SDL_Point*>(
-      std::malloc(this->traces_height * this->traces_width * TRACE_LENGTH *
-                  sizeof(SDL_Point)));
+      std::malloc(this->traces_height * this->traces_width *
+                  this->trace_length * sizeof(SDL_Point)));
 }
 
 inline void GraphicsHandler::init_sdl() {
@@ -206,22 +219,29 @@ inline void GraphicsHandler::init_sdl() {
   }
 }
 
-GraphicsHandler::GraphicsHandler(int width,
-                                 int height,
-                                 int cell_size,
-                                 float arrow_head_length,
-                                 float arrow_head_angle,
-                                 float arrow_disable_thresh_hold)
-    : width(width),
-      height(height),
-      cell_size(cell_size),
-      arrow_head_angle(arrow_head_angle),
-      arrow_head_length(arrow_head_length),
-      arrow_disable_thresh_hold(arrow_disable_thresh_hold),
-      arrow_data_width(width / ARROW_SPACER),
-      arrow_data_height(height / ARROW_SPACER),
-      traces_width(width / TRACE_SPACER),
-      traces_height(height / TRACE_SPACER) {
+GraphicsHandler::GraphicsHandler(Config config)
+    : width(config.sim.width),
+      height(config.sim.height),
+      cell_size(config.sim.cell_pixel_size),
+      arrow_head_angle(ARROW_HEAD_ANGLE),
+      arrow_head_length(config.visual.arrows.head_length),
+      arrow_disable_thresh_hold(config.visual.arrows.disable_threshold),
+      arrow_data_width(config.sim.width / config.visual.arrows.distance),
+      arrow_data_height(config.sim.height / config.visual.arrows.distance),
+      traces_width(config.sim.width / config.visual.path_line.distance),
+      traces_height(config.sim.height / config.visual.path_line.distance),
+      arrow_length_multiplier(config.visual.arrows.length_multiplier),
+      block_size_x(config.thread.cuda.block_size_x),
+      block_size_y(config.thread.cuda.block_size_y),
+      arrow_distance(config.visual.arrows.distance),
+      trace_distance(config.visual.arrows.distance),
+      trace_length(config.visual.path_line.length),
+      trace_color(config.visual.path_line.color),
+      arrow_color(config.visual.arrows.color),
+      enable_smoke(config.sim.enable_smoke),
+      enable_pressure(config.sim.enable_pressure),
+      enable_arrows(config.visual.arrows.enable),
+      enable_traces(config.visual.path_line.enable) {
   this->alloc_host_memory();
   this->alloc_device_memory();
   this->init_device_memory();
@@ -271,7 +291,7 @@ __device__ inline ArrowData GraphicsHandler::make_arrow_data(int x,
                                                              float angle) {
   ArrowData arrow_data;
 
-  if (length < ARROW_DISABLE_THRESH_HOLD) {
+  if (length < this->arrow_disable_thresh_hold) {
     arrow_data.valid = false;
     return arrow_data;
   }
@@ -280,7 +300,7 @@ __device__ inline ArrowData GraphicsHandler::make_arrow_data(int x,
 
   arrow_data.start_x = x;
   arrow_data.start_y = y;
-  length *= ARROW_LENGTH_MULTIPLIER;
+  length *= this->arrow_length_multiplier;
   int x_offset = length * cos(angle);
   int y_offset = -length * sin(angle);
   arrow_data.end_x = x + x_offset;
@@ -423,21 +443,21 @@ __global__ void update_pressure_pixel_kernel(
 inline void GraphicsHandler::update_fluid_pixels(const Fluid& fluid) {
   float min_pressure = fluid.min_pressure;
   float max_pressure = fluid.max_pressure;
-  int block_dim_x = BLOCK_SIZE_X;
-  int block_dim_y = BLOCK_SIZE_Y;
+  int block_dim_x = this->block_size_x;
+  int block_dim_y = this->block_size_y;
   int grid_dim_x = std::ceil(static_cast<float>(fluid.width) / block_dim_x);
   int grid_dim_y = std::ceil(static_cast<float>(fluid.height) / block_dim_y);
   auto block_dim = dim3(block_dim_x, block_dim_y, 1);
   auto grid_dim = dim3(grid_dim_x, grid_dim_y, 1);
-#if ENABLE_PRESSURE and ENABLE_SMOKE
-  update_smoke_and_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
-      fluid.d_this, d_this, min_pressure, max_pressure);
-#elif ENABLE_PRESSURE
-  update_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
-      fluid.d_this, d_this, min_pressure, max_pressure);
-#elif ENABLE_SMOKE
-  update_smoke_pixel_kernel<<<grid_dim, block_dim>>>(fluid.d_this, d_this);
-#endif
+  if (this->enable_pressure && this->enable_smoke) {
+    update_smoke_and_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
+        fluid.d_this, d_this, min_pressure, max_pressure);
+  } else if (this->enable_pressure) {
+    update_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
+        fluid.d_this, d_this, min_pressure, max_pressure);
+  } else if (this->enable_smoke) {
+    update_smoke_pixel_kernel<<<grid_dim, block_dim>>>(fluid.d_this, d_this);
+  }
 
   cudaMemcpyAsync(this->fluid_pixels, this->d_fluid_pixels,
                   sizeof(int) * this->height * this->width,
@@ -450,8 +470,8 @@ __global__ void update_center_velocity_arrow_kernel(
     Fluid* d_fluid) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
-  i *= ARROW_SPACER;
-  j *= ARROW_SPACER;
+  i *= d_graphics_handler->arrow_distance;
+  j *= d_graphics_handler->arrow_distance;
   if (i >= d_fluid->width or j >= d_fluid->height) {
     return;
   }
@@ -473,18 +493,18 @@ __device__ void GraphicsHandler::update_center_velocity_arrow_at(
   auto vel_y = velocity.get_y();
   auto angle = atan2(vel_y, vel_x);
   auto length = sqrt(vel_x * vel_x + vel_y * vel_y);
-  this->d_arrow_data[this->indx_arrow_data(i / ARROW_SPACER,
-                                           j / ARROW_SPACER)] =
+  this->d_arrow_data[this->indx_arrow_data(i / this->arrow_distance,
+                                           j / this->arrow_distance)] =
       this->make_arrow_data(x, y, length, angle);
 }
 
 inline void GraphicsHandler::update_center_velocity_arrow(const Fluid& fluid) {
-  int arrow_x = this->width / ARROW_SPACER;
-  int arrow_y = this->height / ARROW_SPACER;
-  int block_x = BLOCK_SIZE_X;
-  int block_y = BLOCK_SIZE_Y;
-  int grid_x = std::ceil(arrow_x / static_cast<float>(BLOCK_SIZE_X));
-  int grid_y = std::ceil(arrow_y / static_cast<float>(BLOCK_SIZE_Y));
+  int arrow_x = this->width / this->arrow_distance;
+  int arrow_y = this->height / this->arrow_distance;
+  int block_x = this->block_size_x;
+  int block_y = this->block_size_y;
+  int grid_x = std::ceil(arrow_x / static_cast<float>(block_x));
+  int grid_y = std::ceil(arrow_y / static_cast<float>(block_y));
   auto block_dim = dim3(block_x, block_y, 1);
   auto gird_dim = dim3(grid_x, grid_y, 1);
   update_center_velocity_arrow_kernel<<<gird_dim, block_dim>>>(d_this,
@@ -493,32 +513,34 @@ inline void GraphicsHandler::update_center_velocity_arrow(const Fluid& fluid) {
                   sizeof(ArrowData) * arrow_x * arrow_y,
                   cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
-  for (int j = 0; j < this->height / ARROW_SPACER; j++) {
-    for (int i = 0; i < this->width / ARROW_SPACER; i++) {
+  for (int j = 0; j < this->height / this->arrow_distance; j++) {
+    for (int i = 0; i < this->width / this->arrow_distance; i++) {
       this->draw_arrow(this->arrow_data[indx_arrow_data(i, j)]);
     }
   }
 }
 
 inline void GraphicsHandler::update_velocity_arrows(const Fluid& fluid) {
-#if DRAW_CENTER_ARROW
-  SDL_SetRenderDrawColor(renderer, CENTER_ARROW_COLOR);
-  this->update_center_velocity_arrow(fluid);
-#endif
+  if (this->enable_arrows) {
+    SDL_SetRenderDrawColor(renderer, this->arrow_color.r, this->arrow_color.g,
+                           this->arrow_color.b, this->arrow_color.a);
+    this->update_center_velocity_arrow(fluid);
+  }
 }
 
 __device__ inline void GraphicsHandler::update_trace_at(const Fluid* fluid,
                                                         float d_t,
                                                         int i,
                                                         int j) {
-  const int trace_i = i / TRACE_SPACER;
-  const int trace_j = j / TRACE_SPACER;
+  const int trace_i = i / this->trace_distance;
+  const int trace_j = j / this->trace_distance;
 
   if (fluid->d_is_solid[fluid->indx(i, j)]) {
     this->d_traces[indx_traces(trace_i, trace_j, 0)].x = -1;
     this->d_traces[indx_traces(trace_i, trace_j, 0)].y = -1;
   } else {
-    fluid->trace(i, j, d_t, &this->d_traces[indx_traces(trace_i, trace_j, 0)]);
+    fluid->trace(i, j, d_t, &this->d_traces[indx_traces(trace_i, trace_j, 0)],
+                 this->trace_length);
   }
 }
 
@@ -527,8 +549,8 @@ __global__ void update_traces_kernel(GraphicsHandler* d_graphics_handler,
                                      float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
-  i *= TRACE_SPACER;
-  j *= TRACE_SPACER;
+  i *= d_graphics_handler->trace_distance;
+  j *= d_graphics_handler->trace_distance;
 
   if (i >= d_fluid->width || j >= d_fluid->height)
     return;
@@ -537,27 +559,30 @@ __global__ void update_traces_kernel(GraphicsHandler* d_graphics_handler,
 }
 
 inline void GraphicsHandler::update_traces(const Fluid& fluid, float d_t) {
-  const int trace_cols = this->width / TRACE_SPACER;
-  const int trace_rows = this->height / TRACE_SPACER;
+  const int trace_cols = this->width / this->trace_distance;
+  const int trace_rows = this->height / this->trace_distance;
 
-  dim3 block_dim(BLOCK_SIZE_X, BLOCK_SIZE_Y);
-  dim3 grid_dim((trace_cols + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X,
-                (trace_rows + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y);
+  dim3 block_dim(this->block_size_x, this->block_size_y);
+  dim3 grid_dim((trace_cols + this->block_size_x - 1) / this->block_size_x,
+                (trace_rows + this->block_size_y - 1) / this->block_size_y);
 
   update_traces_kernel<<<grid_dim, block_dim>>>(d_this, fluid.d_this, d_t);
   CUDA_CHECK(cudaGetLastError());
-  cudaMemcpyAsync(this->traces, this->d_traces,
-                  trace_cols * trace_rows * TRACE_LENGTH * sizeof(SDL_Point),
-                  cudaMemcpyDeviceToHost);
+  cudaMemcpyAsync(
+      this->traces, this->d_traces,
+      trace_cols * trace_rows * this->trace_length * sizeof(SDL_Point),
+      cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
 
-  SDL_SetRenderDrawColor(this->renderer, TRACE_COLOR);
+  SDL_SetRenderDrawColor(this->renderer, this->trace_color.r,
+                         this->trace_color.g, this->trace_color.b,
+                         this->trace_color.a);
   for (int j = 0; j < trace_rows; j++) {
     for (int i = 0; i < trace_cols; i++) {
       if (traces[indx_traces(i, j, 0)].x < 0)
         continue;
       SDL_RenderDrawLines(renderer, &traces[indx_traces(i, j, 0)],
-                          TRACE_LENGTH);
+                          this->trace_length);
     }
   }
 }
@@ -569,9 +594,10 @@ void GraphicsHandler::update(const Fluid& fluid, float d_t) {
 
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, this->fluid_texture, NULL, NULL);
-#if ENABLE_TRACES
-  this->update_traces(fluid, d_t);
-#endif
+  if (this->enable_traces) {
+    this->update_traces(fluid, d_t);
+  }
+
   this->update_velocity_arrows(fluid);
 
   SDL_RenderPresent(renderer);

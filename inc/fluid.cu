@@ -11,7 +11,7 @@
 
 #include "SDL_rect.h"
 
-#include "config.hpp"
+#include "config_parser.hpp"
 #include "helper.cu"
 
 class Fluid {
@@ -35,15 +35,25 @@ class Fluid {
   inline void decay_smoke(float d_t);
 
   void alloc_device_memory();
-  void init_device_memory();
+  void init_device_memory(Config config);
 
  public:
   const int width;
   const int height;
-  const float g = PHYSICS_G;
+  const float g;
+  const float density;
   const float o;
   const int cell_size;
   const int n;
+  const float drag_coeff;
+  const int wind_tunnel_smoke_length;
+  const float wind_tunnel_speed;
+  const int wind_tunnel_height;
+  const float wind_tunnel_smoke;
+  const bool enable_smoke_decay;
+  const bool enable_pressure;
+  const bool enable_smoke;
+  const float smoke_decay_rate;
 
   float min_pressure;
   float max_pressure;
@@ -62,7 +72,7 @@ class Fluid {
   dim3 kernel_grid_dim;
   dim3 kernel_block_dim;
 
-  Fluid(int width, int height, float o, int n, int cell_size);
+  Fluid(Config config);
   ~Fluid();
 
   __host__ __device__ inline int indx(int i, int j) const;
@@ -80,7 +90,8 @@ class Fluid {
   __device__ inline void trace(int i,
                                int j,
                                float d_t,
-                               SDL_Point* trace_line) const;
+                               SDL_Point* trace_line,
+                               int trace_length) const;
 
   __device__ inline void apply_external_forces_at(int i, int j, float d_t);
   __device__ inline void apply_projection_at(int i, int j, float d_t);
@@ -101,13 +112,14 @@ class Fluid {
 __device__ inline void Fluid::trace(int i,
                                     int j,
                                     float d_t,
-                                    SDL_Point* trace_line) const {
+                                    SDL_Point* trace_line,
+                                    int trace_length) const {
   Vector2d<float> position = this->get_center_position(i, j);
   trace_line[0].x = static_cast<int>(round(position.get_x()));
   trace_line[0].y =
       this->height - 1 - static_cast<int>(round(position.get_y()));
 
-  for (int k = 1; k < TRACE_LENGTH; k++) {
+  for (int k = 1; k < trace_length; k++) {
     auto x = position.get_x();
     auto y = position.get_y();
     Vector2d<float> velocity = this->get_general_velocity(x, y);
@@ -135,7 +147,7 @@ void Fluid::alloc_device_memory() {
   cudaMalloc(&this->d_total_s, this->width * this->height * sizeof(int));
 }
 
-void Fluid::init_device_memory() {
+void Fluid::init_device_memory(Config config) {
   int* is_solid =
       static_cast<int*>(std::malloc(this->height * this->width * sizeof(int)));
   int* total_s =
@@ -150,17 +162,17 @@ void Fluid::init_device_memory() {
   for (auto i = 0; i < this->width; i++) {
     for (auto j = 0; j < this->height; j++) {
       is_solid[indx(i, j)] =
-          (i == 0 or j == 0 or j == this->height - 1
-#if ENABLE_RIGHT_WALL
-           or i == W - 1
-#endif
-           or
-           (ENABLE_CIRCLE and std::sqrt(std::pow((i - CIRCLE_POSITION_X), 2) +
-                                        std::pow((j - CIRCLE_POSITION_Y), 2)) <
-                                  CIRCLE_RADIUS or
-            (i < PIPE_LENGTH &&
-             (j == this->height / 2 - PIPE_HEIGHT / 2 - 1 or
-              j == this->height / 2 + PIPE_HEIGHT / 2 + 1))));
+          (i == 0 or j == 0 or j == this->height - 1 or
+           (!config.sim.enable_drain and i == this->width - 1) or
+           (config.sim.obstacle.enable and
+                std::sqrt(std::pow((i - config.sim.obstacle.center_x), 2) +
+                          std::pow((j - config.sim.obstacle.center_y), 2)) <
+                    config.sim.obstacle.radius or
+            (i < config.sim.wind_tunnel.pipe_length &&
+             (j == this->height / 2 - config.sim.wind_tunnel.pipe_height / 2 -
+                       1 or
+              j == this->height / 2 + config.sim.wind_tunnel.pipe_height / 2 +
+                       1))));
     }
   }
   for (auto i = 0; i < this->width; i++) {
@@ -203,14 +215,32 @@ __device__ __host__ inline int Fluid::indx(int i, int j) const {
   return (this->height - j - 1) * this->width + i;
 }
 
-Fluid::Fluid(int width, int height, float o, int n, int cell_size)
-    : width(width), height(height), o(o), n(n), cell_size(cell_size) {
-  int grid_x = std::ceil(static_cast<float>(width) / BLOCK_SIZE_X);
-  int grid_y = std::ceil(static_cast<float>(height) / BLOCK_SIZE_Y);
+Fluid::Fluid(Config config)
+    : width(config.sim.width),
+      height(config.sim.height),
+      o(config.sim.projection.o),
+      n(config.sim.projection.n),
+      cell_size(config.sim.cell_size),
+      density(config.fluid.density),
+      g(config.sim.physics.g),
+      drag_coeff(config.fluid.drag_coeff),
+      wind_tunnel_speed(config.sim.wind_tunnel.speed),
+      wind_tunnel_height(config.sim.wind_tunnel.pipe_height),
+      wind_tunnel_smoke_length(config.sim.wind_tunnel.smoke_length),
+      wind_tunnel_smoke(config.sim.wind_tunnel.smoke),
+      enable_smoke_decay(config.sim.smoke.enable_decay),
+      enable_smoke(config.sim.enable_smoke),
+      enable_pressure(config.sim.enable_pressure),
+      smoke_decay_rate(config.sim.smoke.decay_rate) {
+  int grid_x =
+      std::ceil(static_cast<float>(width) / config.thread.cuda.block_size_x);
+  int grid_y =
+      std::ceil(static_cast<float>(height) / config.thread.cuda.block_size_y);
   this->kernel_grid_dim = dim3(grid_x, grid_y, 1);
-  this->kernel_block_dim = dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1);
+  this->kernel_block_dim =
+      dim3(config.thread.cuda.block_size_x, config.thread.cuda.block_size_y, 1);
   this->alloc_device_memory();
-  this->init_device_memory();
+  this->init_device_memory(config);
 }
 
 Fluid::~Fluid() {
@@ -260,7 +290,7 @@ __device__ inline void Fluid::update_pressure_at(int i,
                                                  float velocity_diff,
                                                  float d_t) {
   this->d_pressure[indx(i, j)] +=
-      velocity_diff * FLUID_DENSITY * CELL_SIZE / d_t;
+      velocity_diff * this->density * this->cell_size / d_t;
 }
 
 __device__ inline void Fluid::apply_projection_at(int i, int j, float d_t) {
@@ -319,14 +349,17 @@ __global__ void apply_projection_odd_kernel(Fluid* d_fluid, float d_t) {
 }
 
 inline void Fluid::apply_projection(float d_t) {
-  int grid_x = std::ceil(static_cast<float>(this->width) / BLOCK_SIZE_X / 2);
-  int grid_y = std::ceil(static_cast<float>(this->height) / BLOCK_SIZE_Y);
+  int grid_x =
+      std::ceil(static_cast<float>(this->width) / this->kernel_block_dim.x / 2);
+  int grid_y =
+      std::ceil(static_cast<float>(this->height) / this->kernel_block_dim.y);
   auto grid_dim = dim3(grid_x, grid_y);
-  auto block_dim = dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1);
 
   for (int _ = 0; _ < this->n; _++) {
-    apply_projection_even_kernel<<<grid_dim, block_dim>>>(d_this, d_t);
-    apply_projection_odd_kernel<<<grid_dim, block_dim>>>(d_this, d_t);
+    apply_projection_even_kernel<<<grid_dim, this->kernel_block_dim>>>(d_this,
+                                                                       d_t);
+    apply_projection_odd_kernel<<<grid_dim, this->kernel_block_dim>>>(d_this,
+                                                                      d_t);
   }
 }
 
@@ -342,22 +375,23 @@ __global__ void apply_external_forces_kernel(Fluid* d_fluid, float d_t) {
 __device__ inline void Fluid::apply_external_forces_at(int i,
                                                        int j,
                                                        float d_t) {
-  if (i <= SMOKE_LENGTH and i != 0 && j >= this->height / 2 - PIPE_HEIGHT / 2 &&
-      j <= this->height / 2 + PIPE_HEIGHT / 2) {
-    this->d_smoke[indx(i, j)] = WIND_SMOKE;
-    this->d_vel_x[indx(i, j)] = WIND_SPEED;
+  if (i <= this->wind_tunnel_smoke_length and i != 0 &&
+      j >= this->height / 2 - this->wind_tunnel_height / 2 &&
+      j <= this->height / 2 + this->wind_tunnel_height / 2) {
+    this->d_smoke[indx(i, j)] = this->wind_tunnel_smoke;
+    this->d_vel_x[indx(i, j)] = this->wind_tunnel_speed;
   }
   if (this->d_vel_x[indx(i, j)] > 0) {
-    this->d_vel_x[indx(i, j)] -= DRAG_COEFF * d_t;
+    this->d_vel_x[indx(i, j)] -= this->drag_coeff * d_t;
   } else {
-    this->d_vel_x[indx(i, j)] += DRAG_COEFF * d_t;
+    this->d_vel_x[indx(i, j)] += this->drag_coeff * d_t;
   }
   if (this->d_vel_y[indx(i, j)] > 0) {
-    this->d_vel_y[indx(i, j)] -= DRAG_COEFF * d_t;
+    this->d_vel_y[indx(i, j)] -= this->drag_coeff * d_t;
   } else {
-    this->d_vel_y[indx(i, j)] += DRAG_COEFF * d_t;
+    this->d_vel_y[indx(i, j)] += this->drag_coeff * d_t;
   }
-  this->d_vel_y[indx(i, j)] += PHYSICS_G * d_t;
+  this->d_vel_y[indx(i, j)] += this->g * d_t;
 }
 
 inline void Fluid::apply_external_forces(float d_t) {
@@ -780,9 +814,9 @@ __global__ void decay_smoke_kernel(Fluid* d_fluid, float d_t) {
 }
 
 __device__ inline void Fluid::decay_smoke_at(int i, int j, float d_t) {
-#if ENABLE_SMOKE_DECAY
-  this->smoke[i][j] = max(smoke - SMOKE_DECAY_RATE * d_t, 0.0);
-#endif
+  if (this->enable_smoke_decay)
+    this->d_smoke[this->indx(i, j)] = max(
+        this->d_smoke[this->indx(i, j)] - this->smoke_decay_rate * d_t, 0.0);
 }
 
 inline void Fluid::decay_smoke(float d_t) {
@@ -793,27 +827,25 @@ inline void Fluid::decay_smoke(float d_t) {
 // ? put the whole thing into a graph
 inline void Fluid::update(float d_t) {
   this->apply_external_forces(d_t);
-#if ENABLE_PRESSURE
-  this->zero_pressure();
-#endif
+  if (this->enable_pressure)
+    this->zero_pressure();
+
   this->apply_projection(d_t);
-#if ENABLE_PRESSURE
-  thrust::device_ptr<float> device_pressure =
-      thrust::device_pointer_cast(this->d_pressure);
-  this->min_pressure = thrust::reduce(
-      device_pressure, device_pressure + (this->width * this->height),
-      std::numeric_limits<float>::infinity(), thrust::minimum<float>());
-  this->max_pressure = thrust::reduce(
-      device_pressure, device_pressure + (this->width * this->height),
-      -std::numeric_limits<float>::infinity(), thrust::maximum<float>());
-#endif
+  if (this->enable_pressure) {
+    thrust::device_ptr<float> device_pressure =
+        thrust::device_pointer_cast(this->d_pressure);
+    this->min_pressure = thrust::reduce(
+        device_pressure, device_pressure + (this->width * this->height),
+        std::numeric_limits<float>::infinity(), thrust::minimum<float>());
+    this->max_pressure = thrust::reduce(
+        device_pressure, device_pressure + (this->width * this->height),
+        -std::numeric_limits<float>::infinity(), thrust::maximum<float>());
+  }
   this->apply_extrapolation();
   this->apply_velocity_advection(d_t);
-#if ENABLE_SMOKE
-  if (WIND_SMOKE != 0) {
+  if (this->enable_smoke && this->wind_tunnel_smoke != 0) {
     this->apply_smoke_advection(d_t);
     this->decay_smoke(d_t);
   }
-#endif
   cudaDeviceSynchronize();
 }

@@ -26,7 +26,7 @@
 #define WIND_SPEED 200
 #define WIND_SMOKE 1
 
-#define ENABLE_RIGHT_WALL false
+#define ENABLE_RIGHT_WALL true
 
 #define CIRCLE_RADIUS FLUID_HEIGHT / 30.0
 #define CIRCLE_POSITION_X FLUID_WIDTH / 2 + 40
@@ -57,6 +57,6 @@
 #define ENABLE_TRACES false
 #define TRACE_COLOR 0, 0, 0, 0
 
-#define ENABLE_PRESSURE true
+#define ENABLE_PRESSURE false
 #define ENABLE_SMOKE true
 #define FLUID_DENSITY 16
