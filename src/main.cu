@@ -39,11 +39,10 @@ void setup(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
   setup(argc, argv);
 
-  GraphicsHandler* graphics = new GraphicsHandler(
-      FLUID_WIDTH, FLUID_HEIGHT, CELL_SIZE, ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE,
-      ARROW_DISABLE_THRESH_HOLD);
-  Fluid* fluid = new Fluid(FLUID_WIDTH, FLUID_HEIGHT, PROJECTION_O,
-                           PROJECTION_N, CELL_SIZE);
+  GraphicsHandler graphics(FLUID_WIDTH, FLUID_HEIGHT, CELL_SIZE,
+                           ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE,
+                           ARROW_DISABLE_THRESH_HOLD);
+  Fluid fluid(FLUID_WIDTH, FLUID_HEIGHT, PROJECTION_O, PROJECTION_N, CELL_SIZE);
   SDL_Event event;
 
   {
@@ -79,8 +78,8 @@ int main(int argc, char* argv[]) {
       d_t = D_T;
 #endif
       prev_clock = std::clock();
-      fluid->update(d_t);
-      graphics->update(*fluid, d_t);
+      fluid.update(d_t);
+      graphics.update(fluid, d_t);
       work = std::clock() - prev_clock;
       prev_time = now;
     }
