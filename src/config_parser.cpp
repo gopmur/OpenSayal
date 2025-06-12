@@ -120,7 +120,7 @@ Config ConfigParser::parse() const {
                               .b = ConfigParser::get_or(
                                   config_json, "visual.arrows.color.b", 0),
                               .a = ConfigParser::get_or(
-                                  config_json, "visual.arrows.color.a", 0),
+                                  config_json, "visual.arrows.color.a", 255),
                           },
                       .enable = ConfigParser::get_or(
                           config_json, "visual.arrows.enable", false),
@@ -141,19 +141,21 @@ Config ConfigParser::parse() const {
                           config_json, "visual.path_line.length", 20),
                       .color =
                           {
-                              ConfigParser::get_or(
+                              .r = ConfigParser::get_or(
                                   config_json, "visual.path_line.color.r", 0),
-                              ConfigParser::get_or(
+                              .g = ConfigParser::get_or(
                                   config_json, "visual.path_line.color.g", 0),
-                              ConfigParser::get_or(
-                                  config_json, "visual.path_line.color.b", 0),
-                              ConfigParser::get_or(config_json,
-                                                   "visual.path_line.color.a",
-                                                   0),
+                              .b =
+                                  ConfigParser::get_or(
+                                      config_json,
+                                      "visual.path_line.color.b", 0),
+                              .a =
+                                  ConfigParser::get_or(
+                                      config_json,
+                                      "visual.path_line.color.a", 255),
                           },
                       .distance = ConfigParser::get_or(
-                          config_json,
-                          "visual.path_line.distance", 20),
+                          config_json, "visual.path_line.distance", 20),
                   },
           },
   };
