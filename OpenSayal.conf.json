@@ -1,0 +1,10 @@
+{
+	"sim": {
+		"sim.height": 500,
+		"width": 1000,
+    "wind_tunnel": {
+      "speed": 200
+    }
+	},
+  "visual.arrows.enable": true
+}
