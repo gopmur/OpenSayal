@@ -34,6 +34,7 @@ file(GLOB_RECURSE PROJECT_SOURCE_FILES
 set(PROJECT_INCLUDE_DIRECTORIES
   "inc"
   "lib/sdl/include"
+  "lib/json/include/nlohmann"
 )
 
 # add source files
@@ -44,12 +45,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_INCLUDE_DIRECTORIES}
 )
 
-# link sdl
+
 add_subdirectory("lib/sdl")
+add_subdirectory("lib/json")
+
 target_link_directories(${PROJECT_NAME} PRIVATE
   "lib/sdl"
+  "lib/json"
 )
+
 target_link_libraries(${PROJECT_NAME}
   SDL2
   SDL2main
+  nlohmann_json
 )

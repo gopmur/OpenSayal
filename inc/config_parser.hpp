@@ -1,3 +1,11 @@
+#pragma once
+
+#include <string>
+
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 struct ColorConfig {
   int r;
   int g;
@@ -67,12 +75,6 @@ struct FluidConfig {
 };
 
 struct SimConfig {
-  ProjectionConfig projection;
-  WindTunnelConfig wind_tunnel;
-  PhysicsConfig physics;
-  TimeConfig time;
-  SmokeConfig smoke;
-  ObstacleConfig obstacle;
   int height;
   int width;
   int cell_pixel_size;
@@ -80,6 +82,12 @@ struct SimConfig {
   bool enable_drain;
   bool enable_pressure;
   bool enable_smoke;
+  ProjectionConfig projection;
+  WindTunnelConfig wind_tunnel;
+  PhysicsConfig physics;
+  TimeConfig time;
+  SmokeConfig smoke;
+  ObstacleConfig obstacle;
 };
 
 struct ArrowConfig {
@@ -102,3 +110,38 @@ struct Config {
   FluidConfig fluid;
   VisualConfig visual;
 };
+
+class ConfigParser {
+ private:
+  const std::string config_file_name;
+
+  template <typename T>
+  static T get_or(json config_json, std::string key, T default_value);
+
+ public:
+  ConfigParser(std::string config_file_name);
+  ConfigParser();
+  Config parse() const;
+};
+
+template <typename T>
+T ConfigParser::get_or(json config_json, std::string key, T default_value) {
+  if (config_json.contains(key)) {
+    return config_json.at(key);
+  }
+  if (key == "") {
+    return default_value;
+  }
+  int first_dot_pos = key.find('.');
+  if (first_dot_pos == std::string::npos) {
+    return default_value;
+  }
+  auto parent_key = key.substr(0, first_dot_pos);
+  auto child_key = key.substr(first_dot_pos + 1);
+  try {
+    json child_json = config_json.at(parent_key);
+    return get_or(child_json, child_key, default_value);
+  } catch (...) {
+    return default_value;
+  }
+}

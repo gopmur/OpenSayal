@@ -2,11 +2,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <fstream>
 #include <optional>
 
 #include "SDL_events.h"
+#include "json.hpp"
 
-#include "config.hpp"
+#include "config_parser.hpp"
 #include "fluid.cu"
 #include "graphics_handler.cu"
 #include "logger.hpp"
@@ -37,97 +39,8 @@ void setup(int argc, char* argv[], Config config) {
 }
 
 int main(int argc, char* argv[]) {
-  Config config;
-
-  config = {
-      .thread =
-          {
-              .openMP = {.thread_count = THREAD_COUNT},
-              .cuda = {.block_size_x = BLOCK_SIZE_X,
-                       .block_size_y = BLOCK_SIZE_Y},
-          },
-      .sim =
-          {
-              .projection =
-                  {
-                      .n = PROJECTION_N,
-                      .o = PROJECTION_O,
-                  },
-              .wind_tunnel =
-                  {
-                      .pipe_height = PIPE_HEIGHT,
-                      .pipe_length = PIPE_LENGTH,
-                      .smoke_length = SMOKE_LENGTH,
-                      .speed = WIND_SPEED,
-                      .smoke = WIND_SMOKE,
-                  },
-              .physics =
-                  {
-                      .g = PHYSICS_G,
-                  },
-              .time =
-                  {
-                      .d_t = D_T,
-                      .enable_read_time = USE_REAL_TIME,
-                      .real_time_multiplier = REAL_TIME_MULTIPLIER,
-                  },
-              .smoke =
-                  {
-                      .enable_decay = ENABLE_SMOKE_DECAY,
-                      .decay_rate = SMOKE_DECAY_RATE,
-                  },
-              .obstacle =
-                  {
-                      .enable = ENABLE_CIRCLE,
-                      .center_x = CIRCLE_POSITION_X,
-                      .center_y = CIRCLE_POSITION_Y,
-                      .radius = CIRCLE_RADIUS,
-                  },
-              .height = FLUID_HEIGHT,
-              .width = FLUID_WIDTH,
-              .cell_pixel_size = CELL_SIZE,
-              .cell_size = CELL_SIZE,
-              .enable_drain = !ENABLE_RIGHT_WALL,
-              .enable_pressure = ENABLE_PRESSURE,
-              .enable_smoke = ENABLE_SMOKE,
-          },
-      .fluid =
-          {
-              .density = FLUID_DENSITY,
-              .drag_coeff = DRAG_COEFF,
-          },
-      .visual =
-          {
-              .arrows =
-                  {
-                      .color =
-                          {
-                              .r = 255,
-                              .g = 255,
-                              .b = 255,
-                              .a = 255,
-                          },
-                      .enable = DRAW_CENTER_ARROW,
-                      .distance = ARROW_SPACER,
-                      .length_multiplier = ARROW_LENGTH_MULTIPLIER,
-                      .disable_threshold = ARROW_DISABLE_THRESH_HOLD,
-                      .head_length = ARROW_HEAD_LENGTH,
-                  },
-              .path_line =
-                  {
-                      .enable = ENABLE_TRACES,
-                      .length = TRACE_LENGTH,
-                      .color =
-                          {
-                              .r = 255,
-                              .g = 255,
-                              .b = 255,
-                              .a = 255,
-                          },
-                      .distance = TRACE_SPACER,
-                  },
-          },
-  };
+  auto config_parser = ConfigParser();
+  auto config = config_parser.parse();
 
   setup(argc, argv, config);
 
