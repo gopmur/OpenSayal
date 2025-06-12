@@ -11,11 +11,14 @@
     "fopenmp",
     "Malloc",
     "Memcpy",
+    "nlohmann",
     "nullopt",
     "nvcc",
     "OPENMP",
+    "ptxas",
     "Sayal",
     "strcmp",
-    "syncthreads"
+    "syncthreads",
+    "Xcompiler"
   ]
 }
