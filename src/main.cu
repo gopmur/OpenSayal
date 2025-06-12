@@ -14,8 +14,6 @@
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
-using json = nlohmann::json;
-
 void setup(int argc, char* argv[], Config config) {
   if (argc > 2 or
       (argc == 2 and (std::strcmp(argv[1], "--save-report") != 0 and
