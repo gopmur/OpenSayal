@@ -307,11 +307,9 @@ __device__ inline void Fluid::apply_projection_at(int i, int j, float d_t) {
   auto s = this->d_total_s[indx(i, j)];
   auto velocity_diff = this->o * (divergence / s);
 
-#if ENABLE_PRESSURE
-  if (i >= SMOKE_LENGTH + 1 or j >= this->height / 2 + PIPE_HEIGHT / 2 or
-      j <= this->height / 2 - PIPE_HEIGHT / 2)
+  if (this->enable_pressure) {
     this->update_pressure_at(i, j, velocity_diff, d_t);
-#endif
+  }
 
   if (not this->d_is_solid[indx(i - 1, j)]) {
     this->d_vel_x[indx(i, j)] += velocity_diff;

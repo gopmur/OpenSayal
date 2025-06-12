@@ -3,6 +3,7 @@
     "ccls",
     "chrono",
     "cmath",
+    "coeff",
     "cstdint",
     "cstdlib",
     "cstring",

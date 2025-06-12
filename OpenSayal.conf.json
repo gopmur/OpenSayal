@@ -1,10 +1,78 @@
 {
-	"sim": {
-		"sim.height": 500,
-		"width": 1000,
-		"wind_tunnel": {
-			"speed": 200
+	"thread": {
+		"openMP": {
+			"thread_count": 8
+		},
+		"cuda": {
+			"block_size_x": 1024,
+			"block_size_y": 1
 		}
 	},
-	"visual.arrows.enable": true
+	"sim": {
+		"height": 1080,
+		"width": 1920,
+		"cell_pixel_size": 1,
+		"cell_size": 1,
+		"enable_drain": true,
+		"enable_pressure": true,
+		"enable_smoke": true,
+		"projection": {
+			"n": 50,
+			"o": 1.9
+		},
+		"wind_tunnel": {
+			"pipe_height": 270,
+			"smoke_length": 20,
+			"speed": 200,
+			"smoke": 1
+		},
+		"physics": {
+			"g": -1
+		},
+		"time": {
+			"d_t": 0.05,
+			"enable_read_time": false,
+			"real_time_multiplier": 1
+		},
+		"smoke": {
+			"enable_decay": false,
+			"decay_rate": 0
+		},
+		"obstacle": {
+			"enable": true,
+			"center_x": 960,
+			"center_y": 540,
+			"radius": 36
+		}
+	},
+	"fluid": {
+		"density": 1,
+		"drag_coeff": 0
+	},
+	"visual": {
+		"arrows": {
+			"color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 255
+			},
+			"enable": false,
+			"distance": 20,
+			"length_multiplier": 0.1,
+			"disable_threshold": 0,
+			"head_length": 5
+		},
+		"path_line": {
+			"enable": false,
+			"length": 20,
+			"color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 255
+			},
+			"distance": 20
+		}
+	}
 }

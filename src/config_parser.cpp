@@ -95,9 +95,9 @@ Config ConfigParser::parse() const {
                           config_json, "sim.obstacle.center_x", sim_width / 2),
                       .center_y = ConfigParser::get_or(
                           config_json, "sim.obstacle.center_y", sim_height / 2),
-                      .radius = ConfigParser::get_or(config_json,
-                                                     "sim.obstacle.radius",
-                                                     sim_height / 30.0f),
+                      .radius = ConfigParser::get_or(
+                          config_json, "sim.obstacle.radius",
+                          std::min({sim_height, sim_width}) / 30.0f),
                   },
           },
       .fluid =
@@ -141,18 +141,22 @@ Config ConfigParser::parse() const {
                           config_json, "visual.path_line.length", 20),
                       .color =
                           {
-                              .r = ConfigParser::get_or(
-                                  config_json, "visual.path_line.color.r", 0),
-                              .g = ConfigParser::get_or(
-                                  config_json, "visual.path_line.color.g", 0),
+                              .r =
+                                  ConfigParser::get_or(
+                                      config_json,
+                                      "visual.path_line.color.r", 0),
+                              .g =
+                                  ConfigParser::get_or(
+                                      config_json,
+                                      "visual.path_line.color.g", 0),
                               .b =
                                   ConfigParser::get_or(
                                       config_json,
                                       "visual.path_line.color.b", 0),
                               .a =
-                                  ConfigParser::get_or(
-                                      config_json,
-                                      "visual.path_line.color.a", 255),
+                                  ConfigParser::
+                                      get_or(config_json,
+                                             "visual.path_line.color.a", 255),
                           },
                       .distance = ConfigParser::get_or(
                           config_json, "visual.path_line.distance", 20),
