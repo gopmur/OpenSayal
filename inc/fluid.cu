@@ -676,7 +676,6 @@ __device__ inline float Fluid::interpolate_smoke(float x, float y) const {
   Vector2d<int> indices_3;
   Vector2d<int> indices_4;
 
-  float distance_sum = 0;
   float avg_smoke = 0;
 
   if (in_x < this->cell_size / 2.0 && in_y < this->cell_size / 2.0) {
@@ -710,8 +709,6 @@ __device__ inline float Fluid::interpolate_smoke(float x, float y) const {
   auto distance_2 = get_distance(Vector2d<float>(x, y), pos_2);
   auto distance_3 = get_distance(Vector2d<float>(x, y), pos_3);
   auto distance_4 = get_distance(Vector2d<float>(x, y), pos_4);
-
-  distance_sum = distance_1 + distance_2 + distance_3 + distance_4;
 
   float inv1 = 1.0 / (distance_1 + 1e-6);
   float inv2 = 1.0 / (distance_2 + 1e-6);

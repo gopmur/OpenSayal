@@ -39,9 +39,9 @@ void setup(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
   setup(argc, argv);
 
-  GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE>* graphics =
-      new GraphicsHandler<FLUID_HEIGHT, FLUID_WIDTH, CELL_SIZE>(
-          ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE, ARROW_DISABLE_THRESH_HOLD);
+  GraphicsHandler* graphics = new GraphicsHandler(
+      FLUID_WIDTH, FLUID_HEIGHT, CELL_SIZE, ARROW_HEAD_LENGTH, ARROW_HEAD_ANGLE,
+      ARROW_DISABLE_THRESH_HOLD);
   Fluid* fluid = new Fluid(FLUID_WIDTH, FLUID_HEIGHT, PROJECTION_O,
                            PROJECTION_N, CELL_SIZE);
   SDL_Event event;
