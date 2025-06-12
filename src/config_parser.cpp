@@ -85,7 +85,7 @@ Config ConfigParser::parse() const {
                       .enable_decay = ConfigParser::get_or(
                           config_json, "sim.smoke.enable_decay", false),
                       .decay_rate = ConfigParser::get_or(
-                          config_json, "sim.smoke.enable_decay", 0.05f),
+                          config_json, "sim.smoke.decay_rate", 0.05f),
                   },
               .obstacle =
                   {
