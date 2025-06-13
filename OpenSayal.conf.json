@@ -4,7 +4,7 @@
 			"thread_count": 8
 		},
 		"cuda": {
-			"block_size_x": 1024,
+			"block_size_x": 512,
 			"block_size_y": 1
 		}
 	},
@@ -57,19 +57,19 @@
 				"b": 0,
 				"a": 255
 			},
-			"enable": false,
+			"enable": true,
 			"distance": 20,
 			"length_multiplier": 0.1,
 			"disable_threshold": 0,
 			"head_length": 5
 		},
 		"path_line": {
-			"enable": false,
+			"enable": true,
 			"length": 20,
 			"color": {
-				"r": 0,
-				"g": 0,
-				"b": 0,
+				"r": 255,
+				"g": 255,
+				"b": 255,
 				"a": 255
 			},
 			"distance": 20

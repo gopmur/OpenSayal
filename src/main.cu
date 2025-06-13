@@ -9,8 +9,8 @@
 #include "json.hpp"
 
 #include "config_parser.hpp"
-#include "fluid.cu"
-#include "graphics_handler.cu"
+#include "fluid.cuh"
+#include "graphics_handler.cuh"
 #include "logger.hpp"
 #include "platform_setup.hpp"
 
