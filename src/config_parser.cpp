@@ -28,9 +28,9 @@ Config ConfigParser::parse() const {
                              config_json, "thread.openMP.thread_count",
                              omp_get_thread_num() / 2)},
               .cuda = {.block_size_x = ConfigParser::get_or(
-                           config_json, "thread.cuda.block_size_x", 512),
+                           config_json, "thread.cuda.block_size_x", 64),
                        .block_size_y = ConfigParser::get_or(
-                           config_json, "thread.cuda.block_size_y", 2)},
+                           config_json, "thread.cuda.block_size_y", 1)},
           },
       .sim =
           {
@@ -77,7 +77,7 @@ Config ConfigParser::parse() const {
                   {
                       .d_t = ConfigParser::get_or(config_json, "sim.time.d_t",
                                                   0.05f),
-                      .enable_read_time = ConfigParser::get_or(
+                      .enable_real_time = ConfigParser::get_or(
                           config_json, "sim.time.enable_real_time", false),
                       .real_time_multiplier = ConfigParser::get_or(
                           config_json, "sim.time.real_time_multiplier", 1.0f),

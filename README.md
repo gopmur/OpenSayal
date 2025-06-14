@@ -2,8 +2,9 @@
 
 ## Table of Content
 
-- [About](About)
-- [How to Build](HowtoBuild)
+- [About](#about)
+- [How to Build](#how-to-build)
+- [Configuration](#configuration)
 
 ## About
 
@@ -29,7 +30,7 @@ Build dependencies
 
 - `cmake >= 4.0`
 - `ninja` or `make`
-- `gcc` or `clang`
+- `gcc`
 - `cuda`
 
 ```shell
@@ -42,7 +43,7 @@ Run the program.
 cmake --build build --config Release
 ```
 
-you can change CMAKE_C_COMPILER and CMAKE_CXX_COMPILER to match your desired compiler or change build system by specifying your generator after -G.
+you can change build system by specifying your generator after -G.
 
 ```shell
 ./build/OpenSayal
@@ -67,3 +68,113 @@ cmake --build build --config Release
 ```
 
 To run the program navigate to `build/Release` copy `OpenSayal.exe` to `build/lib/sdl/Release` and run `OpenSayal.exe` there.  
+
+## Configuration
+
+Put a configuration file named `OpenSayal.conf.json` in the directory in which you wish to launch you program from. You can either copy the configuration provided below or configure from scratch.
+
+```json
+{
+ "thread": {
+  "cuda": {
+   "block_size_x": 64,
+   "block_size_y": 1
+  }
+ },
+ "sim": {
+  "height": 1080,
+  "width": 1920,
+  "cell_pixel_size": 1,
+  "cell_size": 1,
+  "enable_drain": false,
+  "enable_pressure": true,
+  "enable_smoke": true,
+  "projection": {
+   "n": 50,
+   "o": 1.9
+  },
+  "enable_interactive": true,
+  "wind_tunnel": {
+   "pipe_height": 270,
+   "smoke_length": 0,
+   "speed": 0,
+   "smoke": 1
+  },
+  "physics": {
+   "g": -5
+  },
+  "time": {
+   "d_t": 0.05,
+   "enable_real_time": false,
+   "real_time_multiplier": 1
+  },
+  "smoke": {
+   "enable_decay": false,
+   "decay_rate": 0
+  },
+  "obstacle": {
+   "enable": false,
+   "center_x": 960,
+   "center_y": 540,
+   "radius": 36
+  }
+ },
+ "fluid": {
+  "density": 1
+ },
+ "visual": {
+  "arrows": {
+   "color": {
+    "r": 0,
+    "g": 0,
+    "b": 0,
+    "a": 255
+   },
+   "enable": false,
+   "distance": 20,
+   "length_multiplier": 0.1,
+   "disable_threshold": 0,
+   "head_length": 5
+  },
+  "path_line": {
+   "enable": false,
+   "length": 20,
+   "color": {
+    "r": 255,
+    "g": 255,
+    "b": 255,
+    "a": 255
+   },
+   "distance": 20
+  }
+ }
+}
+```
+
+Every configuration key can be defined in a single line or can be defined in multiple levels. for example the following will do the exact same thing.
+
+```json
+{
+  "sim": {
+    "time": {
+      "d_t": 0.05
+    }
+  }
+}
+```
+
+```json
+{
+  "sim.time.d_t": 0.05
+}
+```
+
+```json
+{
+  "sim": {
+    "time.d_t": 0.05
+  }
+}
+```
+
+For more information on each setting read [here](/docs/configuration.md)

@@ -53,7 +53,7 @@ struct ObstacleConfig {
 
 struct TimeConfig {
   float d_t;
-  bool enable_read_time;
+  bool enable_real_time;
   float real_time_multiplier;
 };
 

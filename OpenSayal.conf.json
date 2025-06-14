@@ -1,8 +1,5 @@
 {
 	"thread": {
-		"openMP": {
-			"thread_count": 8
-		},
 		"cuda": {
 			"block_size_x": 64,
 			"block_size_y": 1
@@ -47,8 +44,7 @@
 		}
 	},
 	"fluid": {
-		"density": 1,
-		"drag_coeff": 0
+		"density": 1
 	},
 	"visual": {
 		"arrows": {
