@@ -89,14 +89,6 @@ __device__ __host__ void hsv_to_rgb(float h,
 __device__ __host__ int map_rgba(int r, int g, int b, int a);
 __host__ __device__ float clamp(float x, float lower, float upper);
 
-// ! temporary
-struct Source {
-  bool active;
-  float smoke;
-  float velocity;
-  Vector2d<int> position;
-};
-
 template <typename T>
 __device__ __host__ inline T square(T a) {
   return a * a;

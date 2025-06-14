@@ -2,7 +2,7 @@
 
 #include "SDL_events.h"
 
-#include "helper.cuh"
+#include "fluid.cuh"
 
 class Mouse {
  private:

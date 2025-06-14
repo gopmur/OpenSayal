@@ -5,6 +5,13 @@
 #include "config_parser.hpp"
 #include "helper.cuh"
 
+struct Source {
+  bool active;
+  float smoke;
+  float velocity;
+  Vector2d<int> position;
+};
+
 class Fluid {
  private:
   __device__ float interpolate_smoke(float x, float y) const;
@@ -83,7 +90,10 @@ class Fluid {
                         int* trace_line_y,
                         int trace_length) const;
 
-  __device__ void apply_external_forces_at(Source source, int i, int j, float d_t);
+  __device__ void apply_external_forces_at(Source source,
+                                           int i,
+                                           int j,
+                                           float d_t);
   __device__ void apply_projection_at(int i, int j, float d_t);
   __device__ void apply_velocity_advection_at(int i, int j, float d_t);
   __device__ void update_pressure_at(int i,
