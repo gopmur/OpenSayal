@@ -3,15 +3,6 @@
 #include <cstdint>
 #include <iostream>
 
-#define CUDA_CHECK(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-
-inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort=true) {
-    if (code != cudaSuccess) {
-        std::cerr << "CUDA Error: " << cudaGetErrorString(code)
-                  << " at " << file << ":" << line << std::endl;
-        if (abort) exit(code);
-    }
-}
 
 template <typename T>
 class Vector2d {
@@ -36,6 +27,12 @@ class Vector2d {
   __device__ __host__ friend Vector2d<T> operator*(const Vector2d<T>& vector,
                                                    G scalar) {
     return Vector2d<T>(vector.x * scalar, vector.y * scalar);
+  }
+
+  template <typename G>
+  __device__ __host__ friend Vector2d<T> operator/(const Vector2d<T>& vector,
+                                                   G scalar) {
+    return Vector2d<T>(vector.x / scalar, vector.y / scalar);
   }
 };
 
@@ -91,3 +88,8 @@ __device__ __host__ void hsv_to_rgb(float h,
                                     uint8_t& b);
 __device__ __host__ int map_rgba(int r, int g, int b, int a);
 __host__ __device__ float clamp(float x, float lower, float upper);
+
+template <typename T>
+__device__ __host__ inline T square(T a) {
+  return a * a;
+}

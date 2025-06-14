@@ -5,6 +5,13 @@
 #include "config_parser.hpp"
 #include "helper.cuh"
 
+struct Source {
+  bool active;
+  float smoke;
+  float velocity;
+  Vector2d<int> position;
+};
+
 class Fluid {
  private:
   __device__ float interpolate_smoke(float x, float y) const;
@@ -18,7 +25,7 @@ class Fluid {
 
   void zero_pressure();
 
-  void apply_external_forces(float d_t);
+  void apply_external_forces(Source source, float d_t);
   void apply_projection(float d_t);
   void apply_smoke_advection(float d_t);
   void apply_velocity_advection(float d_t);
@@ -44,6 +51,7 @@ class Fluid {
   const bool enable_smoke_decay;
   const bool enable_pressure;
   const bool enable_smoke;
+  const bool enable_interactive;
   const float smoke_decay_rate;
 
   float min_pressure;
@@ -82,7 +90,10 @@ class Fluid {
                         int* trace_line_y,
                         int trace_length) const;
 
-  __device__ void apply_external_forces_at(int i, int j, float d_t);
+  __device__ void apply_external_forces_at(Source source,
+                                           int i,
+                                           int j,
+                                           float d_t);
   __device__ void apply_projection_at(int i, int j, float d_t);
   __device__ void apply_velocity_advection_at(int i, int j, float d_t);
   __device__ void update_pressure_at(int i,
@@ -95,5 +106,5 @@ class Fluid {
   __device__ void apply_extrapolation_at(int i, int j);
   __device__ void decay_smoke_at(int i, int j, float d_t);
   __device__ void zero_pressure_at(int i, int j);
-  void update(float d_t);
+  void update(Source source, float d_t);
 };

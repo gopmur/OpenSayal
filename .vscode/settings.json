@@ -12,6 +12,7 @@
     "fopenmp",
     "Malloc",
     "Memcpy",
+    "MOUSEMOTION",
     "nlohmann",
     "nullopt",
     "nvcc",
