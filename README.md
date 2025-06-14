@@ -2,8 +2,8 @@
 
 ## Table of Content
 
-- [About](About)
-- [How to Build](HowtoBuild)
+- [About](#about)
+- [How to Build](#how-to-build)
 
 ## About
 
