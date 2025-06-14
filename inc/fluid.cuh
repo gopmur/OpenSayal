@@ -44,6 +44,7 @@ class Fluid {
   const bool enable_smoke_decay;
   const bool enable_pressure;
   const bool enable_smoke;
+  const bool enable_interactive;
   const float smoke_decay_rate;
 
   float min_pressure;

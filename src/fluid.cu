@@ -54,7 +54,8 @@ Fluid::Fluid(Config config)
       enable_smoke_decay(config.sim.smoke.enable_decay),
       enable_smoke(config.sim.enable_smoke),
       enable_pressure(config.sim.enable_pressure),
-      smoke_decay_rate(config.sim.smoke.decay_rate) {
+      smoke_decay_rate(config.sim.smoke.decay_rate),
+      enable_interactive(config.sim.enable_interactive) {
   int grid_x =
       std::ceil(static_cast<float>(width) / config.thread.cuda.block_size_x);
   int grid_y =

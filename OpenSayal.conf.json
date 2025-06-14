@@ -20,6 +20,7 @@
 			"n": 50,
 			"o": 1.9
 		},
+		"enable_interactive": true,
 		"wind_tunnel": {
 			"pipe_height": 270,
 			"smoke_length": 20,

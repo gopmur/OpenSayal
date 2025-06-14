@@ -82,6 +82,7 @@ struct SimConfig {
   bool enable_drain;
   bool enable_pressure;
   bool enable_smoke;
+  bool enable_interactive;
   ProjectionConfig projection;
   WindTunnelConfig wind_tunnel;
   PhysicsConfig physics;

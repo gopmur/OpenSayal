@@ -46,6 +46,8 @@ Config ConfigParser::parse() const {
                   config_json, "sim.enable_pressure", false),
               .enable_smoke =
                   ConfigParser::get_or(config_json, "sim.enable_smoke", true),
+              .enable_interactive = ConfigParser::get_or(
+                  config_json, "sim.enable_interactive", false),
               .projection =
                   {
                       .n = ConfigParser::get_or(config_json, "sim.projection.n",
@@ -137,8 +139,9 @@ Config ConfigParser::parse() const {
                   {
                       .enable = ConfigParser::get_or(
                           config_json, "visual.path_line.enable", false),
-                      .length = ConfigParser::get_or(
-                          config_json, "visual.path_line.length", 20),
+                      .length =
+                          ConfigParser::get_or(config_json,
+                                               "visual.path_line.length", 20),
                       .color =
                           {
                               .r =
@@ -158,8 +161,9 @@ Config ConfigParser::parse() const {
                                       get_or(config_json,
                                              "visual.path_line.color.a", 255),
                           },
-                      .distance = ConfigParser::get_or(
-                          config_json, "visual.path_line.distance", 20),
+                      .distance =
+                          ConfigParser::get_or(config_json,
+                                               "visual.path_line.distance", 20),
                   },
           },
   };

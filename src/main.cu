@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
   Fluid fluid(config);
   SDL_Event event;
   Mouse mouse;
+  Source source;
 
   {
     using namespace std::chrono;
@@ -62,7 +63,9 @@ int main(int argc, char* argv[]) {
           is_running = false;
           break;
         }
-        mouse.update(event);
+        if (config.sim.enable_interactive) {
+          mouse.update(event);
+        }
       }
       if (!is_running) {
         break;
@@ -81,8 +84,10 @@ int main(int argc, char* argv[]) {
         auto fps = static_cast<uint32_t>(1 / d_t);
         Logger::log_fps(d_t, work);
       }
-      auto source =
-          mouse.make_source(config.sim.height, config.sim.cell_pixel_size);
+      if (config.sim.enable_interactive) {
+        source =
+            mouse.make_source(config.sim.height, config.sim.cell_pixel_size);
+      }
       if (config.sim.time.enable_read_time) {
         d_t *= config.sim.time.real_time_multiplier;
       } else {
