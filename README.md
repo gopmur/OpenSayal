@@ -105,7 +105,7 @@ Put a configuration file named `OpenSayal.conf.json` in the directory in which y
   },
   "time": {
    "d_t": 0.05,
-   "enable_read_time": false,
+   "enable_real_time": false,
    "real_time_multiplier": 1
   },
   "smoke": {

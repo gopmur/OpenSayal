@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
         source =
             mouse.make_source(config.sim.height, config.sim.cell_pixel_size);
       }
-      if (config.sim.time.enable_read_time) {
+      if (config.sim.time.enable_real_time) {
         d_t *= config.sim.time.real_time_multiplier;
       } else {
         d_t = config.sim.time.d_t;
