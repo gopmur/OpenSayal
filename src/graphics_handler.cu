@@ -112,7 +112,7 @@ GraphicsHandler::GraphicsHandler(Config config)
       block_size_x(config.thread.cuda.block_size_x),
       block_size_y(config.thread.cuda.block_size_y),
       arrow_distance(config.visual.arrows.distance),
-      trace_distance(config.visual.arrows.distance),
+      trace_distance(config.visual.path_line.distance),
       trace_length(config.visual.path_line.length),
       trace_color(config.visual.path_line.color),
       arrow_color(config.visual.arrows.color),
