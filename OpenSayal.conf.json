@@ -4,7 +4,7 @@
 			"thread_count": 8
 		},
 		"cuda": {
-			"block_size_x": 512,
+			"block_size_x": 64,
 			"block_size_y": 1
 		}
 	},
@@ -23,7 +23,7 @@
 		"wind_tunnel": {
 			"pipe_height": 270,
 			"smoke_length": 20,
-			"speed": 200,
+			"speed": 0,
 			"smoke": 1
 		},
 		"physics": {
@@ -57,14 +57,14 @@
 				"b": 0,
 				"a": 255
 			},
-			"enable": true,
+			"enable": false,
 			"distance": 20,
 			"length_multiplier": 0.1,
 			"disable_threshold": 0,
 			"head_length": 5
 		},
 		"path_line": {
-			"enable": true,
+			"enable": false,
 			"length": 20,
 			"color": {
 				"r": 255,

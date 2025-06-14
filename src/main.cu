@@ -12,6 +12,7 @@
 #include "fluid.cuh"
 #include "graphics_handler.cuh"
 #include "logger.hpp"
+#include "mouse.cuh"
 #include "platform_setup.hpp"
 
 void setup(int argc, char* argv[], Config config) {
@@ -47,6 +48,7 @@ int main(int argc, char* argv[]) {
   GraphicsHandler graphics(config);
   Fluid fluid(config);
   SDL_Event event;
+  Mouse mouse;
 
   {
     using namespace std::chrono;
@@ -54,11 +56,16 @@ int main(int argc, char* argv[]) {
     std::optional<time_point<high_resolution_clock>> prev_time = std::nullopt;
     clock_t prev_clock = 0;
     uint64_t work = 0;
-    while (is_running) {
+    while (true) {
       while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
           is_running = false;
+          break;
         }
+        mouse.update(event);
+      }
+      if (!is_running) {
+        break;
       }
       auto now = high_resolution_clock::now();
       if (not prev_time.has_value()) {
@@ -74,14 +81,15 @@ int main(int argc, char* argv[]) {
         auto fps = static_cast<uint32_t>(1 / d_t);
         Logger::log_fps(d_t, work);
       }
-
+      auto source =
+          mouse.make_source(config.sim.height, config.sim.cell_pixel_size);
       if (config.sim.time.enable_read_time) {
         d_t *= config.sim.time.real_time_multiplier;
       } else {
         d_t = config.sim.time.d_t;
       }
       prev_clock = std::clock();
-      fluid.update(d_t);
+      fluid.update(source, d_t);
       graphics.update(fluid, d_t);
       work = std::clock() - prev_clock;
       prev_time = now;
