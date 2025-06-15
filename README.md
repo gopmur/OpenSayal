@@ -3,12 +3,20 @@
 ## Table of Content
 
 - [About](#about)
+- [Gallery](#gallery)
 - [How to Build](#how-to-build)
 - [Configuration](#configuration)
 
 ## About
 
 OpenSayal is a lightweight fluid simulator accelerated using Cuda enabled Nvidia GPUs. OpenSayal can simulate incompressible fluids with zero viscosity. It supports gravity, drag and solids.
+
+## Gallery
+
+![image](https://github.com/user-attachments/assets/af31841f-5153-48ba-b8b3-65e701fe6f0b)
+
+![image](https://github.com/user-attachments/assets/ed2dac9b-94e7-4d76-8ee6-ec8d34526b41)
+
 
 ## How to Build
 
