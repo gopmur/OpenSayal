@@ -255,11 +255,10 @@ __device__ void GraphicsHandler::update_pressure_pixel(float pressure,
   this->d_fluid_pixels[indx(x, y)] = map_rgba(r, g, b, 255);
 }
 
-__global__ void update_smoke_and_pressure_pixel_kernel(
-    Fluid* d_fluid,
-    GraphicsHandler* d_graphics_handler,
-    float min_pressure,
-    float max_pressure) {
+__global__ void update_fluid_pixels_kernel(Fluid* d_fluid,
+                                           GraphicsHandler* d_graphics_handler,
+                                           float min_pressure,
+                                           float max_pressure) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= d_fluid->width or j >= d_fluid->height) {
@@ -270,51 +269,18 @@ __global__ void update_smoke_and_pressure_pixel_kernel(
   if (d_fluid->d_is_solid[d_fluid->indx(i, j)]) {
     d_graphics_handler->d_fluid_pixels[d_graphics_handler->indx(x, y)] =
         map_rgba(80, 80, 80, 255);
-  } else {
+  } else if (d_fluid->enable_pressure && d_fluid->enable_smoke) {
     d_graphics_handler->update_smoke_and_pressure(
         d_fluid->d_smoke[d_fluid->indx(i, j)],
         d_fluid->d_pressure[d_fluid->indx(i, j)], x, y, min_pressure,
         max_pressure);
-  }
-}
-
-__global__ void update_smoke_pixel_kernel(Fluid* d_fluid,
-                                          GraphicsHandler* d_graphics_handler) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  int j = blockIdx.y * blockDim.y + threadIdx.y;
-  if (i >= d_fluid->width or j >= d_fluid->height) {
-    return;
-  }
-  int x = i;
-  int y = d_fluid->height - j - 1;
-  if (d_fluid->d_is_solid[d_fluid->indx(i, j)]) {
-    d_graphics_handler->d_fluid_pixels[d_graphics_handler->indx(x, y)] =
-        map_rgba(80, 80, 80, 255);
-  } else {
-    d_graphics_handler->update_smoke_pixels(
-        d_fluid->d_smoke[d_fluid->indx(i, j)], x, y);
-  }
-}
-
-__global__ void update_pressure_pixel_kernel(
-    Fluid* d_fluid,
-    GraphicsHandler* d_graphics_handler,
-    float min_pressure,
-    float max_pressure) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  int j = blockIdx.y * blockDim.y + threadIdx.y;
-  if (i >= d_fluid->width or j >= d_fluid->height) {
-    return;
-  }
-  int x = i;
-  int y = d_fluid->height - j - 1;
-  if (d_fluid->d_is_solid[d_fluid->indx(i, j)]) {
-    d_graphics_handler->d_fluid_pixels[d_graphics_handler->indx(x, y)] =
-        map_rgba(80, 80, 80, 255);
-  } else {
+  } else if (d_fluid->enable_pressure) {
     d_graphics_handler->update_pressure_pixel(
         d_fluid->d_pressure[d_fluid->indx(i, j)], x, y, min_pressure,
         max_pressure);
+  } else if (d_fluid->enable_smoke) {
+    d_graphics_handler->update_smoke_pixels(
+        d_fluid->d_smoke[d_fluid->indx(i, j)], x, y);
   }
 }
 
@@ -327,16 +293,8 @@ void GraphicsHandler::update_fluid_pixels(const Fluid& fluid) {
   int grid_dim_y = std::ceil(static_cast<float>(fluid.height) / block_dim_y);
   auto block_dim = dim3(block_dim_x, block_dim_y, 1);
   auto grid_dim = dim3(grid_dim_x, grid_dim_y, 1);
-  if (this->enable_pressure && this->enable_smoke) {
-    update_smoke_and_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
-        fluid.d_this, d_this, min_pressure, max_pressure);
-  } else if (this->enable_pressure) {
-    update_pressure_pixel_kernel<<<grid_dim, block_dim>>>(
-        fluid.d_this, d_this, min_pressure, max_pressure);
-  } else if (this->enable_smoke) {
-    update_smoke_pixel_kernel<<<grid_dim, block_dim>>>(fluid.d_this, d_this);
-  }
-
+  update_fluid_pixels_kernel<<<grid_dim, block_dim>>>(
+      fluid.d_this, d_this, min_pressure, max_pressure);
   cudaMemcpyAsync(this->fluid_pixels, this->d_fluid_pixels,
                   sizeof(int) * this->height * this->width,
                   cudaMemcpyDeviceToHost);
