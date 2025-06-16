@@ -5,3 +5,4 @@ build
 *.zip
 CMakeFiles
 CMakeCache.txt
+OpenSayal.conf.json

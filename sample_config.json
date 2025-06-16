@@ -10,22 +10,22 @@
 		"width": 1920,
 		"cell_pixel_size": 1,
 		"cell_size": 1,
-		"enable_drain": false,
-		"enable_pressure": true,
-		"enable_smoke": true,
+		"enable_drain": true,
+		"enable_pressure": false,
+		"enable_smoke": false,
 		"projection": {
 			"n": 50,
 			"o": 1.9
 		},
 		"enable_interactive": true,
 		"wind_tunnel": {
-			"pipe_height": 270,
-			"smoke_length": 0,
-			"speed": 0,
+			"pipe_height": 1080,
+			"smoke_length": 1,
+			"speed": 200,
 			"smoke": 1
 		},
 		"physics": {
-			"g": -5
+			"g": 0
 		},
 		"time": {
 			"d_t": 0.05,
@@ -37,7 +37,7 @@
 			"decay_rate": 0
 		},
 		"obstacle": {
-			"enable": false,
+			"enable": true,
 			"center_x": 960,
 			"center_y": 540,
 			"radius": 36
@@ -61,7 +61,7 @@
 			"head_length": 5
 		},
 		"path_line": {
-			"enable": false,
+			"enable": true,
 			"length": 20,
 			"color": {
 				"r": 255,
