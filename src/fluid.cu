@@ -301,30 +301,30 @@ __device__ void Fluid::apply_external_forces_at(Source source,
              this->wind_tunnel_smoke_height)) {
       this->d_smoke[indx(i, j)] = this->wind_tunnel_smoke;
     }
-    if (this->d_vel_x[indx(i, j)] > 0) {
-      this->d_vel_x[indx(i, j)] -= this->drag_coeff * d_t;
-    } else {
-      this->d_vel_x[indx(i, j)] += this->drag_coeff * d_t;
-    }
-    if (this->d_vel_y[indx(i, j)] > 0) {
-      this->d_vel_y[indx(i, j)] -= this->drag_coeff * d_t;
-    } else {
-      this->d_vel_y[indx(i, j)] += this->drag_coeff * d_t;
-    }
-    if (source.active && square(i - source.position.get_x()) +
-                                 square(j - source.position.get_y()) <
-                             square(40)) {
-      if (source.smoke) {
-        this->d_smoke[indx(i, j)] = source.smoke;
-      }
-      float x_speed_modifier = i - source.position.get_x();
-      float y_speed_modifier = j - source.position.get_y();
-      this->d_vel_x[indx(i, j)] += source.velocity * x_speed_modifier;
-      this->d_vel_y[indx(i, j)] += source.velocity * y_speed_modifier;
-    }
-
-    this->d_vel_y[indx(i, j)] += this->g * d_t;
   }
+  if (this->d_vel_x[indx(i, j)] > 0) {
+    this->d_vel_x[indx(i, j)] -= this->drag_coeff * d_t;
+  } else {
+    this->d_vel_x[indx(i, j)] += this->drag_coeff * d_t;
+  }
+  if (this->d_vel_y[indx(i, j)] > 0) {
+    this->d_vel_y[indx(i, j)] -= this->drag_coeff * d_t;
+  } else {
+    this->d_vel_y[indx(i, j)] += this->drag_coeff * d_t;
+  }
+  if (source.active && square(i - source.position.get_x()) +
+                               square(j - source.position.get_y()) <
+                           square(40)) {
+    if (source.smoke) {
+      this->d_smoke[indx(i, j)] = source.smoke;
+    }
+    float x_speed_modifier = i - source.position.get_x();
+    float y_speed_modifier = j - source.position.get_y();
+    this->d_vel_x[indx(i, j)] += source.velocity * x_speed_modifier;
+    this->d_vel_y[indx(i, j)] += source.velocity * y_speed_modifier;
+  }
+
+  this->d_vel_y[indx(i, j)] += this->g * d_t;
 }
 
 void Fluid::apply_external_forces(Source source, float d_t) {
