@@ -57,12 +57,18 @@ Config ConfigParser::parse() const {
                   },
               .wind_tunnel =
                   {
+
                       .pipe_height = ConfigParser::get_or(
                           config_json, "sim.wind_tunnel.pipe_height",
                           sim_height / 4),
                       .pipe_length = 0,
                       .smoke_length = ConfigParser::get_or(
                           config_json, "sim.wind_tunnel.smoke_length", 1),
+                      .smoke_height = ConfigParser::get_or(
+                          config_json, "sim.wind_tunnel.smoke_height",
+                          sim_height / 4),
+                      .smoke_count = ConfigParser::get_or(
+                          config_json, "sim.wind_tunnel.smoke_count", 1),
                       .speed = ConfigParser::get_or(
                           config_json, "sim.wind_tunnel.speed", 0.0f),
                       .smoke = ConfigParser::get_or(
@@ -132,13 +138,16 @@ Config ConfigParser::parse() const {
                           config_json, "visual.arrows.length_multiplier", 0.1f),
                       .disable_threshold = ConfigParser::get_or(
                           config_json, "visual.arrows.disable_threshold", 0.0f),
-                      .head_length = ConfigParser::get_or(
-                          config_json, "visual.arrows.head_length", 5),
+                      .head_length =
+                          ConfigParser::get_or(config_json,
+                                               "visual.arrows.head_length", 5),
                   },
               .path_line =
                   {
-                      .enable = ConfigParser::get_or(
-                          config_json, "visual.path_line.enable", false),
+                      .enable =
+                          ConfigParser::get_or(config_json,
+                                               "visual.path_line.enable",
+                                               false),
                       .length =
                           ConfigParser::get_or(config_json,
                                                "visual.path_line.length", 20),
@@ -149,21 +158,19 @@ Config ConfigParser::parse() const {
                                       config_json,
                                       "visual.path_line.color.r", 0),
                               .g =
-                                  ConfigParser::get_or(
-                                      config_json,
-                                      "visual.path_line.color.g", 0),
+                                  ConfigParser::
+                                      get_or(config_json,
+                                             "visual.path_line.color.g", 0),
                               .b =
-                                  ConfigParser::get_or(
-                                      config_json,
-                                      "visual.path_line.color.b", 0),
+                                  ConfigParser::
+                                      get_or(config_json,
+                                             "visual.path_line.color.b", 0),
                               .a =
                                   ConfigParser::
                                       get_or(config_json,
                                              "visual.path_line.color.a", 255),
                           },
-                      .distance =
-                          ConfigParser::get_or(config_json,
-                                               "visual.path_line.distance", 20),
+                      .distance = ConfigParser::get_or(config_json, "visual.path_line.distance", 20),
                   },
           },
   };
