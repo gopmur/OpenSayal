@@ -40,6 +40,8 @@ struct WindTunnelConfig {
   int pipe_height;
   int pipe_length;
   int smoke_length;
+  int smoke_height;
+  int smoke_count;
   float speed;
   float smoke;
 };

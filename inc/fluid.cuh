@@ -45,6 +45,8 @@ class Fluid {
   const int n;
   const float drag_coeff;
   const int wind_tunnel_smoke_length;
+  const int wind_tunnel_smoke_count;
+  const int wind_tunnel_smoke_height;
   const float wind_tunnel_speed;
   const int wind_tunnel_height;
   const float wind_tunnel_smoke;

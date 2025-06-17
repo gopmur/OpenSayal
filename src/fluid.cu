@@ -51,6 +51,8 @@ Fluid::Fluid(Config config)
       wind_tunnel_height(config.sim.wind_tunnel.pipe_height),
       wind_tunnel_smoke_length(config.sim.wind_tunnel.smoke_length),
       wind_tunnel_smoke(config.sim.wind_tunnel.smoke),
+      wind_tunnel_smoke_count(config.sim.wind_tunnel.smoke_count),
+      wind_tunnel_smoke_height(config.sim.wind_tunnel.smoke_height),
       enable_smoke_decay(config.sim.smoke.enable_decay),
       enable_smoke(config.sim.enable_smoke),
       enable_pressure(config.sim.enable_pressure),
@@ -281,11 +283,24 @@ __device__ void Fluid::apply_external_forces_at(Source source,
                                                 int i,
                                                 int j,
                                                 float d_t) {
+  int smoke_spacing =
+      (this->wind_tunnel_height -
+       this->wind_tunnel_smoke_count * this->wind_tunnel_smoke_height) /
+      (this->wind_tunnel_smoke_count - 1);
+
   if (i <= this->wind_tunnel_smoke_length and i != 0 &&
       j >= this->height / 2 - this->wind_tunnel_height / 2 &&
       j <= this->height / 2 + this->wind_tunnel_height / 2) {
-    this->d_smoke[indx(i, j)] = this->wind_tunnel_smoke;
     this->d_vel_x[indx(i, j)] = this->wind_tunnel_speed;
+    if ((this->wind_tunnel_smoke_count == 1 &&
+         j >= this->height / 2 - this->wind_tunnel_smoke_height / 2 &&
+         j <= this->height / 2 + this->wind_tunnel_smoke_height / 2) ||
+        (this->wind_tunnel_smoke_count != 1 &&
+         (this->height / 2 + this->wind_tunnel_height / 2 - j) %
+                 (smoke_spacing + this->wind_tunnel_smoke_height) <
+             this->wind_tunnel_smoke_height)) {
+      this->d_smoke[indx(i, j)] = this->wind_tunnel_smoke;
+    }
   }
   if (this->d_vel_x[indx(i, j)] > 0) {
     this->d_vel_x[indx(i, j)] -= this->drag_coeff * d_t;
