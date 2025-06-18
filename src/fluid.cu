@@ -57,7 +57,8 @@ Fluid::Fluid(Config config)
       enable_smoke(config.sim.enable_smoke),
       enable_pressure(config.sim.enable_pressure),
       smoke_decay_rate(config.sim.smoke.decay_rate),
-      enable_interactive(config.sim.enable_interactive) {
+      enable_interactive(config.sim.enable_interactive),
+      viscosity(config.fluid.viscosity) {
   int grid_x =
       std::ceil(static_cast<float>(width) / config.thread.cuda.block_size_x);
   int grid_y =
@@ -161,6 +162,31 @@ void Fluid::init_device_memory(Config config) {
 
 __device__ __host__ int Fluid::indx(int i, int j) const {
   return (this->height - j - 1) * this->width + i;
+}
+
+__global__ void apply_diffusion_kernel(Fluid* d_fluid, float d_t) {
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i >= d_fluid->width - 1 or j >= d_fluid->height - 1 or i <= 0 or j <= 0) {
+    return;
+  }
+  d_fluid->apply_diffusion_at(i, j, d_t);
+}
+
+__device__ void Fluid::apply_diffusion_at(int i, int j, float d_t) {
+  float a = this->viscosity * d_t / square(cell_size);
+  d_vel_x[indx(i, j)] =
+      (d_vel_x[indx(i, j)] +
+       a * (d_vel_x[indx(i - 1, j)] + d_vel_x[indx(i + 1, j)] +
+            d_vel_x[indx(i, j - 1)] + d_vel_x[indx(i, j + 1)])) /
+      (1 + 4 * a);
+}
+
+void Fluid::apply_diffusion(float d_t) {
+  for (int _; _ < this->n; _++) {
+    apply_diffusion_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
+        d_this, d_t);
+  }
 }
 
 __device__ float Fluid::get_divergence(int i, int j) const {
@@ -302,15 +328,10 @@ __device__ void Fluid::apply_external_forces_at(Source source,
       this->d_smoke[indx(i, j)] = this->wind_tunnel_smoke;
     }
   }
-  if (this->d_vel_x[indx(i, j)] > 0) {
-    this->d_vel_x[indx(i, j)] -= this->drag_coeff * d_t;
-  } else {
-    this->d_vel_x[indx(i, j)] += this->drag_coeff * d_t;
-  }
-  if (this->d_vel_y[indx(i, j)] > 0) {
-    this->d_vel_y[indx(i, j)] -= this->drag_coeff * d_t;
-  } else {
-    this->d_vel_y[indx(i, j)] += this->drag_coeff * d_t;
+  if (this->drag_coeff != 0) {
+    float damping = expf(-this->drag_coeff * d_t);
+    this->d_vel_x[indx(i, j)] *= damping;
+    this->d_vel_y[indx(i, j)] *= damping;
   }
   if (source.active && square(i - source.position.get_x()) +
                                square(j - source.position.get_y()) <
@@ -750,7 +771,9 @@ void Fluid::update(Source source, float d_t) {
   this->apply_external_forces(source, d_t);
   if (this->enable_pressure)
     this->zero_pressure();
-
+  if (this->viscosity != 0) {
+    this->apply_diffusion(d_t);
+  }
   this->apply_projection(d_t);
   if (this->enable_pressure) {
     thrust::device_ptr<float> device_pressure =
