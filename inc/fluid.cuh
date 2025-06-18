@@ -30,6 +30,7 @@ class Fluid {
   void apply_smoke_advection(float d_t);
   void apply_velocity_advection(float d_t);
   void apply_extrapolation();
+  void apply_diffusion(float d_t);
   void decay_smoke(float d_t);
 
   void alloc_device_memory();
@@ -40,6 +41,7 @@ class Fluid {
   const int height;
   const float g;
   const float density;
+  const float viscosity;
   const float o;
   const int cell_size;
   const int n;
@@ -108,5 +110,7 @@ class Fluid {
   __device__ void apply_extrapolation_at(int i, int j);
   __device__ void decay_smoke_at(int i, int j, float d_t);
   __device__ void zero_pressure_at(int i, int j);
+  __device__ void apply_diffusion_at(int i, int j, float d_t);
+
   void update(Source source, float d_t);
 };

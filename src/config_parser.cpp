@@ -1,6 +1,6 @@
-#include <omp.h>
 #include <fstream>
 #include <iostream>
+#include <omp.h>
 
 #include "json.hpp"
 
@@ -114,6 +114,8 @@ Config ConfigParser::parse() const {
                   ConfigParser::get_or(config_json, "fluid.density", 1.0f),
               .drag_coeff =
                   ConfigParser::get_or(config_json, "fluid.drag_coeff", 0.0f),
+              .viscosity =
+                  ConfigParser::get_or(config_json, "fluid.viscosity", 0.001f),
           },
       .visual =
           {
@@ -136,8 +138,10 @@ Config ConfigParser::parse() const {
                           config_json, "visual.arrows.distance", 20),
                       .length_multiplier = ConfigParser::get_or(
                           config_json, "visual.arrows.length_multiplier", 0.1f),
-                      .disable_threshold = ConfigParser::get_or(
-                          config_json, "visual.arrows.disable_threshold", 0.0f),
+                      .disable_threshold =
+                          ConfigParser::get_or(
+                              config_json,
+                              "visual.arrows.disable_threshold", 0.0f),
                       .head_length =
                           ConfigParser::get_or(config_json,
                                                "visual.arrows.head_length", 5),
@@ -170,7 +174,9 @@ Config ConfigParser::parse() const {
                                       get_or(config_json,
                                              "visual.path_line.color.a", 255),
                           },
-                      .distance = ConfigParser::get_or(config_json, "visual.path_line.distance", 20),
+                      .distance =
+                          ConfigParser::get_or(config_json,
+                                               "visual.path_line.distance", 20),
                   },
           },
   };

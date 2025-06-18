@@ -74,6 +74,7 @@ struct PathLineConfig {
 struct FluidConfig {
   float density;
   float drag_coeff;
+  float viscosity;
 };
 
 struct SimConfig {
