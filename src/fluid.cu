@@ -164,17 +164,9 @@ __device__ __host__ int Fluid::indx(int i, int j) const {
   return (this->height - j - 1) * this->width + i;
 }
 
-__global__ void apply_diffusion_even_kernel(Fluid* d_fluid, float d_t) {
+__global__ void apply_diffusion_kernel(Fluid* d_fluid, float d_t) {
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   int i = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i >= d_fluid->width - 1 or j >= d_fluid->height - 1 or i <= 0 or j <= 0) {
-    return;
-  }
-  d_fluid->apply_diffusion_at(i, j, d_t);
-}
-__global__ void apply_diffusion_odd_kernel(Fluid* d_fluid, float d_t) {
-  int j = blockIdx.y * blockDim.y + threadIdx.y;
-  int i = (blockIdx.x * blockDim.x + threadIdx.x) * 2 + ((j + 1) % 2);
   if (i >= d_fluid->width - 1 or j >= d_fluid->height - 1 or i <= 0 or j <= 0) {
     return;
   }
@@ -191,14 +183,9 @@ __device__ void Fluid::apply_diffusion_at(int i, int j, float d_t) {
 }
 
 void Fluid::apply_diffusion(float d_t) {
-  int grid_x =
-      std::ceil(static_cast<float>(this->width) / this->kernel_block_dim.x / 2);
-  int grid_y =
-      std::ceil(static_cast<float>(this->height) / this->kernel_block_dim.y);
-  auto grid_dim = dim3(grid_x, grid_y);
   for (int _; _ < this->n; _++) {
-    apply_diffusion_even_kernel<<<this->kernel_grid_dim,
-                                  this->kernel_block_dim>>>(d_this, d_t);
+    apply_diffusion_kernel<<<this->kernel_grid_dim, this->kernel_block_dim>>>(
+        d_this, d_t);
   }
 }
 
