@@ -1,4 +1,5 @@
 #include "SDL.h"
+#include "fmt/core.h"
 
 #include "helper.cuh"
 #include "graphics_handler.cuh"
@@ -58,7 +59,7 @@ void GraphicsHandler::init_sdl() {
   if (sdl_status < 0) {
     auto sdl_error_message = SDL_GetError();
     Logger::error(
-        std::format("video initialization failed: ", sdl_error_message));
+        fmt::format("video initialization failed: ", sdl_error_message));
     exit(EXIT_FAILURE);
   }
 
@@ -67,7 +68,7 @@ void GraphicsHandler::init_sdl() {
                                   window_height, SDL_WINDOW_SHOWN);
   if (this->window == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    Logger::error(std::format("window creation failed: ", sdl_error_message));
+    Logger::error(fmt::format("window creation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
@@ -76,7 +77,7 @@ void GraphicsHandler::init_sdl() {
       SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
   if (this->renderer == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    Logger::error(std::format("renderer creation failed: ", sdl_error_message));
+    Logger::error(fmt::format("renderer creation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
@@ -86,7 +87,7 @@ void GraphicsHandler::init_sdl() {
                         SDL_TEXTUREACCESS_STREAMING, this->width, this->height);
   if (this->fluid_texture == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    Logger::error(std::format("texture creation failed: ", sdl_error_message));
+    Logger::error(fmt::format("texture creation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }
@@ -94,7 +95,7 @@ void GraphicsHandler::init_sdl() {
   this->format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
   if (this->format == nullptr) {
     auto sdl_error_message = SDL_GetError();
-    Logger::error(std::format("format allocation failed: ", sdl_error_message));
+    Logger::error(fmt::format("format allocation failed: ", sdl_error_message));
     this->cleanup();
     exit(EXIT_FAILURE);
   }

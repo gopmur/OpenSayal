@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <format>
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#include "fmt/core.h"
 
 #include "config.hpp"
 
@@ -80,9 +81,9 @@ inline void Logger::report() {
       (previous_d_t - current_d_t) / static_cast<float>(previous_d_t);
   std::cout << "performance gain: ";
   if (performance_gain > 0) {
-    Logger::green(std::format("{}%\n", performance_gain * 100));
+    Logger::green(fmt::format("{}%\n", performance_gain * 100));
   } else {
-    Logger::red(std::format("{}%\n", performance_gain * 100));
+    Logger::red(fmt::format("{}%\n", performance_gain * 100));
   }
 }
 
@@ -173,7 +174,7 @@ inline void Logger::log_fps(float d_t, uint64_t work) {
     return;
   fps_log_number %= FPS_LOG_SPACER;
   if (memo_length == FPS_AVG_SIZE and not Logger::first_add) {
-    Logger::green(std::format("FPS: {}, DT: {}us, Work: {}\n", fps_avg, d_t_avg,
+    Logger::green(fmt::format("FPS: {}, DT: {}us, Work: {}\n", fps_avg, d_t_avg,
                               work_avg));
   } else if (not Logger::first_add) {
     std::cout << "FPS: " << fps_avg << ", DT: " << d_t_avg

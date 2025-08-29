@@ -43,6 +43,7 @@ set(PROJECT_INCLUDE_DIRECTORIES
   "inc"
   "lib/sdl/include"
   "lib/json/include/nlohmann"
+  "lib/fmt/include"
 )
 
 # add source files
@@ -55,17 +56,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_INCLUDE_DIRECTORIES}
 )
 
-
 add_subdirectory("lib/sdl")
 add_subdirectory("lib/json")
+add_subdirectory("lib/fmt")
 
 target_link_directories(${PROJECT_NAME} PRIVATE
   "lib/sdl"
   "lib/json"
+  "lib/fmt"
 )
 
 target_link_libraries(${PROJECT_NAME}
   SDL2
   SDL2main
   nlohmann_json
+  fmt
 )
