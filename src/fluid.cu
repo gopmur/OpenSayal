@@ -53,7 +53,7 @@ Fluid::Fluid(Config config)
       enable_smoke(config.sim.enable_smoke),
       enable_pressure(config.sim.enable_pressure),
       smoke_decay_rate(config.sim.smoke.decay_rate),
-      enable_interactive(config.sim.enable_interactive),
+      enable_interactive(config.sim.mouse.enable),
       viscosity(config.fluid.viscosity) {
   int grid_x =
       std::ceil(static_cast<float>(width) / config.thread.cuda.block_size_x);
@@ -290,7 +290,7 @@ void Fluid::apply_projection(float d_t) {
   }
 }
 
-__global__ void apply_external_forces_kernel(Source source,
+__global__ void apply_external_forces_kernel(UserAction action,
                                              Fluid* d_fluid,
                                              float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -298,10 +298,10 @@ __global__ void apply_external_forces_kernel(Source source,
   if (i >= d_fluid->width or j >= d_fluid->height) {
     return;
   }
-  d_fluid->apply_external_forces_at(source, i, j, d_t);
+  d_fluid->apply_external_forces_at(action, i, j, d_t);
 }
 
-__device__ void Fluid::apply_external_forces_at(Source source,
+__device__ void Fluid::apply_external_forces_at(UserAction action,
                                                 int i,
                                                 int j,
                                                 float d_t) {
@@ -329,16 +329,20 @@ __device__ void Fluid::apply_external_forces_at(Source source,
     this->d_vel_x[indx(i, j)] *= damping;
     this->d_vel_y[indx(i, j)] *= damping;
   }
-  if (source.active && square(i - source.position.get_x()) +
-                               square(j - source.position.get_y()) <
-                           square(40)) {
-    if (source.smoke) {
-      this->d_smoke[indx(i, j)] = source.smoke;
-    }
-    float x_speed_modifier = i - source.position.get_x();
-    float y_speed_modifier = j - source.position.get_y();
-    this->d_vel_x[indx(i, j)] += source.velocity * x_speed_modifier;
-    this->d_vel_y[indx(i, j)] += source.velocity * y_speed_modifier;
+  if ((action.click_action == MouseClickAction::PUSH_ADD_SMOKE ||
+       action.click_action == MouseClickAction::PUSH) &&
+      is_in_radius(i, j, action.position.get_x(), action.position.get_y(),
+                   40)) {
+    float x_speed_modifier = i - action.position.get_x();
+    float y_speed_modifier = j - action.position.get_y();
+    this->d_vel_x[indx(i, j)] += action.wheel_value * x_speed_modifier;
+    this->d_vel_y[indx(i, j)] += action.wheel_value * y_speed_modifier;
+  }
+  if ((action.click_action == MouseClickAction::ADD_SMOKE ||
+       action.click_action == MouseClickAction::PUSH_ADD_SMOKE) &&
+      is_in_radius(i, j, action.position.get_x(), action.position.get_y(),
+                   40)) {
+    this->d_smoke[indx(i, j)] = 1;
   }
 
   if (!this->d_is_solid[indx(i, j - 1)]) {
@@ -346,9 +350,9 @@ __device__ void Fluid::apply_external_forces_at(Source source,
   }
 }
 
-void Fluid::apply_external_forces(Source source, float d_t) {
+void Fluid::apply_external_forces(UserAction action, float d_t) {
   apply_external_forces_kernel<<<this->kernel_grid_dim,
-                                 this->kernel_block_dim>>>(source, d_this, d_t);
+                                 this->kernel_block_dim>>>(action, d_this, d_t);
 }
 
 __device__ __host__ bool Fluid::index_is_valid(int i, int j) const {
@@ -657,7 +661,7 @@ void Fluid::decay_smoke(float d_t) {
 }
 
 // ? put the whole thing into a graph
-void Fluid::update(Source source, float d_t) {
+void Fluid::update(UserAction source, float d_t) {
   this->apply_external_forces(source, d_t);
   if (this->enable_pressure)
     this->zero_pressure();

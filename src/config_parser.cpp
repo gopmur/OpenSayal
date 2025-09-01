@@ -77,19 +77,19 @@ Config ConfigParser::parse() const {
                                                   "sim.mouse.enable", false),
                    .right_click_action = get_mouse_click_action_from_string(
                        ConfigParser::get_or(config_json,
-                                            "sim.mouse.right_click_action", ""),
-                       MouseClickAction::PUSH),
+                                            "sim.mouse.right_click_action", std::string("")),
+                       MouseClickAction::NOTHING),
                    .middle_click_action = get_mouse_click_action_from_string(
                        ConfigParser::get_or(
-                           config_json, "sim.mouse.middle_click_action", ""),
-                       MouseClickAction::SUCK),
+                           config_json, "sim.mouse.middle_click_action", std::string("")),
+                       MouseClickAction::NOTHING),
                    .left_click_action = get_mouse_click_action_from_string(
                        ConfigParser::get_or(config_json,
-                                            "sim.mouse.left_click_action", ""),
-                       MouseClickAction::PUSH_ADD_SMOKE),
+                                            "sim.mouse.left_click_action", std::string("")),
+                       MouseClickAction::NOTHING),
                    .scroll_action = get_mouse_scroll_action_from_string(
                        ConfigParser::get_or(config_json,
-                                            "sim.mouse.scroll_action", ""),
+                                            "sim.mouse.scroll_action", std::string("")),
                        MouseScrollAction::CHANGE_INTENSITY)
 
                   },

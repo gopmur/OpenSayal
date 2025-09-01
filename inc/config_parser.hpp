@@ -6,17 +6,19 @@
 
 using json = nlohmann::json;
 
-enum MouseClickAction {
+enum class MouseClickAction {
   PUSH,
   SUCK,
   ADD_SMOKE,
   PUSH_ADD_SMOKE,
   ADD_WALL,
+  NOTHING,
 };
 
-enum MouseScrollAction {
+enum class MouseScrollAction {
   CHANGE_SIZE,
   CHANGE_INTENSITY,
+  NOTHING,
 };
 
 struct ColorConfig {
