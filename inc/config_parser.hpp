@@ -2,9 +2,22 @@
 
 #include <string>
 
-#include "json.hpp" // IWYU pragma: keep
+#include "json.hpp"  // IWYU pragma: keep
 
 using json = nlohmann::json;
+
+enum MouseClickAction {
+  PUSH,
+  SUCK,
+  ADD_SMOKE,
+  PUSH_ADD_SMOKE,
+  ADD_WALL,
+};
+
+enum MouseScrollAction {
+  CHANGE_SIZE,
+  CHANGE_INTENSITY,
+};
 
 struct ColorConfig {
   int r;
@@ -72,6 +85,14 @@ struct FluidConfig {
   float viscosity;
 };
 
+struct MouseConfig {
+  bool enable;
+  MouseClickAction right_click_action;
+  MouseClickAction middle_click_action;
+  MouseClickAction left_click_action;
+  MouseScrollAction scroll_action;
+};
+
 struct SimConfig {
   int height;
   int width;
@@ -80,7 +101,7 @@ struct SimConfig {
   bool enable_drain;
   bool enable_pressure;
   bool enable_smoke;
-  bool enable_interactive;
+  MouseConfig mouse;
   ProjectionConfig projection;
   WindTunnelConfig wind_tunnel;
   PhysicsConfig physics;

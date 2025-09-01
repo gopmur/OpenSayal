@@ -8,6 +8,39 @@ ConfigParser::ConfigParser(std::string config_file_name)
     : config_file_name(config_file_name) {}
 ConfigParser::ConfigParser() : config_file_name("OpenSayal.conf.json") {}
 
+MouseClickAction get_mouse_click_action_from_string(
+    std::string str,
+    MouseClickAction default_action) {
+  if (str == "push") {
+    return MouseClickAction::PUSH;
+  }
+  if (str == "suck") {
+    return MouseClickAction::SUCK;
+  }
+  if (str == "add_smoke") {
+    return MouseClickAction::ADD_SMOKE;
+  }
+  if (str == "push_add_smoke") {
+    return MouseClickAction::PUSH_ADD_SMOKE;
+  }
+  if (str == "add_wall") {
+    return MouseClickAction::ADD_WALL;
+  }
+  return default_action;
+}
+
+MouseScrollAction get_mouse_scroll_action_from_string(
+    std::string str,
+    MouseScrollAction default_action) {
+  if (str == "change_size") {
+    return MouseScrollAction::CHANGE_SIZE;
+  }
+  if (str == "change_intensity") {
+    return MouseScrollAction::CHANGE_INTENSITY;
+  }
+  return default_action;
+}
+
 Config ConfigParser::parse() const {
   Config config;
   std::ifstream config_file(this->config_file_name);
@@ -39,8 +72,27 @@ Config ConfigParser::parse() const {
                   config_json, "sim.enable_pressure", false),
               .enable_smoke =
                   ConfigParser::get_or(config_json, "sim.enable_smoke", true),
-              .enable_interactive = ConfigParser::get_or(
-                  config_json, "sim.enable_interactive", false),
+              .mouse =
+                  {.enable = ConfigParser::get_or(config_json,
+                                                  "sim.mouse.enable", false),
+                   .right_click_action = get_mouse_click_action_from_string(
+                       ConfigParser::get_or(config_json,
+                                            "sim.mouse.right_click_action", ""),
+                       MouseClickAction::PUSH),
+                   .middle_click_action = get_mouse_click_action_from_string(
+                       ConfigParser::get_or(
+                           config_json, "sim.mouse.middle_click_action", ""),
+                       MouseClickAction::SUCK),
+                   .left_click_action = get_mouse_click_action_from_string(
+                       ConfigParser::get_or(config_json,
+                                            "sim.mouse.left_click_action", ""),
+                       MouseClickAction::PUSH_ADD_SMOKE),
+                   .scroll_action = get_mouse_scroll_action_from_string(
+                       ConfigParser::get_or(config_json,
+                                            "sim.mouse.scroll_action", ""),
+                       MouseScrollAction::CHANGE_INTENSITY)
+
+                  },
               .projection =
                   {
                       .n = ConfigParser::get_or(config_json, "sim.projection.n",
@@ -118,12 +170,15 @@ Config ConfigParser::parse() const {
                           {
                               .r = ConfigParser::get_or(
                                   config_json, "visual.arrows.color.r", 0),
-                              .g = ConfigParser::get_or(
-                                  config_json, "visual.arrows.color.g", 0),
-                              .b = ConfigParser::get_or(
-                                  config_json, "visual.arrows.color.b", 0),
-                              .a = ConfigParser::get_or(
-                                  config_json, "visual.arrows.color.a", 255),
+                              .g = ConfigParser::get_or(config_json,
+                                                        "visual.arrows.color.g",
+                                                        0),
+                              .b = ConfigParser::get_or(config_json,
+                                                        "visual.arrows.color.b",
+                                                        0),
+                              .a = ConfigParser::get_or(config_json,
+                                                        "visual.arrows.color.a",
+                                                        255),
                           },
                       .enable = ConfigParser::get_or(
                           config_json, "visual.arrows.enable", false),
@@ -138,8 +193,10 @@ Config ConfigParser::parse() const {
                   },
               .path_line =
                   {
-                      .enable = ConfigParser::get_or(
-                          config_json, "visual.path_line.enable", false),
+                      .enable =
+                          ConfigParser::get_or(config_json,
+                                               "visual.path_line.enable",
+                                               false),
                       .length =
                           ConfigParser::get_or(config_json,
                                                "visual.path_line.length", 20),
@@ -150,13 +207,13 @@ Config ConfigParser::parse() const {
                                       config_json,
                                       "visual.path_line.color.r", 0),
                               .g =
-                                  ConfigParser::get_or(
-                                      config_json,
-                                      "visual.path_line.color.g", 0),
+                                  ConfigParser::
+                                      get_or(config_json,
+                                             "visual.path_line.color.g", 0),
                               .b =
-                                  ConfigParser::get_or(
-                                      config_json,
-                                      "visual.path_line.color.b", 0),
+                                  ConfigParser::
+                                      get_or(config_json,
+                                             "visual.path_line.color.b", 0),
                               .a =
                                   ConfigParser::
                                       get_or(config_json,
