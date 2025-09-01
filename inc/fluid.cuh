@@ -24,9 +24,15 @@ class Fluid {
   void apply_extrapolation();
   void apply_diffusion(float d_t);
   void decay_smoke(float d_t);
+  void update_total_s();
 
   void alloc_device_memory();
   void init_device_memory(Config config);
+
+  __device__ static bool is_in_mouse_radius(const UserAction& action,
+                                            int i,
+                                            int j,
+                                            int r);
 
  public:
   const int width;
@@ -86,6 +92,7 @@ class Fluid {
                         int* trace_line_y,
                         int trace_length) const;
 
+  __device__ void update_total_s_at(int i, int j);
   __device__ void apply_external_forces_at(UserAction action,
                                            int i,
                                            int j,
