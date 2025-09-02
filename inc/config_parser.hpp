@@ -12,6 +12,7 @@ enum class MouseClickAction {
   ADD_SMOKE,
   PUSH_ADD_SMOKE,
   ADD_WALL,
+  REMOVE_WALL,
   NOTHING,
 };
 

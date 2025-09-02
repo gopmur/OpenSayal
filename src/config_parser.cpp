@@ -26,6 +26,9 @@ MouseClickAction get_mouse_click_action_from_string(
   if (str == "add_wall") {
     return MouseClickAction::ADD_WALL;
   }
+  if (str == "remove_wall") {
+    return MouseClickAction::REMOVE_WALL;
+  }
   return default_action;
 }
 

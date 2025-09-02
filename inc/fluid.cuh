@@ -17,7 +17,7 @@ class Fluid {
 
   void zero_pressure();
 
-  void apply_external_forces(UserAction action, float d_t);
+  void apply_external_forces_and_user_actions(UserAction action, float d_t);
   void apply_projection(float d_t);
   void apply_smoke_advection(float d_t);
   void apply_velocity_advection(float d_t);
@@ -93,7 +93,7 @@ class Fluid {
                         int trace_length) const;
 
   __device__ void update_total_s_at(int i, int j);
-  __device__ void apply_external_forces_at(UserAction action,
+  __device__ void apply_external_forces_and_user_actions_at(UserAction action,
                                            int i,
                                            int j,
                                            float d_t);

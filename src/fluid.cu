@@ -298,26 +298,30 @@ void Fluid::apply_projection(float d_t) {
   }
 }
 
-__global__ void apply_external_forces_kernel(UserAction action,
-                                             Fluid* d_fluid,
-                                             float d_t) {
+__global__ void apply_external_forces_and_user_actions_kernel(UserAction action,
+                                                              Fluid* d_fluid,
+                                                              float d_t) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if (i >= d_fluid->width or j >= d_fluid->height) {
     return;
   }
-  d_fluid->apply_external_forces_at(action, i, j, d_t);
+  d_fluid->apply_external_forces_and_user_actions_at(action, i, j, d_t);
 }
 
-__device__ void Fluid::apply_external_forces_at(UserAction action,
-                                                int i,
-                                                int j,
-                                                float d_t) {
+__device__ void Fluid::apply_external_forces_and_user_actions_at(
+    UserAction action,
+    int i,
+    int j,
+    float d_t) {
   if (action.click_action == MouseClickAction::ADD_WALL &&
       is_in_mouse_radius(action, i, j, 20)) {
     this->d_is_solid[indx(i, j)] = true;
     this->d_vel_x[indx(i, j)] = 0;
     this->d_vel_y[indx(i, j)] = 0;
+  } else if (action.click_action == MouseClickAction::REMOVE_WALL &&
+             is_in_mouse_radius(action, i, j, 20)) {
+    this->d_is_solid[indx(i, j)] = false;
   }
   int smoke_spacing =
       (this->wind_tunnel_height -
@@ -362,9 +366,11 @@ __device__ void Fluid::apply_external_forces_at(UserAction action,
   }
 }
 
-void Fluid::apply_external_forces(UserAction action, float d_t) {
-  apply_external_forces_kernel<<<this->kernel_grid_dim,
-                                 this->kernel_block_dim>>>(action, d_this, d_t);
+void Fluid::apply_external_forces_and_user_actions(UserAction action,
+                                                   float d_t) {
+  apply_external_forces_and_user_actions_kernel<<<this->kernel_grid_dim,
+                                                  this->kernel_block_dim>>>(
+      action, d_this, d_t);
 }
 
 __global__ void update_total_s_kernel(Fluid* d_fluid) {
@@ -704,9 +710,10 @@ void Fluid::decay_smoke(float d_t) {
 
 // ? put the whole thing into a graph
 void Fluid::update(UserAction action, float d_t) {
-  this->apply_external_forces(action, d_t);
+  this->apply_external_forces_and_user_actions(action, d_t);
   cudaDeviceSynchronize();
-  if (action.click_action == MouseClickAction::ADD_WALL) {
+  if (action.click_action == MouseClickAction::ADD_WALL ||
+      action.click_action == MouseClickAction::REMOVE_WALL) {
     this->update_total_s();
     cudaDeviceSynchronize();
   }
