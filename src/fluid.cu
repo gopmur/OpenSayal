@@ -315,12 +315,12 @@ __device__ void Fluid::apply_external_forces_and_user_actions_at(
     int j,
     float d_t) {
   if (action.click_action == MouseClickAction::ADD_WALL &&
-      is_in_mouse_radius(action, i, j, 20)) {
+      is_in_mouse_radius(action, i, j, action.radius)) {
     this->d_is_solid[indx(i, j)] = true;
     this->d_vel_x[indx(i, j)] = 0;
     this->d_vel_y[indx(i, j)] = 0;
   } else if (action.click_action == MouseClickAction::REMOVE_WALL &&
-             is_in_mouse_radius(action, i, j, 20)) {
+             is_in_mouse_radius(action, i, j, action.radius)) {
     this->d_is_solid[indx(i, j)] = false;
   }
   int smoke_spacing =
@@ -349,15 +349,15 @@ __device__ void Fluid::apply_external_forces_and_user_actions_at(
   }
   if ((action.click_action == MouseClickAction::PUSH_ADD_SMOKE ||
        action.click_action == MouseClickAction::PUSH) &&
-      is_in_mouse_radius(action, i, j, 40)) {
+      is_in_mouse_radius(action, i, j, action.radius)) {
     float x_speed_modifier = i - action.position.get_x();
     float y_speed_modifier = j - action.position.get_y();
-    this->d_vel_x[indx(i, j)] += action.wheel_value * x_speed_modifier;
-    this->d_vel_y[indx(i, j)] += action.wheel_value * y_speed_modifier;
+    this->d_vel_x[indx(i, j)] += action.intensity * x_speed_modifier;
+    this->d_vel_y[indx(i, j)] += action.intensity * y_speed_modifier;
   }
   if ((action.click_action == MouseClickAction::ADD_SMOKE ||
        action.click_action == MouseClickAction::PUSH_ADD_SMOKE) &&
-      is_in_mouse_radius(action, i, j, 40)) {
+      is_in_mouse_radius(action, i, j, action.radius)) {
     this->d_smoke[indx(i, j)] = 1;
   }
 

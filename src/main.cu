@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
   GraphicsHandler graphics(config);
   Fluid fluid(config);
   SDL_Event event;
-  Mouse mouse;
+  Mouse mouse(config);
   UserAction user_action;
 
   {

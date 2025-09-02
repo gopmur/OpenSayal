@@ -8,7 +8,8 @@ struct UserAction {
   MouseClickAction click_action;
   MouseScrollAction scroll_action;
   Vector2d<int> position;
-  int wheel_value;
+  int intensity;
+  int radius;
 };
 
 class Mouse {
@@ -20,7 +21,7 @@ class Mouse {
   bool wheel_changed;
 
  public:
-  Mouse();
+  Mouse(Config &config);
   void update(SDL_Event event);
   UserAction make_user_action(Config& config);
 };

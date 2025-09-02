@@ -1,12 +1,9 @@
 #include "SDL_mouse.h"
-#include "config.hpp"
 #include "config_parser.hpp"
 #include "mouse.cuh"
 
-Mouse::Mouse()
-    : is_down(false),
-      wheel_value(INTERACTIVE_STARTING_SPEED),
-      wheel_changed(false) {}
+Mouse::Mouse(Config& config)
+    : is_down(false), wheel_changed(false), wheel_value(0) {}
 
 void Mouse::update(SDL_Event event) {
   this->wheel_changed = false;
@@ -42,7 +39,8 @@ UserAction Mouse::make_user_action(Config& config) {
   UserAction action = {
       .click_action = MouseClickAction::NOTHING,
       .scroll_action = MouseScrollAction::NOTHING,
-      .wheel_value = this->wheel_value,
+      .intensity = config.sim.mouse.intensity,
+      .radius = config.sim.mouse.radius,
   };
   action.position.set_x(this->position.get_x());
   action.position.set_y(config.sim.height - 1 -
@@ -64,5 +62,15 @@ UserAction Mouse::make_user_action(Config& config) {
   if (this->wheel_changed) {
     action.scroll_action = config.sim.mouse.scroll_action;
   };
+  switch (config.sim.mouse.scroll_action) {
+    case MouseScrollAction::CHANGE_INTENSITY:
+      action.intensity = this->wheel_value;
+      break;
+    case MouseScrollAction::CHANGE_SIZE:
+      action.radius = this->wheel_value;
+      break;
+    case MouseScrollAction::NOTHING:
+      break;
+  }
   return action;
 }
