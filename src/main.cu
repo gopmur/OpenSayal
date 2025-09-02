@@ -41,8 +41,8 @@ int main(int argc, char* argv[]) {
   GraphicsHandler graphics(config);
   Fluid fluid(config);
   SDL_Event event;
-  Mouse mouse;
-  Source source;
+  Mouse mouse(config);
+  UserAction user_action;
 
   {
     using namespace std::chrono;
@@ -56,8 +56,9 @@ int main(int argc, char* argv[]) {
           is_running = false;
           break;
         }
-        if (config.sim.enable_interactive) {
+        if (config.sim.mouse.enable) {
           mouse.update(event);
+          user_action = mouse.make_user_action(config);
         }
       }
       if (!is_running) {
@@ -77,17 +78,14 @@ int main(int argc, char* argv[]) {
         auto fps = static_cast<uint32_t>(1 / d_t);
         Logger::log_fps(d_t, work);
       }
-      if (config.sim.enable_interactive) {
-        source =
-            mouse.make_source(config.sim.height, config.sim.cell_pixel_size);
-      }
       if (config.sim.time.enable_real_time) {
         d_t *= config.sim.time.real_time_multiplier;
       } else {
         d_t = config.sim.time.d_t;
       }
+
       prev_clock = std::clock();
-      fluid.update(source, d_t);
+      fluid.update(user_action, d_t);
       graphics.update(fluid, d_t);
       work = std::clock() - prev_clock;
       prev_time = now;

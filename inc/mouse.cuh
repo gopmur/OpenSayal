@@ -1,8 +1,16 @@
 #pragma once
 
 #include "SDL_events.h"
+#include "config_parser.hpp"
+#include "helper.cuh"
 
-#include "fluid.cuh"
+struct UserAction {
+  MouseClickAction click_action;
+  MouseScrollAction scroll_action;
+  Vector2d<int> position;
+  int intensity;
+  int radius;
+};
 
 class Mouse {
  private:
@@ -10,9 +18,10 @@ class Mouse {
   Vector2d<int> position;
   int button;
   int wheel_value;
+  bool wheel_changed;
 
  public:
-  Mouse();
+  Mouse(Config &config);
   void update(SDL_Event event);
-  Source make_source(int fluid_height, int cell_size);
+  UserAction make_user_action(Config& config);
 };

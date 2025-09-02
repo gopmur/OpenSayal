@@ -95,3 +95,8 @@ template <typename T>
 __host__ __device__ T clamp(T x, T lower, T upper) {
   return (x < lower) ? lower : (x > upper) ? upper : x;
 }
+
+template <typename T>
+__host__ __device__ bool is_in_radius(T x, T y, T c_x, T c_y, T r) {
+  return square(x - c_x) + square(y - c_y) < square(r);
+}

@@ -1,9 +1,12 @@
-#include "config.hpp"
+#include "SDL_mouse.h"
+#include "config_parser.hpp"
 #include "mouse.cuh"
 
-Mouse::Mouse() : is_down(false), wheel_value(INTERACTIVE_STARTING_SPEED) {}
+Mouse::Mouse(Config& config)
+    : is_down(false), wheel_changed(false), wheel_value(0) {}
 
 void Mouse::update(SDL_Event event) {
+  this->wheel_changed = false;
   switch (event.type) {
     case SDL_MOUSEBUTTONDOWN: {
       this->is_down = true;
@@ -17,6 +20,7 @@ void Mouse::update(SDL_Event event) {
     case SDL_MOUSEWHEEL: {
       int new_wheel_value = this->wheel_value + event.wheel.y * 10;
       if (new_wheel_value >= 0) {
+        this->wheel_changed = true;
         this->wheel_value = new_wheel_value;
       }
       break;
@@ -31,16 +35,42 @@ void Mouse::update(SDL_Event event) {
   }
 }
 
-Source Mouse::make_source(int fluid_height, int cell_size) {
-  auto position = this->position / cell_size;
-  position.set_y(fluid_height - position.get_y());
-  float smoke = this->button == 1 ? 1 : 0;
-  float velocity = this->button == 2 ? -this->wheel_value : this->wheel_value;
-  Source source = {
-      .active = this->is_down,
-      .smoke = smoke,
-      .velocity = velocity,
-      .position = position,
+UserAction Mouse::make_user_action(Config& config) {
+  UserAction action = {
+      .click_action = MouseClickAction::NOTHING,
+      .scroll_action = MouseScrollAction::NOTHING,
+      .intensity = config.sim.mouse.intensity,
+      .radius = config.sim.mouse.radius,
   };
-  return source;
+  action.position.set_x(this->position.get_x());
+  action.position.set_y(config.sim.height - 1 -
+                        (this->position.get_y() / config.sim.cell_pixel_size));
+  if (!this->is_down) {
+    return action;
+  }
+  switch (this->button) {
+    case SDL_BUTTON_RIGHT:
+      action.click_action = config.sim.mouse.right_click_action;
+      break;
+    case SDL_BUTTON_MIDDLE:
+      action.click_action = config.sim.mouse.middle_click_action;
+      break;
+    case SDL_BUTTON_LEFT:
+      action.click_action = config.sim.mouse.left_click_action;
+      break;
+  }
+  if (this->wheel_changed) {
+    action.scroll_action = config.sim.mouse.scroll_action;
+  };
+  switch (config.sim.mouse.scroll_action) {
+    case MouseScrollAction::CHANGE_INTENSITY:
+      action.intensity = this->wheel_value;
+      break;
+    case MouseScrollAction::CHANGE_SIZE:
+      action.radius = this->wheel_value;
+      break;
+    case MouseScrollAction::NOTHING:
+      break;
+  }
+  return action;
 }

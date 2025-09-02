@@ -2,13 +2,7 @@
 
 #include "config_parser.hpp"
 #include "helper.cuh"
-
-struct Source {
-  bool active;
-  float smoke;
-  float velocity;
-  Vector2d<int> position;
-};
+#include "mouse.cuh"
 
 class Fluid {
  private:
@@ -23,16 +17,22 @@ class Fluid {
 
   void zero_pressure();
 
-  void apply_external_forces(Source source, float d_t);
+  void apply_external_forces_and_user_actions(UserAction action, float d_t);
   void apply_projection(float d_t);
   void apply_smoke_advection(float d_t);
   void apply_velocity_advection(float d_t);
   void apply_extrapolation();
   void apply_diffusion(float d_t);
   void decay_smoke(float d_t);
+  void update_total_s();
 
   void alloc_device_memory();
   void init_device_memory(Config config);
+
+  __device__ static bool is_in_mouse_radius(const UserAction& action,
+                                            int i,
+                                            int j,
+                                            int r);
 
  public:
   const int width;
@@ -92,7 +92,8 @@ class Fluid {
                         int* trace_line_y,
                         int trace_length) const;
 
-  __device__ void apply_external_forces_at(Source source,
+  __device__ void update_total_s_at(int i, int j);
+  __device__ void apply_external_forces_and_user_actions_at(UserAction action,
                                            int i,
                                            int j,
                                            float d_t);
@@ -110,5 +111,5 @@ class Fluid {
   __device__ void zero_pressure_at(int i, int j);
   __device__ void apply_diffusion_at(int i, int j, float d_t);
 
-  void update(Source source, float d_t);
+  void update(UserAction user_action, float d_t);
 };
