@@ -94,6 +94,8 @@ struct MouseConfig {
   MouseClickAction middle_click_action;
   MouseClickAction left_click_action;
   MouseScrollAction scroll_action;
+  int radius;
+  int intensity;
 };
 
 struct SimConfig {
