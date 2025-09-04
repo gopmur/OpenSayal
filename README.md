@@ -1,6 +1,6 @@
 # OpenSayal
 
-## Table of Content
+## Table of Contents
 
 - [About](#about)
 - [Gallery](#gallery)
@@ -9,7 +9,7 @@
 
 ## About
 
-OpenSayal is a lightweight fluid simulator accelerated using Cuda enabled Nvidia GPUs. OpenSayal can simulate incompressible fluids with zero viscosity. It supports gravity, drag and solids.
+OpenSayal is a lightweight fluid simulator that is accelerated using CUDA-enabled Nvidia GPUs. It can simulate incompressible fluids and supports gravity, drag, viscosity, and solids.
 
 ## Gallery
 
@@ -65,7 +65,7 @@ Build dependencies
 - `Visual Studio`
 - `cuda`
 
-Enter Visual Studio Developer Powershell and run these commands in the root directory of the project.
+Enter Visual Studio Developer PowerShell and run these commands in the root directory of the project.
 
 ```shell
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CUDA_HOST_COMPILER=cl -DCMAKE_CUDA_ARCHITECTURES="75;86;90"
@@ -75,7 +75,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=cl -DCMAKE_C
 cmake --build build --config Release
 ```
 
-To run the program navigate to `build/Release` copy `OpenSayal.exe` to `build/lib/sdl/Release` and run `OpenSayal.exe` there.  
+To run the program, navigate to `build/Release`, copy `OpenSayal.exe` to `build/lib/sdl/Release`, and run `OpenSayal.exe` there.  
 
 ## Configuration
 
@@ -159,7 +159,7 @@ Put a configuration file named `OpenSayal.conf.json` in the directory in which y
 }
 ```
 
-Every configuration key can be defined in a single line or can be defined in multiple levels. for example the following will do the exact same thing.
+Every configuration key can be defined in a single line or can be defined in multiple levels. for example the following will do the same thing.
 
 ```json
 {
